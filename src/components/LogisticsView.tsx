@@ -14,12 +14,31 @@ import {
   MoreHorizontal,
   Plus,
   ShieldCheck,
-  CheckCircle2
+  CheckCircle2,
+  TrendingUp,
+  TrendingDown,
+  Info
 } from 'lucide-react';
-import { Driver } from '../types';
+import { Driver, ItineraryDay } from '../types';
 import { initialDrivers, activeVehicle } from '../data';
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  Legend
+} from 'recharts';
 
-export default function LogisticsView() {
+interface LogisticsViewProps {
+  itinerary?: ItineraryDay[];
+}
+
+export default function LogisticsView({ itinerary = [] }: LogisticsViewProps) {
   const [drivers, setDrivers] = useState<Driver[]>(initialDrivers);
   const [fuelBudgetUsed, setFuelBudgetUsed] = useState(420);
   const [fuelLimit, setFuelLimit] = useState(650);
@@ -31,6 +50,54 @@ export default function LogisticsView() {
   const [addAmount, setAddAmount] = useState('');
   const [addLoc, setAddLoc] = useState('');
   const [showDocModal, setShowDocModal] = useState<string | null>(null);
+
+  const [chartMetric, setChartMetric] = useState<'fuel' | 'cost'>('fuel');
+
+  // Dynamic chart data representing 6 sequential days of expedition
+  // Values scale automatically as activities are added, simulating realistic fuel and daily spend
+  const chartData = Array.from({ length: 6 }).map((_, i) => {
+    const dayIndex = i;
+    const dayNumber = dayIndex + 1;
+    const itineraryDay = itinerary[dayIndex];
+    const activityCount = itineraryDay ? itineraryDay.activities.length : 0;
+    
+    const dayLabel = itineraryDay ? `Día ${dayNumber} (${itineraryDay.date})` : `Día ${dayNumber} (Proy.)`;
+    
+    // Distances are influenced by the number of activities on that day
+    const baseProjectedDistance = 90 + dayIndex * 20; // km base
+    const activityProjectedDistance = activityCount * 30; // km
+    const totalProjectedDistance = baseProjectedDistance + activityProjectedDistance;
+    
+    const baseRealDistance = 85 + dayIndex * 22;
+    const activityRealDistance = activityCount * 35;
+    const totalRealDistance = baseRealDistance + activityRealDistance;
+    
+    // Fuel (Liters) based on average vehicle consumption (11L/100km)
+    const fuelProjected = Math.round(totalProjectedDistance * 0.11);
+    const fuelReal = Math.round(totalRealDistance * 0.105);
+    
+    // Gasto ($ USD) per day based on activity density and fuel purchases
+    const costProjected = Math.round(totalProjectedDistance * 0.35 + 40);
+    const costReal = Math.round(totalRealDistance * 0.38 + (activityCount > 0 ? 45 : 15));
+    
+    return {
+      name: dayLabel,
+      'Combustible Proyectado': fuelProjected,
+      'Combustible Real': fuelReal,
+      'Gasto Proyectado': costProjected,
+      'Gasto Real': costReal,
+      activities: activityCount,
+      distance: totalRealDistance
+    };
+  });
+
+  const totalProjFuel = chartData.reduce((acc, curr) => acc + curr['Combustible Proyectado'], 0);
+  const totalRealFuel = chartData.reduce((acc, curr) => acc + curr['Combustible Real'], 0);
+  const totalProjCost = chartData.reduce((acc, curr) => acc + curr['Gasto Proyectado'], 0);
+  const totalRealCost = chartData.reduce((acc, curr) => acc + curr['Gasto Real'], 0);
+
+  const fuelDiff = totalProjFuel - totalRealFuel;
+  const costDiff = totalProjCost - totalRealCost;
 
   const fuelSpentPercent = Math.min(100, Math.round((fuelBudgetUsed / fuelLimit) * 100));
 
@@ -141,6 +208,236 @@ export default function LogisticsView() {
                   <ArrowUpRight className="w-4 h-4 text-brand-primary transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                 </button>
               </div>
+            </div>
+          </section>
+
+          {/* Analysis Chart Card */}
+          <section className="bg-white rounded-none p-6 md:p-8 border border-brand-primary/10 shadow-none space-y-6 animate-in fade-in duration-300" id="logistics-analytics-chart">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-brand-primary/10 pb-4">
+              <div>
+                <h3 className="font-serif font-black italic text-brand-primary text-lg md:text-xl flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-brand-sunset" />
+                  <span>Análisis de Consumo y Gastos</span>
+                </h3>
+                <p className="text-[10px] uppercase tracking-widest font-bold text-brand-outline mt-1">
+                  Métricas dinámicas basadas en {itinerary.length} días de expedición y {itinerary.reduce((acc, d) => acc + d.activities.length, 0)} actividades
+                </p>
+              </div>
+
+              {/* Metric Toggle Tabs */}
+              <div className="flex bg-brand-background p-1 border border-brand-primary/10 select-none self-start md:self-auto">
+                <button
+                  type="button"
+                  onClick={() => setChartMetric('fuel')}
+                  className={`px-3 py-1.5 text-[9px] font-black uppercase tracking-widest transition-all cursor-pointer ${
+                    chartMetric === 'fuel'
+                      ? 'bg-brand-primary text-white'
+                      : 'text-brand-primary hover:bg-brand-primary/5'
+                  }`}
+                >
+                  Combustible (L)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setChartMetric('cost')}
+                  className={`px-3 py-1.5 text-[9px] font-black uppercase tracking-widest transition-all cursor-pointer ${
+                    chartMetric === 'cost'
+                      ? 'bg-brand-primary text-white'
+                      : 'text-brand-primary hover:bg-brand-primary/5'
+                  }`}
+                >
+                  Gastos Diarios ($)
+                </button>
+              </div>
+            </div>
+
+            {/* Top Insight stats */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-brand-background p-4 border border-brand-primary/10">
+              <div className="space-y-1">
+                <span className="text-[8px] font-black uppercase tracking-widest text-brand-outline block">Total Proyectado</span>
+                <span className="text-lg font-serif font-black italic text-brand-primary block">
+                  {chartMetric === 'fuel' ? `${totalProjFuel} Litros` : `$${totalProjCost} USD`}
+                </span>
+              </div>
+              <div className="space-y-1">
+                <span className="text-[8px] font-black uppercase tracking-widest text-brand-outline block">Total Real (Simulado)</span>
+                <span className="text-lg font-serif font-black italic text-brand-primary block">
+                  {chartMetric === 'fuel' ? `${totalRealFuel} Litros` : `$${totalRealCost} USD`}
+                </span>
+              </div>
+              <div className="space-y-1">
+                <span className="text-[8px] font-black uppercase tracking-widest text-brand-outline block">Diferencia de Ruta</span>
+                <div className="flex items-center gap-1">
+                  {chartMetric === 'fuel' ? (
+                    fuelDiff >= 0 ? (
+                      <>
+                        <TrendingDown className="w-4 h-4 text-emerald-700 shrink-0" />
+                        <span className="text-xs font-bold text-emerald-700">-{Math.abs(fuelDiff)} L (Ahorro)</span>
+                      </>
+                    ) : (
+                      <>
+                        <TrendingUp className="w-4 h-4 text-red-700 shrink-0" />
+                        <span className="text-xs font-bold text-red-700">+{Math.abs(fuelDiff)} L (Exceso)</span>
+                      </>
+                    )
+                  ) : (
+                    costDiff >= 0 ? (
+                      <>
+                        <TrendingDown className="w-4 h-4 text-emerald-700 shrink-0" />
+                        <span className="text-xs font-bold text-emerald-700">-${Math.abs(costDiff)} USD (Bajo Pres.)</span>
+                      </>
+                    ) : (
+                      <>
+                        <TrendingUp className="w-4 h-4 text-red-700 shrink-0" />
+                        <span className="text-xs font-bold text-red-700">+${Math.abs(costDiff)} USD (Sobre Pres.)</span>
+                      </>
+                    )
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Recharts chart render area */}
+            <div className="h-64 sm:h-72 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                {chartMetric === 'fuel' ? (
+                  <AreaChart
+                    data={chartData}
+                    margin={{ top: 10, right: 10, left: -15, bottom: 0 }}
+                  >
+                    <defs>
+                      <linearGradient id="colorProj" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#1A1A1A" stopOpacity={0.1}/>
+                        <stop offset="95%" stopColor="#1A1A1A" stopOpacity={0.0}/>
+                      </linearGradient>
+                      <linearGradient id="colorReal" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#C9753F" stopOpacity={0.2}/>
+                        <stop offset="95%" stopColor="#C9753F" stopOpacity={0.0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(26,26,26,0.06)" vertical={false} />
+                    <XAxis 
+                      dataKey="name" 
+                      stroke="#777777" 
+                      fontSize={9} 
+                      tickLine={false} 
+                      axisLine={{ stroke: 'rgba(26,26,26,0.1)' }}
+                    />
+                    <YAxis 
+                      stroke="#777777" 
+                      fontSize={9} 
+                      tickLine={false} 
+                      axisLine={{ stroke: 'rgba(26,26,26,0.1)' }}
+                      unit=" L"
+                    />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: '#ffffff', 
+                        borderColor: 'rgba(26,26,26,0.1)', 
+                        fontFamily: 'monospace', 
+                        fontSize: '10px', 
+                        borderRadius: '0',
+                        boxShadow: 'none'
+                      }} 
+                    />
+                    <Legend 
+                      verticalAlign="top" 
+                      height={36} 
+                      iconType="plainline"
+                      iconSize={12}
+                      wrapperStyle={{ 
+                        fontSize: '9px', 
+                        textTransform: 'uppercase', 
+                        letterSpacing: '0.1em', 
+                        fontWeight: 'bold',
+                        color: '#1A1A1A'
+                      }} 
+                    />
+                    <Area 
+                      type="monotone" 
+                      name="Combustible Proyectado" 
+                      dataKey="Combustible Proyectado" 
+                      stroke="#1A1A1A" 
+                      strokeWidth={1.5}
+                      fillOpacity={1} 
+                      fill="url(#colorProj)" 
+                    />
+                    <Area 
+                      type="monotone" 
+                      name="Combustible Real" 
+                      dataKey="Combustible Real" 
+                      stroke="#C9753F" 
+                      strokeWidth={2}
+                      fillOpacity={1} 
+                      fill="url(#colorReal)" 
+                    />
+                  </AreaChart>
+                ) : (
+                  <BarChart
+                    data={chartData}
+                    margin={{ top: 10, right: 10, left: -15, bottom: 0 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(26,26,26,0.06)" vertical={false} />
+                    <XAxis 
+                      dataKey="name" 
+                      stroke="#777777" 
+                      fontSize={9} 
+                      tickLine={false} 
+                      axisLine={{ stroke: 'rgba(26,26,26,0.1)' }}
+                    />
+                    <YAxis 
+                      stroke="#777777" 
+                      fontSize={9} 
+                      tickLine={false} 
+                      axisLine={{ stroke: 'rgba(26,26,26,0.1)' }}
+                      unit=" $"
+                    />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: '#ffffff', 
+                        borderColor: 'rgba(26,26,26,0.1)', 
+                        fontFamily: 'monospace', 
+                        fontSize: '10px', 
+                        borderRadius: '0',
+                        boxShadow: 'none'
+                      }} 
+                    />
+                    <Legend 
+                      verticalAlign="top" 
+                      height={36} 
+                      iconSize={10}
+                      wrapperStyle={{ 
+                        fontSize: '9px', 
+                        textTransform: 'uppercase', 
+                        letterSpacing: '0.1em', 
+                        fontWeight: 'bold',
+                        color: '#1A1A1A'
+                      }} 
+                    />
+                    <Bar 
+                      name="Gasto Proyectado" 
+                      dataKey="Gasto Proyectado" 
+                      fill="#1A1A1A" 
+                      opacity={0.35}
+                      radius={[0, 0, 0, 0]} 
+                    />
+                    <Bar 
+                      name="Gasto Real" 
+                      dataKey="Gasto Real" 
+                      fill="#C9753F" 
+                      radius={[0, 0, 0, 0]} 
+                    />
+                  </BarChart>
+                )}
+              </ResponsiveContainer>
+            </div>
+
+            {/* Reactive Insight Info Alert */}
+            <div className="flex gap-2.5 bg-brand-sunset/5 border-l-4 border-brand-sunset p-3">
+              <Info className="w-4 h-4 text-brand-sunset shrink-0 mt-0.5" />
+              <p className="text-[10px] text-brand-primary leading-normal font-sans font-medium">
+                💡 <strong>Análisis Reactivo Activo:</strong> Al añadir o modificar paradas e itinerarios en la pestaña <strong>Planificador</strong> o aprobar lugares de la lista de propuestas, las distancias y los consumos diarios de combustible y gastos se recalcularán automáticamente en esta gráfica en tiempo real.
+              </p>
             </div>
           </section>
 

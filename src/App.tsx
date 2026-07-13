@@ -243,7 +243,7 @@ export default function App() {
             )}
 
             {activeTab === 'logistics' && (
-              <LogisticsView />
+              <LogisticsView itinerary={itinerary} />
             )}
 
             {activeTab === 'map' && (
