@@ -1,0 +1,142 @@
+import React, { useState } from 'react';
+import { Search, Bell, Settings, Sun, Moon } from 'lucide-react';
+import { ActiveTab } from '../types';
+
+interface HeaderProps {
+  activeTab: ActiveTab;
+  setActiveTab: (tab: ActiveTab) => void;
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+  onNotificationClick: () => void;
+  onSettingsClick: () => void;
+}
+
+export default function Header({
+  activeTab,
+  setActiveTab,
+  searchQuery,
+  setSearchQuery,
+  onNotificationClick,
+  onSettingsClick,
+}: HeaderProps) {
+  const [showNotificationsDropdown, setShowNotificationsDropdown] = useState(false);
+
+  const navItems: { label: string; tab: ActiveTab }[] = [
+    { label: 'Panel', tab: 'dashboard' },
+    { label: 'Itinerario', tab: 'itinerary' },
+    { label: 'Lugares', tab: 'places' },
+    { label: 'Logística', tab: 'logistics' },
+    { label: 'Mapa', tab: 'map' },
+  ];
+
+  return (
+    <nav className="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-6 md:px-16 h-16 bg-brand-background/95 backdrop-blur-md border-b border-brand-primary/10 shadow-none">
+      {/* Brand logo */}
+      <div className="flex items-center gap-10">
+        <span 
+          onClick={() => setActiveTab('dashboard')} 
+          className="font-serif text-2xl font-black italic text-brand-primary cursor-pointer select-none tracking-tight hover:opacity-90 active:scale-98 transition-transform"
+          id="header-brand-logo"
+        >
+          Horizon
+        </span>
+
+        {/* Center navigation links */}
+        <div className="hidden md:flex gap-8 items-center">
+          {navItems.map((item) => (
+            <button
+              key={item.tab}
+              onClick={() => setActiveTab(item.tab)}
+              className={`font-sans font-bold text-xs uppercase tracking-[0.15em] transition-all pb-1.5 hover:text-brand-primary relative cursor-pointer ${
+                activeTab === item.tab
+                  ? 'text-brand-primary'
+                  : 'text-brand-on-surface-variant/75'
+              }`}
+              id={`header-nav-${item.tab}`}
+            >
+              {item.label}
+              {activeTab === item.tab && (
+                <span className="absolute bottom-0 left-0 w-full h-[1.5px] bg-brand-primary" />
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Right side icons */}
+      <div className="flex items-center gap-4">
+        {/* Search */}
+        <div className="relative hidden sm:block">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-primary/40 w-3.5 h-3.5" />
+          <input
+            type="text"
+            placeholder="Buscar detalles del viaje..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 pr-4 py-1.5 bg-white hover:bg-brand-surface-low border border-brand-primary/10 rounded-sm text-xs focus:outline-none focus:border-brand-primary/30 w-52 transition-colors font-sans tracking-wide"
+            id="header-search-input"
+          />
+        </div>
+
+        {/* Notifications */}
+        <div className="relative">
+          <button
+            onClick={() => {
+              setShowNotificationsDropdown(!showNotificationsDropdown);
+              onNotificationClick();
+            }}
+            className="p-2 text-brand-on-surface-variant hover:text-brand-primary hover:bg-brand-surface-container/50 rounded-none transition-colors relative cursor-pointer active:scale-95"
+            id="header-notifications-btn"
+          >
+            <Bell className="w-4.5 h-4.5" />
+            <span className="absolute top-1 right-1 w-2 h-2 bg-brand-sunset rounded-full border border-brand-background" />
+          </button>
+
+          {showNotificationsDropdown && (
+            <div className="absolute right-0 mt-2 w-80 bg-white border border-brand-primary/10 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200 shadow-xl rounded-none">
+              <div className="px-4 py-2 border-b border-brand-primary/10 flex justify-between items-center">
+                <span className="font-bold text-[10px] text-brand-primary uppercase tracking-widest">Alertas y Actualizaciones</span>
+                <span className="text-[9px] text-white font-bold uppercase bg-brand-primary px-2 py-0.5 rounded-none">Nuevo</span>
+              </div>
+              <div className="max-h-60 overflow-y-auto">
+                <div className="px-4 py-3 hover:bg-brand-surface-low transition-colors cursor-pointer border-b border-brand-primary/5">
+                  <p className="text-xs font-bold text-brand-primary font-serif italic">Actualización del Ferry</p>
+                  <p className="text-xs text-brand-on-surface-variant/95 mt-0.5 font-sans">Maya: El ferry a la isla Hrísey sale mañana a las 2 PM en punto.</p>
+                  <span className="text-[9px] text-brand-outline mt-1 block">Ahora mismo</span>
+                </div>
+                <div className="px-4 py-3 hover:bg-brand-surface-low transition-colors cursor-pointer border-b border-brand-primary/5">
+                  <p className="text-xs font-bold text-brand-primary font-serif italic">Importación Inteligente Exitosa</p>
+                  <p className="text-xs text-brand-on-surface-variant/95 mt-0.5 font-sans">Tus vuelos a Islandia y boletos de la laguna se han procesado correctamente.</p>
+                  <span className="text-[9px] text-brand-outline mt-1 block">Hace 15 minutos</span>
+                </div>
+                <div className="px-4 py-3 hover:bg-brand-surface-low transition-colors cursor-pointer">
+                  <p className="text-xs font-bold text-brand-primary font-serif italic">Fotos Nuevas</p>
+                  <p className="text-xs text-brand-on-surface-variant/95 mt-0.5 font-sans">Sarah subió 12 fotos nuevas de la caminata por el glaciar.</p>
+                  <span className="text-[9px] text-brand-outline mt-1 block">Hace 1 hora</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Settings */}
+        <button
+          onClick={onSettingsClick}
+          className="p-2 text-brand-on-surface-variant hover:text-brand-primary hover:bg-brand-surface-container/50 rounded-full transition-colors cursor-pointer active:scale-95"
+          id="header-settings-btn"
+        >
+          <Settings className="w-5 h-5" />
+        </button>
+
+        {/* User Profile avatar */}
+        <div className="w-8 h-8 rounded-full bg-brand-primary-fixed overflow-hidden border border-brand-outline-variant select-none cursor-pointer hover:opacity-90 active:scale-95 transition-all">
+          <img
+            className="w-full h-full object-cover"
+            src="https://lh3.googleusercontent.com/aida-public/AB6AXuCr387soWTtXUJbgL9pO9o3NzLfBnAz_ZIMfNeyMLMiAHdRtuMfAAH4HyXQhEYk4wFeVHGEfK6N8-gIpXWe7xTGjQ5EUkhAXoSJjxxzafBR-uXp2qHHQ6y9785VK8pAxb4i06PNpLaRpZMzVALvNf-yiPaNzYsqChtVCZHnECrlWotYDWCAdCQycJ7o2_wcNMlZr1GLpzOTBYapoeottpDKTzQ1-42paVA_Gv_anczV-PKFK13XKZcKrd5hj3B7F6vETC_DYWrx8qPz"
+            alt="Alex"
+          />
+        </div>
+      </div>
+    </nav>
+  );
+}

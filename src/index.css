@@ -1,0 +1,121 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Helvetica Neue", Helvetica, "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Helvetica Neue", Helvetica, "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Helvetica Neue", Helvetica, "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  
+  /* Editorial Aesthetic Theme Colors */
+  --color-brand-background: #F3F4F1;
+  --color-brand-surface: #FFFFFF;
+  --color-brand-surface-dim: #E7E8E4;
+  --color-brand-surface-bright: #FFFFFF;
+  --color-brand-surface-lowest: #FFFFFF;
+  --color-brand-surface-low: #FAFBF9;
+  --color-brand-surface-container: #E1E2DE;
+  --color-brand-surface-high: #D8D9D4;
+  --color-brand-surface-highest: #CDCECA;
+  --color-brand-on-surface: #1A1A1A;
+  --color-brand-on-surface-variant: #555555;
+  --color-brand-inverse-surface: #1A1A1A;
+  --color-brand-inverse-on-surface: #F3F4F1;
+  --color-brand-outline: #777777;
+  --color-brand-outline-variant: #BFBFBF;
+  --color-brand-surface-tint: #1A1A1A;
+  
+  --color-brand-primary: #1A1A1A;
+  --color-brand-on-primary: #F3F4F1;
+  --color-brand-primary-container: #262626;
+  --color-brand-on-primary-container: #E1E2DE;
+  --color-brand-inverse-primary: #E1E2DE;
+  
+  --color-brand-secondary: #2C3E2D; /* Elegant Atacama/Nordic Deep Sage Olive */
+  --color-brand-on-secondary: #FFFFFF;
+  --color-brand-secondary-container: #DFE5DF;
+  --color-brand-on-secondary-container: #2C3E2D;
+  
+  --color-brand-tertiary: #4E3B27; /* Earthy Wood/Clay tone */
+  --color-brand-on-tertiary: #FFFFFF;
+  --color-brand-tertiary-container: #F2ECE5;
+  --color-brand-on-tertiary-container: #4E3B27;
+  
+  --color-brand-error: #8C2D19;
+  --color-brand-on-error: #FFFFFF;
+  --color-brand-error-container: #F8ECE9;
+  --color-brand-on-error-container: #8C2D19;
+  
+  --color-brand-primary-fixed: #E1E2DE;
+  --color-brand-primary-fixed-dim: #CDCECA;
+  --color-brand-on-primary-fixed: #1A1A1A;
+  --color-brand-on-primary-fixed-variant: #262626;
+  
+  --color-brand-secondary-fixed: #E1ECE3;
+  --color-brand-secondary-fixed-dim: #D1E1D4;
+  --color-brand-on-secondary-fixed: #1B291C;
+  --color-brand-on-secondary-fixed-variant: #2C3E2D;
+  
+  --color-brand-tertiary-fixed: #F2ECE5;
+  --color-brand-tertiary-fixed-dim: #E5D7CA;
+  --color-brand-on-tertiary-fixed: #352516;
+  --color-brand-on-tertiary-fixed-variant: #4E3B27;
+  
+  --color-brand-sunset: #C9753F; /* Beautiful terracotta/sunset accent */
+}
+
+body {
+  background-color: var(--color-brand-background);
+  color: var(--color-brand-on-surface);
+  font-family: var(--font-sans);
+}
+
+.serif {
+  font-family: var(--font-serif);
+}
+
+.vertical-text {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+
+.pill-nav {
+  border: 1.5px solid #1A1A1A;
+  border-radius: 999px;
+  padding: 6px 20px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  transition: all 0.2s ease;
+}
+
+.pill-nav:hover {
+  background-color: #1A1A1A;
+  color: #F3F4F1;
+}
+
+.glass-effect {
+  backdrop-filter: blur(10px);
+  background-color: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(26, 26, 26, 0.08);
+}
+
+.itinerary-card-shadow {
+  box-shadow: 0px 8px 30px rgba(26, 26, 26, 0.03);
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(26, 26, 26, 0.1);
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(26, 26, 26, 0.25);
+}
