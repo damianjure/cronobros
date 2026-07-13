@@ -21,6 +21,32 @@ import {
 } from 'lucide-react';
 import { ItineraryDay, ItineraryActivity } from '../types';
 
+export function formatDateToDisplay(dateStr: string): string {
+  if (!dateStr) return '';
+  if (dateStr.includes('Ago') || dateStr.includes('Ene') || dateStr.includes('Feb') || dateStr.includes('Mar') || dateStr.includes('Abr') || dateStr.includes('May') || dateStr.includes('Jun') || dateStr.includes('Jul') || dateStr.includes('Sep') || dateStr.includes('Oct') || dateStr.includes('Nov') || dateStr.includes('Dic')) {
+    return dateStr;
+  }
+  const dateParts = dateStr.split('-');
+  if (dateParts.length === 3) {
+    const d = new Date(Number(dateParts[0]), Number(dateParts[1]) - 1, Number(dateParts[2]));
+    if (isNaN(d.getTime())) return dateStr;
+    const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    return `${d.getDate()} ${months[d.getMonth()]}`;
+  }
+  return dateStr;
+}
+
+export function getDayOfWeekInSpanish(dateStr: string): string {
+  const dateParts = dateStr.split('-');
+  if (dateParts.length === 3) {
+    const d = new Date(Number(dateParts[0]), Number(dateParts[1]) - 1, Number(dateParts[2]));
+    if (isNaN(d.getTime())) return 'Lunes';
+    const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    return days[d.getDay()];
+  }
+  return 'Lunes';
+}
+
 interface ItineraryViewProps {
   itinerary: ItineraryDay[];
   setItinerary: React.Dispatch<React.SetStateAction<ItineraryDay[]>>;
@@ -43,6 +69,8 @@ export default function ItineraryView({
 
   // New activity form states
   const [newDayId, setNewDayId] = useState('day-1');
+  const [daySelectionType, setDaySelectionType] = useState<'existing' | 'calendar'>('existing');
+  const [newDayDate, setNewDayDate] = useState('2026-08-14');
   const [newTime, setNewTime] = useState('11:00 AM');
   const [newType, setNewType] = useState<'Relaxation' | 'Dining' | 'Sightseeing' | 'Adventure' | 'Accommodation'>('Relaxation');
   const [newTitle, setNewTitle] = useState('');
@@ -79,20 +107,55 @@ export default function ItineraryView({
       type: newType,
       title: newTitle,
       description: newDesc,
-      location: newLocation
+      location: newLocation,
+      people: ['Alex Thorne', 'Sarah Miller', 'James', 'Maya', 'Sofía', 'Mateo']
     };
 
-    setItinerary(prev =>
-      prev.map(day => {
-        if (day.id === newDayId) {
+    setItinerary(prev => {
+      let updatedList = [...prev];
+      let targetDayId = newDayId;
+
+      if (daySelectionType === 'calendar') {
+        const existingDay = prev.find(day => day.date === newDayDate);
+        if (existingDay) {
+          targetDayId = existingDay.id;
+        } else {
+          const newDayIdStr = `day-${Date.now()}`;
+          const newDay: ItineraryDay = {
+            id: newDayIdStr,
+            dayNumber: 0,
+            date: newDayDate,
+            dayOfWeek: getDayOfWeekInSpanish(newDayDate),
+            title: `Exploración (${formatDateToDisplay(newDayDate)})`,
+            location: 'Islandia',
+            activities: []
+          };
+          updatedList.push(newDay);
+          targetDayId = newDayIdStr;
+        }
+      }
+
+      updatedList = updatedList.map(day => {
+        if (day.id === targetDayId) {
           return {
             ...day,
             activities: [...day.activities, newActivity]
           };
         }
         return day;
-      })
-    );
+      });
+
+      // Sort chronologically by date
+      updatedList.sort((a, b) => a.date.localeCompare(b.date));
+
+      // Re-index all day numbers
+      updatedList = updatedList.map((day, index) => ({
+        ...day,
+        dayNumber: index + 1
+      }));
+
+      return updatedList;
+    });
 
     // Reset Form
     setNewTitle('');
@@ -208,12 +271,16 @@ export default function ItineraryView({
               {/* Day Header */}
               <div className="flex items-center gap-4 mb-6">
                 <div className="w-14 h-14 rounded-none bg-brand-primary flex flex-col items-center justify-center text-white border border-brand-primary/10 shadow-none shrink-0">
-                  <span className="text-[8px] uppercase font-black tracking-widest text-brand-primary-fixed-dim/95 leading-none mb-0.5">Ago</span>
-                  <span className="text-xl font-serif font-black italic leading-none">{day.date.split(' ')[1]}</span>
+                  <span className="text-[8px] uppercase font-black tracking-widest text-brand-primary-fixed-dim/95 leading-none mb-0.5">
+                    {formatDateToDisplay(day.date).split(' ')[1] || 'Ago'}
+                  </span>
+                  <span className="text-xl font-serif font-black italic leading-none">
+                    {formatDateToDisplay(day.date).split(' ')[0] || '12'}
+                  </span>
                 </div>
                 <div>
                   <h2 className="font-serif text-lg md:text-xl font-black italic text-brand-primary">
-                    Día {day.dayNumber}: {day.title}
+                    Día {day.dayNumber} - {formatDateToDisplay(day.date)}: {day.title}
                   </h2>
                   <p className="text-[10px] font-black uppercase tracking-wider text-brand-on-surface-variant/70 mt-0.5">
                     {day.dayOfWeek} • {day.location}
@@ -425,56 +492,127 @@ export default function ItineraryView({
       {/* Right Column (Sidebar widgets) */}
       <div className="w-full lg:w-80 shrink-0 space-y-6">
         
-        {/* Smart Import Card */}
-        <div className="bg-brand-primary text-white p-6 rounded-none overflow-hidden relative shadow-none border border-brand-primary/10">
-          <div className="absolute -right-10 -top-10 w-36 h-36 bg-white/5 rounded-full blur-2xl pointer-events-none" />
-          <div className="relative z-10">
-            <h3 className="font-serif font-black italic text-lg mb-2 flex items-center gap-2">
-              <Compass className="w-5 h-5 text-white/80 fill-current" />
-              <span>Importación Inteligente</span>
+        {/* Nueva Entrada Sidebar Card */}
+        <div className="bg-white p-6 rounded-none shadow-none border border-brand-primary/10 space-y-4">
+          <div>
+            <h3 className="font-serif font-black italic text-lg text-brand-primary flex items-center gap-2">
+              <CalendarDays className="w-5 h-5 text-brand-sunset" />
+              <span>Nueva Entrada</span>
             </h3>
-            <p className="text-xs text-brand-primary-fixed-dim/80 font-medium leading-relaxed mb-5 font-sans">
-              Arrastra tus PDFs de viaje o boletos de avión aquí. Horizon AI mapeará automáticamente tu itinerario.
+            <p className="text-[10px] text-brand-outline font-bold uppercase tracking-widest mt-1">
+              Agregar actividad directamente
             </p>
+          </div>
 
-            {/* AI Status / Progress Bar */}
-            {isUploading ? (
-              <div className="bg-white/10 p-4 rounded-none border border-white/10 mb-4 animate-pulse">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-brand-sunset animate-ping" />
-                    <span>IA Extrayendo...</span>
-                  </span>
-                  <span className="text-[10px] text-brand-primary-fixed-dim uppercase font-bold">1 Archivo</span>
-                </div>
-                <div className="w-full h-1 bg-white/20 overflow-hidden">
-                  <div className="h-full bg-brand-sunset transition-all duration-150" style={{ width: `${uploadProgress}%` }} />
-                </div>
+          <form onSubmit={handleAddActivity} className="space-y-4">
+            <div>
+              <label className="block text-[8px] font-black text-brand-outline uppercase tracking-widest mb-1.5">Día de la Actividad</label>
+              <div className="flex gap-2 mb-2">
+                <button
+                  type="button"
+                  onClick={() => setDaySelectionType('existing')}
+                  className={`flex-1 py-1 text-[8px] font-black uppercase tracking-widest border transition-all cursor-pointer ${
+                    daySelectionType === 'existing'
+                      ? 'bg-brand-primary text-white border-brand-primary'
+                      : 'bg-white text-brand-primary border-brand-primary/10 hover:bg-brand-primary/5'
+                  }`}
+                >
+                  Día Existente
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDaySelectionType('calendar')}
+                  className={`flex-1 py-1 text-[8px] font-black uppercase tracking-widest border transition-all cursor-pointer ${
+                    daySelectionType === 'calendar'
+                      ? 'bg-brand-primary text-white border-brand-primary'
+                      : 'bg-white text-brand-primary border-brand-primary/10 hover:bg-brand-primary/5'
+                  }`}
+                >
+                  Seleccionar Día
+                </button>
               </div>
-            ) : (
-              <div 
-                onClick={() => fileInputRef.current?.click()}
-                className="border border-dashed border-white/20 hover:border-white/45 bg-white/5 hover:bg-white/10 rounded-none p-5 mb-4 text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-2"
-              >
-                <Upload className="w-5 h-5 text-brand-primary-fixed-dim" />
-                <span className="text-xs font-semibold text-brand-primary-fixed-dim">Arrastra archivos o haz clic para buscar</span>
+
+              {daySelectionType === 'existing' ? (
+                <select 
+                  value={newDayId}
+                  onChange={(e) => setNewDayId(e.target.value)}
+                  className="w-full bg-white border border-brand-primary/10 rounded-none py-2 px-2.5 text-xs focus:outline-none focus:border-brand-primary/30 transition-all font-sans"
+                >
+                  {itinerary.map(day => (
+                    <option key={day.id} value={day.id}>Día {day.dayNumber} - {formatDateToDisplay(day.date)}</option>
+                  ))}
+                </select>
+              ) : (
+                <div>
+                  <input 
+                    type="date" 
+                    value={newDayDate}
+                    onChange={(e) => setNewDayDate(e.target.value)}
+                    className="w-full bg-white border border-brand-primary/10 rounded-none py-2 px-2.5 text-xs focus:outline-none focus:border-brand-primary/30 transition-all font-sans"
+                    required={daySelectionType === 'calendar'}
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-[8px] font-black text-brand-outline uppercase tracking-widest mb-1">Hora</label>
                 <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  onChange={handleSmartImport} 
-                  className="hidden" 
-                  accept=".pdf,.png,.jpg,.jpeg" 
+                  type="text" 
+                  placeholder="ej. 11:00 AM" 
+                  value={newTime}
+                  onChange={(e) => setNewTime(e.target.value)}
+                  className="w-full bg-white border border-brand-primary/10 rounded-none py-2 px-2.5 text-xs focus:outline-none focus:border-brand-primary/30 transition-all font-sans"
+                  required
                 />
               </div>
-            )}
+              <div>
+                <label className="block text-[8px] font-black text-brand-outline uppercase tracking-widest mb-1">Tipo</label>
+                <select 
+                  value={newType}
+                  onChange={(e) => setNewType(e.target.value as any)}
+                  className="w-full bg-white border border-brand-primary/10 rounded-none py-2 px-2.5 text-xs focus:outline-none focus:border-brand-primary/30 transition-all font-sans"
+                >
+                  <option value="Relaxation">Relajación</option>
+                  <option value="Dining">Gastronomía</option>
+                  <option value="Sightseeing">Turismo</option>
+                  <option value="Adventure">Aventura</option>
+                  <option value="Accommodation">Alojamiento</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[8px] font-black text-brand-outline uppercase tracking-widest mb-1">Título de la Actividad</label>
+              <input 
+                type="text" 
+                placeholder="ej. Caminata por la cascada" 
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                className="w-full bg-white border border-brand-primary/10 rounded-none py-2 px-2.5 text-xs focus:outline-none focus:border-brand-primary/30 transition-all font-sans"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-[8px] font-black text-brand-outline uppercase tracking-widest mb-1">Ubicación</label>
+              <input 
+                type="text" 
+                placeholder="ej. Área de Geysir" 
+                value={newLocation}
+                onChange={(e) => setNewLocation(e.target.value)}
+                className="w-full bg-white border border-brand-primary/10 rounded-none py-2 px-2.5 text-xs focus:outline-none focus:border-brand-primary/30 transition-all font-sans"
+              />
+            </div>
 
             <button 
-              onClick={() => fileInputRef.current?.click()}
-              className="w-full py-2.5 bg-white text-brand-primary rounded-none font-bold text-[10px] uppercase tracking-widest hover:bg-brand-primary-fixed transition-all cursor-pointer active:scale-95"
+              type="submit"
+              className="w-full py-2.5 bg-brand-primary hover:bg-brand-primary/90 text-white rounded-none font-bold text-[10px] uppercase tracking-widest transition-all cursor-pointer active:scale-95"
             >
-              Buscar Archivos
+              Guardar Entrada
             </button>
-          </div>
+          </form>
         </div>
 
         {/* Accommodation Sync Card */}
@@ -576,16 +714,56 @@ export default function ItineraryView({
 
             <form onSubmit={handleAddActivity} className="space-y-4">
               <div>
-                <label className="block text-[9px] font-black text-brand-outline uppercase tracking-widest mb-1.5">Seleccionar Día</label>
-                <select 
-                  value={newDayId}
-                  onChange={(e) => setNewDayId(e.target.value)}
-                  className="w-full bg-white border border-brand-primary/10 rounded-none py-2.5 px-3 text-xs focus:outline-none focus:border-brand-primary/30 transition-all font-sans"
-                >
-                  {itinerary.map(day => (
-                    <option key={day.id} value={day.id}>Día {day.dayNumber}: {day.title}</option>
-                  ))}
-                </select>
+                <label className="block text-[9px] font-black text-brand-outline uppercase tracking-widest mb-1.5">Día de la Actividad</label>
+                <div className="flex gap-2 mb-3">
+                  <button
+                    type="button"
+                    onClick={() => setDaySelectionType('existing')}
+                    className={`flex-1 py-1.5 text-[9px] font-black uppercase tracking-widest border transition-all cursor-pointer ${
+                      daySelectionType === 'existing'
+                        ? 'bg-brand-primary text-white border-brand-primary'
+                        : 'bg-white text-brand-primary border-brand-primary/10 hover:bg-brand-primary/5'
+                    }`}
+                  >
+                    Día Existente
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDaySelectionType('calendar')}
+                    className={`flex-1 py-1.5 text-[9px] font-black uppercase tracking-widest border transition-all cursor-pointer ${
+                      daySelectionType === 'calendar'
+                        ? 'bg-brand-primary text-white border-brand-primary'
+                        : 'bg-white text-brand-primary border-brand-primary/10 hover:bg-brand-primary/5'
+                    }`}
+                  >
+                    Seleccionar Día
+                  </button>
+                </div>
+
+                {daySelectionType === 'existing' ? (
+                  <select 
+                    value={newDayId}
+                    onChange={(e) => setNewDayId(e.target.value)}
+                    className="w-full bg-white border border-brand-primary/10 rounded-none py-2.5 px-3 text-xs focus:outline-none focus:border-brand-primary/30 transition-all font-sans"
+                  >
+                    {itinerary.map(day => (
+                      <option key={day.id} value={day.id}>Día {day.dayNumber} - {formatDateToDisplay(day.date)}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <div>
+                    <input 
+                      type="date" 
+                      value={newDayDate}
+                      onChange={(e) => setNewDayDate(e.target.value)}
+                      className="w-full bg-white border border-brand-primary/10 rounded-none py-2.5 px-3 text-xs focus:outline-none focus:border-brand-primary/30 transition-all font-sans"
+                      required={daySelectionType === 'calendar'}
+                    />
+                    <p className="text-[9px] text-brand-outline font-semibold mt-1">
+                      Si eliges un día que no está en el itinerario, se creará uno nuevo automáticamente.
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">

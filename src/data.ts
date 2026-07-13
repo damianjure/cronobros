@@ -4,7 +4,7 @@ export const initialItinerary: ItineraryDay[] = [
   {
     id: 'day-1',
     dayNumber: 1,
-    date: '12 Ago',
+    date: '2026-08-12',
     dayOfWeek: 'Lunes',
     title: 'Llegada y Descanso',
     location: 'Grindavik, Islandia',
@@ -33,7 +33,7 @@ export const initialItinerary: ItineraryDay[] = [
   {
     id: 'day-2',
     dayNumber: 2,
-    date: '13 Ago',
+    date: '2026-08-13',
     dayOfWeek: 'Martes',
     title: 'Deriva Continental',
     location: 'Península del Sur',
