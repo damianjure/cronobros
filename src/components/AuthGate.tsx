@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { useAuthStore } from '../store/authStore';
+import { AUTH_GATE_ENABLED } from '../lib/devFlags';
 
 interface AuthGateProps {
   children: ReactNode;
@@ -14,6 +15,10 @@ export default function AuthGate({ children }: AuthGateProps) {
   const status = useAuthStore(state => state.status);
   const signIn = useAuthStore(state => state.signIn);
   const error = useAuthStore(state => state.error);
+
+  if (!AUTH_GATE_ENABLED) {
+    return <>{children}</>;
+  }
 
   if (status === 'loading') {
     return (

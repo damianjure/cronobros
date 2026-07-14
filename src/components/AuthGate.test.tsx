@@ -10,6 +10,8 @@ vi.mock('../store/authStore', () => ({
   useAuthStore: vi.fn(),
 }));
 
+vi.mock('../lib/devFlags', () => ({ AUTH_GATE_ENABLED: true }));
+
 const mockedUseAuthStore = vi.mocked(useAuthStore);
 
 function setAuthState(
