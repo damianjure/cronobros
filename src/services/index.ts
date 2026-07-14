@@ -1,12 +1,21 @@
 import { InMemoryTripRepository } from './inMemoryTripRepository';
+import { InMemoryTripsRepository } from './inMemoryTripsRepository';
 import type { TripRepository } from './ports';
+import type { TripsRepository } from './tripsPort';
 
 export type { TripRepository, Unsubscribe } from './ports';
+export type { TripsRepository } from './tripsPort';
 
 // Single injection point for the trip data-access seam. Phase 1 swaps this
 // for a FirestoreTripRepository instance — nothing outside this file needs
 // to change, since consumers only depend on the TripRepository interface.
 export const tripRepository: TripRepository = new InMemoryTripRepository();
+
+// Single injection point for the trip-collection/membership seam (design
+// decision "Trip/membership ops"). PR3 swaps this for a
+// FirestoreTripsRepository instance — nothing outside this file needs to
+// change, since consumers only depend on the TripsRepository interface.
+export const tripsRepository: TripsRepository = new InMemoryTripsRepository();
 
 // Reserved for Phase 4 (owner/editor/viewer roles). Declared now, empty, to
 // hold the seam next to TripRepository — no implementation this phase.

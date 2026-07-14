@@ -87,3 +87,25 @@ export interface Friend {
   name: string;
   avatar: string;
 }
+
+// Multi-trip Firestore data model (Phase 1, PR2). `Trip` is the top-level
+// document; `members`/`memberUids` are the role map + flattened uid list a
+// Firestore security rule can query cheaply (see design's "Firestore Layout"
+// and "Security Rules Logic"). `Membership` models a pending-by-email invite
+// record — declared now per the PR2 task list, activated on sign-in in PR5.
+export type Role = 'owner' | 'editor' | 'viewer';
+
+export interface Trip {
+  id: string;
+  name: string;
+  ownerUid: string;
+  members: Record<string, Role>;
+  memberUids: string[];
+}
+
+export interface Membership {
+  email: string;
+  role: Role;
+  pending: boolean;
+  uid?: string;
+}
