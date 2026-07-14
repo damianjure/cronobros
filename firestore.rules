@@ -1,0 +1,66 @@
+rules_version = '2';
+
+// Owner/editor/viewer enforcement per sdd/cronobros-firebase design's
+// "Security Rules Logic". Advanced ahead of PR4 at the user's request so the
+// dev server can run against the real crono-viajes-1779401310 project instead
+// of only the local emulator. PR4 is expected to add
+// @firebase/rules-unit-testing coverage for every spec scenario in the
+// trip-membership-roles domain; treat this file as functionally complete but
+// not yet regression-tested by an automated rules-emulator suite.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // Operate on already-fetched trip data (either `resource.data` for the
+    // trip doc's own rules, or a `get()`'d parent doc for subcollection
+    // rules) — NOT a `get()` on the same document currently being evaluated.
+    // Self-`get()` breaks `list` queries against /trips (Firestore can't
+    // resolve `get()` on the very document a collection scan is producing),
+    // even though single-`get`/`update`/`delete` requests tolerate it.
+    function isMemberOf(tripData) {
+      return signedIn() && request.auth.uid in tripData.memberUids;
+    }
+
+    function roleIn(tripData) {
+      return tripData.members[request.auth.uid];
+    }
+
+    function canWriteTo(tripData) {
+      return signedIn() && roleIn(tripData) in ['owner', 'editor'];
+    }
+
+    function isOwnerOf(tripData) {
+      return signedIn() && roleIn(tripData) == 'owner';
+    }
+
+    // Membership fields are untouched by this write, or the writer is owner.
+    // Lets editors update trip content (e.g. rename) without granting them
+    // membership-management power (design: "members/memberUids only if owner").
+    function membershipUnchanged() {
+      return request.resource.data.members == resource.data.members
+        && request.resource.data.memberUids == resource.data.memberUids;
+    }
+
+    match /trips/{tripId} {
+      allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.members[request.auth.uid] == 'owner'
+        && request.resource.data.memberUids == [request.auth.uid];
+      allow read: if isMemberOf(resource.data);
+      allow update: if canWriteTo(resource.data) && (membershipUnchanged() || isOwnerOf(resource.data));
+      // No last-owner guard by design (accepted risk: a trip may end up with
+      // zero owners; see sdd/cronobros-firebase spec's "No owner-count guard").
+      allow delete: if isOwnerOf(resource.data);
+
+      match /{document=**} {
+        allow read: if isMemberOf(get(/databases/$(database)/documents/trips/$(tripId)).data);
+        allow write: if canWriteTo(get(/databases/$(database)/documents/trips/$(tripId)).data);
+      }
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

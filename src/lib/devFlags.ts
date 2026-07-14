@@ -3,7 +3,9 @@
  * Phase 1 (cronobros-firebase) implementation: skip the mandatory auth gate
  * so trip UI is reachable without signing in while developing PR2+.
  *
- * Flip back to `true` before any real usage/deploy — the auth-gate spec
- * requirement ("mandatory authentication gate") is otherwise unmet.
+ * Re-enabled once PR3 connected the app to the REAL crono-viajes-1779401310
+ * Firestore project with real owner/editor/viewer rules deployed — those
+ * rules require a genuine signed-in `request.auth.uid`, so bypassing sign-in
+ * now only produces permission-denied errors, not a usable dev flow.
  */
-export const AUTH_GATE_ENABLED = false;
+export const AUTH_GATE_ENABLED = true;

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { createTripsStore } from './tripsStore';
+import { createTripsStore, getRoleForTrip } from './tripsStore';
 import { InMemoryTripsRepository } from '../services/inMemoryTripsRepository';
+import type { Trip } from '../types';
 
 describe('tripsStore', () => {
   it('starts empty and does not subscribe until subscribeToUser is called', () => {
@@ -44,5 +45,30 @@ describe('tripsStore', () => {
 
     expect(storeA.getState().trips).toHaveLength(1);
     expect(storeB.getState().trips).toHaveLength(0);
+  });
+
+  describe('getRoleForTrip (design decision "Roles port": role sourced from trip.members[uid])', () => {
+    const trips: Trip[] = [
+      {
+        id: 'trip-1',
+        name: 'Islandia 2026',
+        ownerUid: 'owner-1',
+        members: { 'owner-1': 'owner', 'editor-1': 'editor' },
+        memberUids: ['owner-1', 'editor-1'],
+      },
+    ];
+
+    it('returns the role for a member of the given trip', () => {
+      expect(getRoleForTrip(trips, 'trip-1', 'owner-1')).toBe('owner');
+      expect(getRoleForTrip(trips, 'trip-1', 'editor-1')).toBe('editor');
+    });
+
+    it('returns undefined for a non-member', () => {
+      expect(getRoleForTrip(trips, 'trip-1', 'stranger')).toBeUndefined();
+    });
+
+    it('returns undefined for an unknown tripId', () => {
+      expect(getRoleForTrip(trips, 'does-not-exist', 'owner-1')).toBeUndefined();
+    });
   });
 });

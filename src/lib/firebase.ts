@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { initializeFirestore } from 'firebase/firestore';
 
 // Firebase Web SDK config is non-secret (restricted by referrer/API key
 // rules on the Firebase project itself), but still injected via `VITE_`
@@ -18,4 +18,12 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+
+// `ignoreUndefinedProperties` (PR3, sdd/cronobros-firebase): several domain
+// types have optional fields (e.g. `ItineraryActivity.people`) that are
+// frequently `undefined`. The default Firestore client throws on `undefined`
+// in `setDoc`/`updateDoc` payloads; `InMemoryTripRepository` has no such
+// restriction, so this setting is required for `FirestoreTripRepository` to
+// match its "zero behavior drift" contract instead of throwing on writes the
+// in-memory adapter accepts silently.
+export const db = initializeFirestore(app, { ignoreUndefinedProperties: true });

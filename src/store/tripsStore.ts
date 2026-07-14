@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { StoreApi, UseBoundStore } from 'zustand';
-import type { Trip } from '../types';
+import type { Trip, Role } from '../types';
 import type { TripsRepository } from '../services/tripsPort';
 import type { Unsubscribe } from '../services/ports';
 import { tripsRepository as defaultRepository } from '../services';
@@ -36,3 +36,15 @@ export function createTripsStore(
 }
 
 export const useTripsStore = createTripsStore(defaultRepository);
+
+/**
+ * Role selector (design decision "Roles port": `RolesPort` stub deleted —
+ * role is read directly from `trip.members[uid]`, colocated with the trip
+ * doc rather than a separate port). Pure function over the trips already
+ * held by `tripsStore`, so consumers derive the current user's role for the
+ * selected trip via `getRoleForTrip(useTripsStore(state => state.trips),
+ * tripId, uid)` without any additional subscription.
+ */
+export function getRoleForTrip(trips: Trip[], tripId: string, uid: string): Role | undefined {
+  return trips.find(trip => trip.id === tripId)?.members[uid];
+}

@@ -1,3 +1,4 @@
+import { createContext, useContext } from 'react';
 import { create } from 'zustand';
 import type { StoreApi, UseBoundStore } from 'zustand';
 import type {
@@ -8,12 +9,6 @@ import type {
   ChatMessage,
 } from '../types';
 import type { TripRepository } from '../services/ports';
-import { tripRepository as defaultRepository } from '../services';
-
-// Single-trip app today — no trip switcher UI exists yet. Kept as a constant
-// (rather than hardcoding the string at each call site) so a future
-// multi-trip feature only has to change this one place.
-export const TRIP_ID = 'default-trip';
 
 export interface TripStoreState {
   itinerary: ItineraryDay[];
@@ -31,46 +26,89 @@ export interface TripStoreState {
   addChatMessage: (message: ChatMessage) => Promise<void>;
 }
 
+export interface TripStoreHandle {
+  store: UseBoundStore<StoreApi<TripStoreState>>;
+  teardown: () => void;
+}
+
 /**
- * Builds a trip store bound to the given repository. Zustand stores live
- * outside React, so a repository's realtime `subscribe*` callback (today
- * synchronous in-memory, a Firestore `onSnapshot` in Phase 1) can push
- * directly into `store.setState` with no effect-bridge in components.
+ * Builds a trip store bound to the given repository and tripId (design
+ * decision "Trip-detail store lifecycle" / spec "Store is auth- and
+ * trip-gated, not a module-load singleton"). Zustand stores live outside
+ * React, so a repository's realtime `subscribe*` callback (in-memory today,
+ * a Firestore `onSnapshot` for `FirestoreTripRepository`) can push directly
+ * into `store.setState` with no effect-bridge in components.
  *
- * Exported as a factory (rather than only a singleton) so tests can inject
- * an isolated `InMemoryTripRepository` instance instead of sharing the
- * app-wide singleton from `src/services`.
+ * Unlike the pre-PR3 module-load singleton, `createTripStore` now REQUIRES a
+ * `tripId` and returns a `teardown` alongside the store: callers (in
+ * practice, `TripStoreProvider`) own the store's lifecycle and MUST call
+ * `teardown()` before creating a new store for a different tripId, so old
+ * subscriptions never leak into the new trip's data.
  */
-export function createTripStore(
-  repository: TripRepository,
-): UseBoundStore<StoreApi<TripStoreState>> {
+export function createTripStore(repository: TripRepository, tripId: string): TripStoreHandle {
   const store = create<TripStoreState>(() => ({
     itinerary: [],
     pins: [],
     pendingPlaces: [],
     chatMessages: [],
 
-    addActivity: (dayId, activity) => repository.addActivity(TRIP_ID, dayId, activity),
-    deleteActivity: (dayId, activityId) => repository.deleteActivity(TRIP_ID, dayId, activityId),
+    addActivity: (dayId, activity) => repository.addActivity(tripId, dayId, activity),
+    deleteActivity: (dayId, activityId) => repository.deleteActivity(tripId, dayId, activityId),
     updateActivityPeople: (dayId, activityId, people) =>
-      repository.updateActivityPeople(TRIP_ID, dayId, activityId, people),
-    addDay: day => repository.addDay(TRIP_ID, day),
-    approvePlace: (placeId, targetDayId) => repository.approvePlace(TRIP_ID, placeId, targetDayId),
-    addPendingPlace: place => repository.addPendingPlace(TRIP_ID, place),
-    deletePendingPlace: placeId => repository.deletePendingPlace(TRIP_ID, placeId),
-    addChatMessage: message => repository.addChatMessage(TRIP_ID, message),
+      repository.updateActivityPeople(tripId, dayId, activityId, people),
+    addDay: day => repository.addDay(tripId, day),
+    approvePlace: (placeId, targetDayId) => repository.approvePlace(tripId, placeId, targetDayId),
+    addPendingPlace: place => repository.addPendingPlace(tripId, place),
+    deletePendingPlace: placeId => repository.deletePendingPlace(tripId, placeId),
+    addChatMessage: message => repository.addChatMessage(tripId, message),
   }));
 
   // Subscribed AFTER `create()` returns: the repository fires each callback
   // synchronously once, and `store.setState` must exist first — calling
   // setState from inside the zustand initializer is discarded once the
   // initializer's return value is assigned as the store's initial state.
-  repository.subscribeItinerary(TRIP_ID, itinerary => store.setState({ itinerary }));
-  repository.subscribePins(TRIP_ID, pins => store.setState({ pins }));
-  repository.subscribePendingPlaces(TRIP_ID, pendingPlaces => store.setState({ pendingPlaces }));
-  repository.subscribeChat(TRIP_ID, chatMessages => store.setState({ chatMessages }));
+  const unsubscribeItinerary = repository.subscribeItinerary(tripId, itinerary =>
+    store.setState({ itinerary }),
+  );
+  const unsubscribePins = repository.subscribePins(tripId, pins => store.setState({ pins }));
+  const unsubscribePendingPlaces = repository.subscribePendingPlaces(tripId, pendingPlaces =>
+    store.setState({ pendingPlaces }),
+  );
+  const unsubscribeChat = repository.subscribeChat(tripId, chatMessages =>
+    store.setState({ chatMessages }),
+  );
 
-  return store;
+  return {
+    store,
+    teardown: () => {
+      unsubscribeItinerary();
+      unsubscribePins();
+      unsubscribePendingPlaces();
+      unsubscribeChat();
+    },
+  };
 }
 
-export const useTripStore = createTripStore(defaultRepository);
+// Context holding the currently-active per-trip store, provided by
+// `TripStoreProvider` (`src/components/TripStoreProvider.tsx`). Declared here
+// (rather than in the provider component file) so `useTripStore` below can
+// stay a stable import path for every existing consumer
+// (`import { useTripStore } from '../store/tripStore'`).
+export const TripStoreContext = createContext<UseBoundStore<StoreApi<TripStoreState>> | null>(
+  null,
+);
+
+/**
+ * Drop-in replacement for the old singleton hook: same call shape
+ * (`useTripStore(selector)`) for every existing consumer, but now reads the
+ * store bound to the currently selected trip from `TripStoreContext` instead
+ * of a module-load singleton. Throws if rendered outside a
+ * `TripStoreProvider` — there is no sensible trip-less fallback.
+ */
+export function useTripStore<T>(selector: (state: TripStoreState) => T): T {
+  const store = useContext(TripStoreContext);
+  if (!store) {
+    throw new Error('useTripStore must be used within a TripStoreProvider');
+  }
+  return store(selector);
+}

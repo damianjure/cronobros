@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { createTripStore, TRIP_ID } from './tripStore';
+import { describe, it, expect, vi } from 'vitest';
+import { createTripStore } from './tripStore';
 import { InMemoryTripRepository } from '../services/inMemoryTripRepository';
 import type { ItineraryDay, PendingPlace } from '../types';
 
@@ -21,7 +21,7 @@ describe('tripStore', () => {
     const seedDays = [makeDay()];
     const repo = new InMemoryTripRepository({ itinerary: seedDays, pendingPlaces: [], pins: [], chat: [] });
 
-    const store = createTripStore(repo);
+    const { store } = createTripStore(repo, 'trip-1');
 
     expect(store.getState().itinerary).toEqual(seedDays);
     expect(store.getState().pendingPlaces).toEqual([]);
@@ -29,9 +29,10 @@ describe('tripStore', () => {
     expect(store.getState().chatMessages).toEqual([]);
   });
 
-  it('addActivity delegates to the repository and updates store state reactively', async () => {
+  it('addActivity delegates to the repository (scoped to the given tripId) and updates store state reactively', async () => {
     const repo = new InMemoryTripRepository({ itinerary: [makeDay()] });
-    const store = createTripStore(repo);
+    const addActivitySpy = vi.spyOn(repo, 'addActivity');
+    const { store } = createTripStore(repo, 'trip-1');
 
     await store.getState().addActivity('day-1', {
       id: 'act-1',
@@ -42,6 +43,7 @@ describe('tripStore', () => {
     });
 
     expect(store.getState().itinerary[0].activities).toHaveLength(1);
+    expect(addActivitySpy).toHaveBeenCalledWith('trip-1', 'day-1', expect.objectContaining({ id: 'act-1' }));
   });
 
   it('deleteActivity delegates to the repository and updates store state reactively', async () => {
@@ -52,7 +54,7 @@ describe('tripStore', () => {
         }),
       ],
     });
-    const store = createTripStore(repo);
+    const { store } = createTripStore(repo, 'trip-1');
 
     await store.getState().deleteActivity('day-1', 'act-1');
 
@@ -72,7 +74,7 @@ describe('tripStore', () => {
       pendingPlaces: [place],
       pins: [],
     });
-    const store = createTripStore(repo);
+    const { store } = createTripStore(repo, 'trip-1');
 
     await store.getState().approvePlace('pending-1', 'day-1');
 
@@ -81,11 +83,11 @@ describe('tripStore', () => {
     expect(store.getState().pins).toHaveLength(1);
   });
 
-  it('two independent stores over two independent repositories do not share state', async () => {
+  it('two independent stores over two independent repositories/tripIds do not share state', async () => {
     const repoA = new InMemoryTripRepository({ itinerary: [makeDay({ id: 'a' })] });
     const repoB = new InMemoryTripRepository({ itinerary: [makeDay({ id: 'b' })] });
-    const storeA = createTripStore(repoA);
-    const storeB = createTripStore(repoB);
+    const { store: storeA } = createTripStore(repoA, 'trip-a');
+    const { store: storeB } = createTripStore(repoB, 'trip-b');
 
     await storeA.getState().addActivity('a', {
       id: 'act-1',
@@ -99,8 +101,68 @@ describe('tripStore', () => {
     expect(storeB.getState().itinerary[0].activities).toHaveLength(0);
   });
 
-  it('exposes a stable TRIP_ID used for all repository calls', () => {
-    expect(typeof TRIP_ID).toBe('string');
-    expect(TRIP_ID.length).toBeGreaterThan(0);
+  describe('teardown (spec "Store is auth- and trip-gated, not a module-load singleton")', () => {
+    it('does not issue any subscribe* call until createTripStore is invoked for a tripId', () => {
+      const repo = new InMemoryTripRepository({ itinerary: [makeDay()] });
+      const subscribeItinerarySpy = vi.spyOn(repo, 'subscribeItinerary');
+      const subscribePinsSpy = vi.spyOn(repo, 'subscribePins');
+      const subscribePendingPlacesSpy = vi.spyOn(repo, 'subscribePendingPlaces');
+      const subscribeChatSpy = vi.spyOn(repo, 'subscribeChat');
+
+      expect(subscribeItinerarySpy).not.toHaveBeenCalled();
+      expect(subscribePinsSpy).not.toHaveBeenCalled();
+      expect(subscribePendingPlacesSpy).not.toHaveBeenCalled();
+      expect(subscribeChatSpy).not.toHaveBeenCalled();
+
+      createTripStore(repo, 'trip-1');
+
+      expect(subscribeItinerarySpy).toHaveBeenCalledTimes(1);
+      expect(subscribePinsSpy).toHaveBeenCalledTimes(1);
+      expect(subscribePendingPlacesSpy).toHaveBeenCalledTimes(1);
+      expect(subscribeChatSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('teardown() unsubscribes all four subscriptions', () => {
+      const repo = new InMemoryTripRepository({ itinerary: [makeDay()] });
+      const unsubscribeItinerary = vi.fn();
+      const unsubscribePins = vi.fn();
+      const unsubscribePendingPlaces = vi.fn();
+      const unsubscribeChat = vi.fn();
+      vi.spyOn(repo, 'subscribeItinerary').mockReturnValue(unsubscribeItinerary);
+      vi.spyOn(repo, 'subscribePins').mockReturnValue(unsubscribePins);
+      vi.spyOn(repo, 'subscribePendingPlaces').mockReturnValue(unsubscribePendingPlaces);
+      vi.spyOn(repo, 'subscribeChat').mockReturnValue(unsubscribeChat);
+
+      const { teardown } = createTripStore(repo, 'trip-1');
+      teardown();
+
+      expect(unsubscribeItinerary).toHaveBeenCalledTimes(1);
+      expect(unsubscribePins).toHaveBeenCalledTimes(1);
+      expect(unsubscribePendingPlaces).toHaveBeenCalledTimes(1);
+      expect(unsubscribeChat).toHaveBeenCalledTimes(1);
+    });
+
+    it('switching tripId tears down the old subscriptions before the new store starts its own', () => {
+      const repo = new InMemoryTripRepository({ itinerary: [makeDay()] });
+      const unsubscribeA = vi.fn();
+      const unsubscribeB = vi.fn();
+      const subscribeItinerarySpy = vi
+        .spyOn(repo, 'subscribeItinerary')
+        .mockReturnValueOnce(unsubscribeA)
+        .mockReturnValueOnce(unsubscribeB);
+
+      const handleA = createTripStore(repo, 'trip-a');
+      expect(unsubscribeA).not.toHaveBeenCalled();
+
+      // Simulate the TripStoreProvider's tripId-change effect: tear down the
+      // old handle, then create the new one.
+      handleA.teardown();
+      expect(unsubscribeA).toHaveBeenCalledTimes(1);
+
+      createTripStore(repo, 'trip-b');
+      expect(subscribeItinerarySpy).toHaveBeenCalledTimes(2);
+      expect(subscribeItinerarySpy).toHaveBeenNthCalledWith(2, 'trip-b', expect.any(Function));
+      expect(unsubscribeB).not.toHaveBeenCalled();
+    });
   });
 });

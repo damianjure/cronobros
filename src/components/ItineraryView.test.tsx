@@ -31,7 +31,7 @@ function makePendingPlace(overrides: Partial<PendingPlace> = {}): PendingPlace {
   };
 }
 
-let testStore: ReturnType<typeof createTripStore>;
+let testStore: ReturnType<typeof createTripStore>['store'];
 
 // ItineraryView reads the app-wide `useTripStore` singleton directly rather
 // than receiving the store via props. Mock the module so each smoke test
@@ -53,7 +53,8 @@ function renderItineraryView(seed: { itinerary: ItineraryDay[]; pendingPlaces?: 
     pins: [],
     chat: [],
   });
-  testStore = createTripStore(repo);
+  const { store } = createTripStore(repo, 'test-trip');
+  testStore = store;
 
   render(
     <ItineraryView setActiveTab={vi.fn()} showNewEntryModal={false} setShowNewEntryModal={vi.fn()} />,
