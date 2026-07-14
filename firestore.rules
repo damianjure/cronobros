@@ -53,7 +53,16 @@ service cloud.firestore {
       // zero owners; see sdd/cronobros-firebase spec's "No owner-count guard").
       allow delete: if isOwnerOf(resource.data);
 
-      match /{document=**} {
+      // Scoped to exactly one path segment below the trip doc (subcollection
+      // + its own docId), NOT `{document=**}`. `{document=**}` matches zero
+      // or more segments, so it also matches `trips/{tripId}` itself (zero
+      // segments) — its permissive `write` (canWriteTo-only, no membership
+      // guard) would then shadow the outer `update` rule's membership check,
+      // letting editors silently rewrite `members`/`memberUids` via a write
+      // to the trip doc that Firestore also routes through this nested
+      // match. One level deep is sufficient: current subcollections
+      // (itineraryDays, pins, pendingPlaces, chat) are all flat.
+      match /{subcollection}/{docId} {
         allow read: if isMemberOf(get(/databases/$(database)/documents/trips/$(tripId)).data);
         allow write: if canWriteTo(get(/databases/$(database)/documents/trips/$(tripId)).data);
       }
