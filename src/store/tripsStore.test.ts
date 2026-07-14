@@ -47,6 +47,34 @@ describe('tripsStore', () => {
     expect(storeB.getState().trips).toHaveLength(0);
   });
 
+  it('inviteMember delegates to the repository and updates the store reactively', async () => {
+    const repo = new InMemoryTripsRepository();
+    const store = createTripsStore(repo);
+    store.getState().subscribeToUser('user-1');
+    await store.getState().createTrip('Viaje', 'user-1');
+    const tripId = store.getState().trips[0].id;
+
+    await store.getState().inviteMember(tripId, 'friend@example.com', 'editor');
+
+    expect(store.getState().trips[0].pendingMemberships).toEqual({
+      'friend@example.com': { email: 'friend@example.com', role: 'editor', pending: true },
+    });
+  });
+
+  it('activatePendingInvites delegates to the repository and updates the store reactively', async () => {
+    const repo = new InMemoryTripsRepository();
+    const store = createTripsStore(repo);
+    store.getState().subscribeToUser('user-1');
+    await store.getState().createTrip('Viaje', 'user-1');
+    const tripId = store.getState().trips[0].id;
+    await store.getState().inviteMember(tripId, 'friend@example.com', 'editor');
+
+    await store.getState().activatePendingInvites('user-2', 'friend@example.com');
+    store.getState().subscribeToUser('user-2');
+
+    expect(store.getState().trips[0].members).toEqual({ 'user-1': 'owner', 'user-2': 'editor' });
+  });
+
   describe('getRoleForTrip (design decision "Roles port": role sourced from trip.members[uid])', () => {
     const trips: Trip[] = [
       {

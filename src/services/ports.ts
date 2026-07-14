@@ -4,6 +4,7 @@ import type {
   PinnedPoint,
   PendingPlace,
   ChatMessage,
+  TripLogistics,
 } from '../types';
 
 export type Unsubscribe = () => void;
@@ -51,4 +52,11 @@ export interface TripRepository {
   // new ItineraryDay, sorted and re-numbered — addActivity alone (which
   // assumes dayId already exists) can't express that.
   addDay(tripId: string, day: ItineraryDay): Promise<void>;
+
+  // PR5: LogisticsView's drivers/vehicle had no Firestore-backed home (design
+  // deferred this explicitly). Same subscribe/mutate shape as the rest of
+  // this port — a brand-new trip has no drivers and no vehicle, so this must
+  // default to an empty state, not Iceland's fixture data.
+  subscribeLogistics(tripId: string, cb: (logistics: TripLogistics) => void): Unsubscribe;
+  updateLogistics(tripId: string, logistics: TripLogistics): Promise<void>;
 }

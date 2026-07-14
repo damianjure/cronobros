@@ -62,4 +62,50 @@ describe('InMemoryTripsRepository', () => {
       expect(cb.mock.calls.at(-1)![0]).toHaveLength(0);
     });
   });
+
+  describe('inviteMember (spec: "Owner/editor invites a collaborator by email")', () => {
+    it('writes a pending membership record keyed by email, without touching members/memberUids', async () => {
+      const repo = new InMemoryTripsRepository();
+      await repo.createTrip('Viaje', 'user-1');
+      const cb = vi.fn();
+      repo.subscribeTrips('user-1', cb);
+      const tripId = cb.mock.calls.at(-1)![0][0].id;
+
+      await repo.inviteMember(tripId, 'friend@example.com', 'editor');
+
+      const trip = cb.mock.calls.at(-1)![0][0];
+      expect(trip.pendingMemberships).toEqual({
+        'friend@example.com': { email: 'friend@example.com', role: 'editor', pending: true },
+      });
+      expect(trip.members).toEqual({ 'user-1': 'owner' });
+      expect(trip.memberUids).toEqual(['user-1']);
+    });
+  });
+
+  describe('activatePendingInvites (spec: "Invited user signs in and membership activates")', () => {
+    it('promotes a matching pending invite into members/memberUids and clears the pending record', async () => {
+      const repo = new InMemoryTripsRepository();
+      await repo.createTrip('Viaje', 'user-1');
+      const ownerCb = vi.fn();
+      repo.subscribeTrips('user-1', ownerCb);
+      const tripId = ownerCb.mock.calls.at(-1)![0][0].id;
+      await repo.inviteMember(tripId, 'friend@example.com', 'editor');
+
+      await repo.activatePendingInvites('user-2', 'friend@example.com');
+
+      const invitedCb = vi.fn();
+      repo.subscribeTrips('user-2', invitedCb);
+      const trip = invitedCb.mock.calls.at(-1)![0][0];
+      expect(trip.members).toEqual({ 'user-1': 'owner', 'user-2': 'editor' });
+      expect(trip.memberUids).toEqual(['user-1', 'user-2']);
+      expect(trip.pendingMemberships).toEqual({});
+    });
+
+    it('is a no-op when no trip has a pending invite for the given email', async () => {
+      const repo = new InMemoryTripsRepository();
+      await repo.createTrip('Viaje', 'user-1');
+
+      await expect(repo.activatePendingInvites('user-2', 'nobody@example.com')).resolves.toBeUndefined();
+    });
+  });
 });

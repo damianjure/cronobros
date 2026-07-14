@@ -13,10 +13,14 @@ import {
 import { PinnedPoint } from '../types';
 import { useTripStore } from '../store/tripStore';
 import { useToastStore } from '../store/toastStore';
+import { useCurrentTrip } from '../store/currentTripContext';
+import { useTripParticipants } from '../store/participants';
 
 export default function MapView() {
   const pins = useTripStore(state => state.pins);
   const showToast = useToastStore(state => state.showToast);
+  const currentTrip = useCurrentTrip();
+  const participants = useTripParticipants();
 
   const [activePin, setActivePin] = useState<PinnedPoint | null>(null);
   const [isTerrainActive, setIsTerrainActive] = useState(false);
@@ -31,7 +35,7 @@ export default function MapView() {
   const handleStartNavigation = () => {
     setIsNavigating(true);
     setTimeout(() => {
-      showToast('Navegación GPX en tiempo real simulada iniciada. Destino: Laguna Glaciar de Jökulsárlón.');
+      showToast('Navegación GPX en tiempo real simulada iniciada.');
       setIsNavigating(false);
     }, 2000);
   };
@@ -50,10 +54,10 @@ export default function MapView() {
         {/* Sidebar Header */}
         <div className="px-6 py-5 border-b border-brand-primary/10 shrink-0">
           <h2 className="font-serif font-black italic text-brand-primary text-xl">
-            Verano en Islandia
+            {currentTrip?.name ?? 'Tu viaje'}
           </h2>
           <p className="text-[10px] font-black uppercase tracking-widest text-brand-on-surface-variant/75 mt-1">
-            Grupo de 6 • 12 Días
+            Grupo de {participants.length}
           </p>
 
           {/* Search Pins inside Sidebar */}

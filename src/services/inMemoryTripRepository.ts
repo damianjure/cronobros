@@ -4,18 +4,22 @@ import type {
   PinnedPoint,
   PendingPlace,
   ChatMessage,
+  TripLogistics,
 } from '../types';
-import { initialItinerary, initialChatMessages, pinnedPoints, initialPendingPlaces, friends } from '../data';
+import { initialItinerary, initialChatMessages, pinnedPoints, initialPendingPlaces } from '../data';
 import { mapCategoryToActivityType } from '../utils/category';
 import type { TripRepository, Unsubscribe } from './ports';
 
 type Listener<T> = (value: T) => void;
+
+const EMPTY_LOGISTICS: TripLogistics = { drivers: [], vehicle: null };
 
 interface InMemoryTripRepositorySeed {
   itinerary?: ItineraryDay[];
   pins?: PinnedPoint[];
   pendingPlaces?: PendingPlace[];
   chat?: ChatMessage[];
+  logistics?: TripLogistics;
 }
 
 const APPROVED_PLACE_PIN_IMAGE =
@@ -36,17 +40,20 @@ export class InMemoryTripRepository implements TripRepository {
   private pins: PinnedPoint[];
   private pendingPlaces: PendingPlace[];
   private chat: ChatMessage[];
+  private logistics: TripLogistics;
 
   private itineraryListeners = new Set<Listener<ItineraryDay[]>>();
   private pinsListeners = new Set<Listener<PinnedPoint[]>>();
   private pendingPlacesListeners = new Set<Listener<PendingPlace[]>>();
   private chatListeners = new Set<Listener<ChatMessage[]>>();
+  private logisticsListeners = new Set<Listener<TripLogistics>>();
 
   constructor(seed: InMemoryTripRepositorySeed = {}) {
     this.itinerary = seed.itinerary ?? initialItinerary;
     this.pins = seed.pins ?? pinnedPoints;
     this.pendingPlaces = seed.pendingPlaces ?? initialPendingPlaces;
     this.chat = seed.chat ?? initialChatMessages;
+    this.logistics = seed.logistics ?? EMPTY_LOGISTICS;
   }
 
   subscribeItinerary(_tripId: string, cb: Listener<ItineraryDay[]>): Unsubscribe {
@@ -71,6 +78,17 @@ export class InMemoryTripRepository implements TripRepository {
     this.chatListeners.add(cb);
     cb(this.chat);
     return () => this.chatListeners.delete(cb);
+  }
+
+  subscribeLogistics(_tripId: string, cb: Listener<TripLogistics>): Unsubscribe {
+    this.logisticsListeners.add(cb);
+    cb(this.logistics);
+    return () => this.logisticsListeners.delete(cb);
+  }
+
+  async updateLogistics(_tripId: string, logistics: TripLogistics): Promise<void> {
+    this.logistics = logistics;
+    this.logisticsListeners.forEach(cb => cb(this.logistics));
   }
 
   private notifyItinerary(): void {
@@ -152,7 +170,10 @@ export class InMemoryTripRepository implements TripRepository {
       description: place.description,
       location: place.location,
       status: 'Aprobado',
-      people: place.people && place.people.length > 0 ? place.people : friends.map(f => f.name),
+      // PR5: no more global `friends` fixture to fall back to — leaves
+      // people empty rather than inventing a default from a fixture that no
+      // longer models real trip membership.
+      people: place.people && place.people.length > 0 ? place.people : [],
     };
 
     this.itinerary = this.itinerary.map(day =>

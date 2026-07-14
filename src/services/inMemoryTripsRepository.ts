@@ -44,11 +44,35 @@ export class InMemoryTripsRepository implements TripsRepository {
   }
 
   async inviteMember(tripId: string, email: string, role: Role): Promise<void> {
-    // Membership-by-email activation is PR5 scope; PR2 only needs the port
-    // method to exist and not throw so the stub satisfies TripsRepository.
-    void tripId;
-    void email;
-    void role;
+    this.trips = this.trips.map(trip =>
+      trip.id === tripId
+        ? {
+            ...trip,
+            pendingMemberships: {
+              ...trip.pendingMemberships,
+              [email]: { email, role, pending: true },
+            },
+          }
+        : trip,
+    );
+    this.notify();
+  }
+
+  async activatePendingInvites(uid: string, email: string): Promise<void> {
+    this.trips = this.trips.map(trip => {
+      const pending = trip.pendingMemberships?.[email];
+      if (!pending || !pending.pending) return trip;
+
+      const { [email]: _activated, ...remainingPending } = trip.pendingMemberships ?? {};
+      void _activated;
+      return {
+        ...trip,
+        members: { ...trip.members, [uid]: pending.role },
+        memberUids: [...trip.memberUids, uid],
+        pendingMemberships: remainingPending,
+      };
+    });
+    this.notify();
   }
 
   async updateRole(tripId: string, uid: string, role: Role): Promise<void> {

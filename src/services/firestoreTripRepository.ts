@@ -18,11 +18,13 @@ import type {
   PinnedPoint,
   PendingPlace,
   ChatMessage,
+  TripLogistics,
 } from '../types';
-import { friends } from '../data';
 import { mapCategoryToActivityType } from '../utils/category';
 import { db as defaultDb } from '../lib/firebase';
 import type { TripRepository, Unsubscribe } from './ports';
+
+const EMPTY_LOGISTICS: TripLogistics = { drivers: [], vehicle: null };
 
 const APPROVED_PLACE_PIN_IMAGE =
   'https://lh3.googleusercontent.com/aida-public/AB6AXuC8kbbAVSGnOTZjuDOJbgKxvomdkFv5dlPjxQlL8K4RSkPMJynCQ4XkYX-8nN_ieyYhjFAimCZlGiwUXYJfrIfR8xfU4_5aR9W6jAP36Qtk_Tvi0IZaTtS6mGiabINpPHyHmdVY6G6smwzHqNZGww_PiqileoStp0VHXbxZzzHkQbhDpOLVxIelUlB_IhB4m6m-nTXBkqaE79Wyy9pcbbcQrfpTJ_iOzrVMtd_4wN1Wrnk1_kd2hXCvD1to7uznxceO9gusiK382DnK';
@@ -64,6 +66,13 @@ export class FirestoreTripRepository implements TripRepository {
     return collection(this.db, 'trips', tripId, 'chat');
   }
 
+  private logisticsDocRef(tripId: string) {
+    // Single doc under its own subcollection (same one-level-deep shape the
+    // security rules' nested `match /{subcollection}/{docId}` already
+    // covers, so no rules change is needed for this new seam).
+    return doc(this.db, 'trips', tripId, 'logistics', 'main');
+  }
+
   subscribeItinerary(tripId: string, cb: (days: ItineraryDay[]) => void): Unsubscribe {
     return onSnapshot(this.itineraryDaysRef(tripId), snapshot => {
       const days = snapshot.docs
@@ -89,6 +98,16 @@ export class FirestoreTripRepository implements TripRepository {
     return onSnapshot(this.chatRef(tripId), snapshot => {
       cb(snapshot.docs.map(d => d.data() as ChatMessage));
     });
+  }
+
+  subscribeLogistics(tripId: string, cb: (logistics: TripLogistics) => void): Unsubscribe {
+    return onSnapshot(this.logisticsDocRef(tripId), snapshot => {
+      cb(snapshot.exists() ? (snapshot.data() as TripLogistics) : EMPTY_LOGISTICS);
+    });
+  }
+
+  async updateLogistics(tripId: string, logistics: TripLogistics): Promise<void> {
+    await setDoc(this.logisticsDocRef(tripId), logistics);
   }
 
   async addActivity(tripId: string, dayId: string, activity: ItineraryActivity): Promise<void> {
@@ -171,7 +190,10 @@ export class FirestoreTripRepository implements TripRepository {
       description: place.description,
       location: place.location,
       status: 'Aprobado',
-      people: place.people && place.people.length > 0 ? place.people : friends.map(f => f.name),
+      // PR5: no more global `friends` fixture to fall back to — leaves
+      // people empty rather than inventing a default from a fixture that no
+      // longer models real trip membership.
+      people: place.people && place.people.length > 0 ? place.people : [],
     };
 
     const newPin: PinnedPoint = {

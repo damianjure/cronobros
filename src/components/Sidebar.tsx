@@ -12,6 +12,7 @@ import {
   Upload
 } from 'lucide-react';
 import { ActiveTab } from '../types';
+import { useCurrentTrip } from '../store/currentTripContext';
 
 interface SidebarProps {
   activeTab: ActiveTab;
@@ -31,6 +32,9 @@ export default function Sidebar({
   uploadProgress
 }: SidebarProps) {
   const sidebarFileInputRef = useRef<HTMLInputElement>(null);
+  // PR5: the real selected trip's name/member count instead of the
+  // hardcoded "Verano en Islandia" fixture.
+  const trip = useCurrentTrip();
 
   const navItems = [
     { label: 'Panel', tab: 'dashboard' as ActiveTab, icon: LayoutDashboard },
@@ -50,10 +54,10 @@ export default function Sidebar({
           </div>
           <div className="overflow-hidden">
             <h3 className="font-serif font-black text-sm text-brand-primary truncate leading-tight italic">
-              Verano en Islandia
+              {trip?.name ?? 'Viaje'}
             </h3>
             <p className="font-sans text-[10px] uppercase tracking-wider text-brand-on-surface-variant/70 font-semibold mt-0.5">
-              6 Huéspedes • 12 Días
+              {trip?.memberUids.length ?? 0} Huéspedes
             </p>
           </div>
         </div>

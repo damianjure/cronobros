@@ -1,6 +1,8 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import type { StoreApi, UseBoundStore } from 'zustand';
 import { createTripStore, TripStoreContext, type TripStoreState } from '../store/tripStore';
+import { CurrentTripContext } from '../store/currentTripContext';
+import { useTripsStore } from '../store/tripsStore';
 import { tripRepository } from '../services';
 
 interface TripStoreProviderProps {
@@ -19,6 +21,10 @@ interface TripStoreProviderProps {
  */
 export default function TripStoreProvider({ tripId, children }: TripStoreProviderProps) {
   const [store, setStore] = useState<UseBoundStore<StoreApi<TripStoreState>> | null>(null);
+  // `tripsStore` is already subscribed by `TripsListView` before a trip can be
+  // selected — reading it here (rather than a new subscription) surfaces the
+  // real `Trip` doc (name, members, memberUids) with no extra Firestore read.
+  const trip = useTripsStore(state => state.trips.find(t => t.id === tripId) ?? null);
 
   useEffect(() => {
     const handle = createTripStore(tripRepository, tripId);
@@ -32,5 +38,9 @@ export default function TripStoreProvider({ tripId, children }: TripStoreProvide
 
   if (!store) return null;
 
-  return <TripStoreContext.Provider value={store}>{children}</TripStoreContext.Provider>;
+  return (
+    <CurrentTripContext.Provider value={trip}>
+      <TripStoreContext.Provider value={store}>{children}</TripStoreContext.Provider>
+    </CurrentTripContext.Provider>
+  );
 }

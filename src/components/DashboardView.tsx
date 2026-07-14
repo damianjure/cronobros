@@ -12,8 +12,11 @@ import {
   Info
 } from 'lucide-react';
 import { ChatMessage, UpcomingHighlight, ActiveTab } from '../types';
-import { upcomingHighlights as initialHighlights } from '../data';
 import { useTripStore } from '../store/tripStore';
+import { useAuthStore } from '../store/authStore';
+import { useCurrentTrip } from '../store/currentTripContext';
+import { useTripParticipants } from '../store/participants';
+import { deriveUpcomingHighlights } from '../utils/highlights';
 import CriticalEventsCard from './CriticalEventsCard';
 
 interface DashboardViewProps {
@@ -23,13 +26,20 @@ interface DashboardViewProps {
 export default function DashboardView({ setActiveTab }: DashboardViewProps) {
   const messages = useTripStore(state => state.chatMessages);
   const addChatMessage = useTripStore(state => state.addChatMessage);
+  const itinerary = useTripStore(state => state.itinerary);
+  const pins = useTripStore(state => state.pins);
+  const user = useAuthStore(state => state.user);
+  const currentTrip = useCurrentTrip();
+  const participants = useTripParticipants();
+  // PR5: derived from the trip's REAL itinerary instead of the discarded
+  // `data.ts` fixture — a brand-new trip has no upcoming highlights yet.
+  const initialHighlights = deriveUpcomingHighlights(itinerary);
+  const nextStop = initialHighlights[0] ?? null;
+  const displayName = user?.displayName ?? user?.email ?? 'viajero';
 
   const [inputValue, setInputValue] = useState('');
-  const [activeNote, setActiveNote] = useState(
-    "Recuerda empacar los filtros impermeables para drones para la sesión de fotos de Skógafoss."
-  );
+  const [activeNote, setActiveNote] = useState('Sin notas todavía.');
   const [selectedHighlight, setSelectedHighlight] = useState<UpcomingHighlight | null>(null);
-  const [showNextStopDetails, setShowNextStopDetails] = useState(false);
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,25 +66,16 @@ export default function DashboardView({ setActiveTab }: DashboardViewProps) {
       const cleanNote = currentInput.replace(/nota:/i, '').replace(/recuerda/i, '').trim();
       setActiveNote(cleanNote);
     } else {
-      // Simulate reply from friends
+      // Simulate a reply from another trip member (no real messaging backend
+      // yet — this is a placeholder interaction, not tied to any specific
+      // destination content).
       setTimeout(() => {
-        let replyContent = "¡Eso suena como un plan increíble! No puedo esperar.";
-        let senderName = "Sarah";
-        let avatar = "https://lh3.googleusercontent.com/aida-public/AB6AXuC_scvakiKbrrrRI_-Pm2qEKrgr42w-Zxnzfo1elMxW-rblu18TPbSGvrqUpslnCSJswJyezA3RB93Bj4MhSFwkTgD6OaZF2UOycSOQEP-ZGbSZYR2dUHB83651Y26BzJMxAGj0Je8w8OxXBsB-12sjBlVwtvZT2qO-9oZEYUt8JNzg0niZMMZTdvTaDa-hT-wzSCqzNgxoCv2rh_hg1LScTbdhGOY2CT77m02PSoTFnbTkdEtPfPofPPifuj0OfUpGXwwr-s10U-54";
-
-        if (currentInput.toLowerCase().includes('comida') || currentInput.toLowerCase().includes('comer') || currentInput.toLowerCase().includes('almuerzo')) {
-          replyContent = "¡Sí! La sopa de langosta islandesa en Bryggjan está muy bien calificada. Asegurémonos de llegar a tiempo.";
-          senderName = "James";
-          avatar = "https://lh3.googleusercontent.com/aida-public/AB6AXuAOQ_svfRla5JO_7LcA6ad8K7ccJ8CrsZudd5WtRt9-2BLGT9NwcEHM7_fcejok0f7wCGp-3rG5QUYq7FgusYoGtXxvf8gNMB__eEmJ856TyKXgU2yB_uo_9LZvH2icOGuV5AN8i0cc6o-G_zEfU8kGkdKZSlBY9wXfeGcZLgJfIfSW_MfSs9m-xbGvyJ9YxJrSLAEha-mrJqGYw7QO7LxdzA6ASu29fVWx1SEIPOmh8WOtS5W8cZcwrUhuB3rxHtS7pYa95Hpqe7y4";
-        } else if (currentInput.toLowerCase().includes('ferry') || currentInput.toLowerCase().includes('hora') || currentInput.toLowerCase().includes('horario')) {
-          replyContent = "Verifiqué dos veces los horarios del ferry y son estrictos. Intentemos llegar 20 minutos antes.";
-          senderName = "Maya";
-          avatar = "https://lh3.googleusercontent.com/aida-public/AB6AXuBASr24FgG3vzWTsDBsDfYRpGRsrizvm6jVMGJpXnT_osDk3Xh2_4Pwsjb68JkpjHPd6dOtI9GYaAOI45_NtWBgPEUuVc21ouwj19OF4eehIMGE6ebp7gDNA9ZGeg8u4aiQU8_c--C9p360niDkPVg0TF_aVIH0gHiL7N4gkL1kJW_dh7ZdJn2vE8FQbY_g_bvjdTfxO-hXRARP-ZnjO-Wvc0o1WePDjEwaOboQLUaJ8O90ngK347qcjrwDkVs2ox-Z2QyjWdwH2p8c";
-        }
+        const replyContent = "¡Eso suena como un plan increíble! No puedo esperar.";
+        const senderName = participants.find(p => p !== displayName) ?? 'Compañero de viaje';
 
         const friendReply: ChatMessage = {
           id: `msg-${Date.now() + 1}`,
-          sender: { name: senderName, avatar, role: 'Viajera' },
+          sender: { name: senderName, avatar: '', role: 'Viajero' },
           content: replyContent,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         };
@@ -92,28 +93,30 @@ export default function DashboardView({ setActiveTab }: DashboardViewProps) {
         <section className="flex flex-col sm:flex-row sm:items-center justify-between gap-4" id="welcome-header">
           <div>
             <h1 className="font-serif text-3xl md:text-4xl font-black italic text-brand-primary tracking-tight">
-              Bienvenido de nuevo, Alex
+              Bienvenido de nuevo, {displayName}
             </h1>
             <p className="text-xs uppercase tracking-widest text-brand-on-surface-variant/80 font-bold mt-1.5">
-              Tu aventura islandesa está al 40% • ¿Listo para el Norte?
+              {currentTrip?.name ?? 'Tu viaje'}
             </p>
           </div>
-          
+
           {/* Group avatars */}
           <div className="flex items-center gap-2">
             <div className="flex -space-x-3">
-              <div className="w-9 h-9 rounded-full border-2 border-brand-background overflow-hidden shadow-none" title="Sarah">
-                <img className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAsiiV2o3md6E8RS7zNwR6kgD77dlbOG2snIRYl1y6tDLkMG-VPat4mHrXALNYHZs1bpttUx15RkD_cogvtdEEgC8IJoJbtiGlsZQHf6DjuxMIYUNgpTnLZwTfXZU7J5ANmxhSlcGH82s_sW_ZjxpfOt0rnAAkHIrylCT3ciZf-LkdbSmlyKRt5tqEcyA7pFYuAo2exYRyPhl-VIFZzrxA9ZQsr5sOKhPDUXowPoN34nw9aeoLfLEW44U6WOe-iNNskE3zqyOx6Cx8z" alt="Sarah" />
-              </div>
-              <div className="w-9 h-9 rounded-full border-2 border-brand-background overflow-hidden shadow-none" title="James">
-                <img className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAOQ_svfRla5JO_7LcA6ad8K7ccJ8CrsZudd5WtRt9-2BLGT9NwcEHM7_fcejok0f7wCGp-3rG5QUYq7FgusYoGtXxvf8gNMB__eEmJ856TyKXgU2yB_uo_9LZvH2icOGuV5AN8i0cc6o-G_zEfU8kGkdKZSlBY9wXfeGcZLgJfIfSW_MfSs9m-xbGvyJ9YxJrSLAEha-mrJqGYw7QO7LxdzA6ASu29fVWx1SEIPOmh8WOtS5W8cZcwrUhuB3rxHtS7pYa95Hpqe7y4" alt="James" />
-              </div>
-              <div className="w-9 h-9 rounded-full border-2 border-brand-background overflow-hidden shadow-none" title="Maya">
-                <img className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBASr24FgG3vzWTsDBsDfYRpGRsrizvm6jVMGJpXnT_osDk3Xh2_4Pwsjb68JkpjHPd6dOtI9GYaAOI45_NtWBgPEUuVc21ouwj19OF4eehIMGE6ebp7gDNA9ZGeg8u4aiQU8_c--C9p360niDkPVg0TF_aVIH0gHiL7N4gkL1kJW_dh7ZdJn2vE8FQbY_g_bvjdTfxO-hXRARP-ZnjO-Wvc0o1WePDjEwaOboQLUaJ8O90ngK347qcjrwDkVs2ox-Z2QyjWdwH2p8c" alt="Maya" />
-              </div>
-              <div className="w-9 h-9 rounded-full border-2 border-brand-background bg-brand-primary text-white flex items-center justify-center font-bold text-[10px] shadow-none">
-                +3
-              </div>
+              {participants.slice(0, 3).map(name => (
+                <div
+                  key={name}
+                  title={name}
+                  className="w-9 h-9 rounded-full border-2 border-brand-background bg-brand-primary/10 text-brand-primary flex items-center justify-center font-bold text-[10px] shadow-none"
+                >
+                  {name.charAt(0).toUpperCase()}
+                </div>
+              ))}
+              {participants.length > 3 && (
+                <div className="w-9 h-9 rounded-full border-2 border-brand-background bg-brand-primary text-white flex items-center justify-center font-bold text-[10px] shadow-none">
+                  +{participants.length - 3}
+                </div>
+              )}
             </div>
             <span className="text-[10px] font-extrabold uppercase tracking-widest text-brand-on-surface-variant/80 ml-1">En viaje</span>
           </div>
@@ -153,69 +156,62 @@ export default function DashboardView({ setActiveTab }: DashboardViewProps) {
                 <div className="flex items-center gap-2 mb-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-brand-primary" />
                   <span className="text-[9px] font-black text-brand-primary uppercase tracking-[0.2em]">
-                    Ruta Activa: Ring Road Norte
+                    {pins.length > 0 ? 'Lugares Guardados' : 'Sin Lugares Todavía'}
                   </span>
                 </div>
                 <h2 className="text-xl font-serif font-black italic text-brand-primary">
-                  Reikiavik → Akureyri
+                  {pins.length > 0
+                    ? `${pins.length} ${pins.length === 1 ? 'lugar' : 'lugares'} en el mapa`
+                    : 'Agregá lugares desde Lugares o el Mapa'}
                 </h2>
-              </div>
-              
-              <div className="sm:text-right border-t sm:border-t-0 border-brand-primary/10 pt-2.5 sm:pt-0 w-full sm:w-auto">
-                <p className="text-[9px] text-brand-on-surface-variant/70 font-black uppercase tracking-widest">
-                  Tiempo Est. de Viaje
-                </p>
-                <p className="text-2xl font-serif font-black italic text-brand-primary mt-0.5">
-                  4h 45m
-                </p>
               </div>
             </div>
           </div>
 
           {/* Sidebar Stats Column */}
           <div className="flex flex-col gap-6">
-            
-            {/* Distance Remaining */}
+
+            {/* Places saved */}
             <div className="bg-white rounded-none p-6 border border-brand-primary/10 shadow-none flex flex-col justify-center flex-1">
               <p className="text-[10px] font-black text-brand-on-surface-variant/75 uppercase tracking-widest mb-1.5">
-                Distancia Restante
+                Lugares Guardados
               </p>
               <h3 className="text-3xl font-serif font-black italic text-brand-primary">
-                382 <span className="text-sm font-sans uppercase font-bold tracking-wider text-brand-on-surface-variant/70">km</span>
+                {pins.length}
               </h3>
-              
-              <div className="w-full h-1 bg-brand-surface-container mt-4 overflow-hidden relative">
-                <div className="w-2/3 h-full bg-brand-primary" />
-              </div>
-              <p className="text-[10px] text-brand-outline mt-2.5 font-bold uppercase tracking-wider">66% del tránsito completado</p>
+              <p className="text-[10px] text-brand-outline mt-2.5 font-bold uppercase tracking-wider">
+                {itinerary.length} {itinerary.length === 1 ? 'día planificado' : 'días planificados'}
+              </p>
             </div>
 
             {/* Next Stop highlight */}
             <div className="bg-brand-primary rounded-none p-6 text-white shadow-none flex flex-col justify-between flex-1 relative overflow-hidden group">
               <div className="absolute -right-10 -top-10 w-32 h-32 bg-white/5 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500 pointer-events-none" />
-              
+
               <div>
                 <div className="flex items-center gap-1.5 text-brand-primary-fixed-dim/90 font-bold text-[10px] uppercase tracking-widest mb-2.5">
                   <Sparkles className="w-3.5 h-3.5" />
                   <span>Siguiente Parada</span>
                 </div>
                 <h3 className="text-2xl font-serif font-black italic tracking-tight">
-                  Cascada Goðafoss
+                  {nextStop ? nextStop.title : 'Aún no hay planes'}
                 </h3>
                 <p className="text-xs text-brand-primary-fixed-dim/75 mt-2 leading-relaxed font-sans">
-                  Espectacular cascada recomendada para fotografía y almuerzo.
+                  {nextStop ? nextStop.description : 'Agregá tu primera actividad en el Itinerario.'}
                 </p>
               </div>
 
               <div className="mt-5 flex gap-2">
-                <button 
-                  onClick={() => setShowNextStopDetails(true)}
-                  className="text-[10px] font-bold uppercase tracking-widest py-2 px-4 rounded-none bg-white/10 hover:bg-white/20 border border-white/10 transition-all text-white cursor-pointer active:scale-95 flex items-center gap-1"
-                >
-                  <Info className="w-3 h-3" />
-                  <span>Detalles</span>
-                </button>
-                <button 
+                {nextStop && (
+                  <button
+                    onClick={() => setSelectedHighlight(nextStop)}
+                    className="text-[10px] font-bold uppercase tracking-widest py-2 px-4 rounded-none bg-white/10 hover:bg-white/20 border border-white/10 transition-all text-white cursor-pointer active:scale-95 flex items-center gap-1"
+                  >
+                    <Info className="w-3 h-3" />
+                    <span>Detalles</span>
+                  </button>
+                )}
+                <button
                   onClick={() => setActiveTab('itinerary')}
                   className="text-[10px] font-bold uppercase tracking-widest py-2 px-4 rounded-none bg-white text-brand-primary hover:bg-brand-primary-fixed transition-all cursor-pointer active:scale-95"
                 >
@@ -225,34 +221,6 @@ export default function DashboardView({ setActiveTab }: DashboardViewProps) {
             </div>
           </div>
         </section>
-
-        {/* Next Stop Details Modal */}
-        {showNextStopDetails && (
-          <div className="fixed inset-0 bg-brand-primary/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-            <div className="bg-white rounded-none p-6 max-w-md w-full shadow-2xl border border-brand-primary/10 animate-in zoom-in-95 duration-200 relative">
-              <h4 className="font-serif font-black italic text-xl text-brand-primary mb-2">Goðafoss (Cascada de los Dioses)</h4>
-              <p className="text-xs text-brand-on-surface-variant/90 leading-relaxed font-sans">
-                Una de las cascadas más espectaculares de Islandia. Ubicada en el distrito de Bárðardalur en la región noreste al inicio de la carretera de las tierras altas de Sprengisandur. El agua del río Skjálfandafljót cae desde una altura de 12 metros sobre un ancho de 30 metros.
-              </p>
-              <div className="mt-4 p-3.5 bg-brand-background border border-brand-primary/5 rounded-none flex flex-col gap-2">
-                <div className="flex justify-between text-[10px] uppercase tracking-wider">
-                  <span className="font-bold text-brand-outline">Hora Óptima de Visita:</span>
-                  <span className="font-extrabold text-brand-primary">1:00 PM - 3:00 PM</span>
-                </div>
-                <div className="flex justify-between text-[10px] uppercase tracking-wider">
-                  <span className="font-bold text-brand-outline">Pronóstico del Clima:</span>
-                  <span className="font-extrabold text-brand-secondary">11°C • Parcialmente Nublado</span>
-                </div>
-              </div>
-              <button 
-                onClick={() => setShowNextStopDetails(false)}
-                className="w-full mt-5 py-2.5 bg-brand-primary hover:bg-brand-primary-container text-white rounded-none font-bold text-[10px] uppercase tracking-widest transition-all active:scale-98 cursor-pointer"
-              >
-                Cerrar Detalles
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* Upcoming Highlights */}
         <section className="space-y-4">
@@ -269,20 +237,28 @@ export default function DashboardView({ setActiveTab }: DashboardViewProps) {
             </button>
           </div>
 
+          {initialHighlights.length === 0 ? (
+            <div className="p-10 bg-white border border-brand-primary/10 rounded-none text-center">
+              <p className="font-serif font-bold italic text-brand-primary text-sm mb-1">Aún no hay momentos destacados</p>
+              <p className="text-xs text-brand-outline">Agregá actividades en el Itinerario para verlas aquí.</p>
+            </div>
+          ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {initialHighlights.map((highlight) => (
-              <div 
+              <div
                 key={highlight.id}
                 onClick={() => setSelectedHighlight(highlight)}
                 className="bg-white rounded-none overflow-hidden border border-brand-primary/10 shadow-none group hover:border-brand-primary/30 transition-all duration-300 cursor-pointer flex flex-col h-full"
                 id={`highlight-card-${highlight.id}`}
               >
-                <div className="h-40 overflow-hidden relative shrink-0">
-                  <img 
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
-                    src={highlight.image} 
-                    alt={highlight.title} 
-                  />
+                <div className="h-40 overflow-hidden relative shrink-0 bg-brand-background">
+                  {highlight.image && (
+                    <img
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      src={highlight.image}
+                      alt={highlight.title}
+                    />
+                  )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent pointer-events-none" />
                   
                   <div className="absolute top-3 left-3 bg-white px-3 py-1 rounded-none text-[9px] font-black uppercase tracking-widest text-brand-primary border border-brand-primary/5">
@@ -327,14 +303,17 @@ export default function DashboardView({ setActiveTab }: DashboardViewProps) {
               </div>
             ))}
           </div>
+          )}
         </section>
 
         {/* Selected Highlight Detail Modal */}
         {selectedHighlight && (
           <div className="fixed inset-0 bg-brand-primary/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
             <div className="bg-white rounded-none overflow-hidden max-w-md w-full shadow-2xl border border-brand-primary/10 animate-in zoom-in-95 duration-200 relative flex flex-col">
-              <div className="h-48 relative">
-                <img className="w-full h-full object-cover" src={selectedHighlight.image} alt={selectedHighlight.title} />
+              <div className="h-48 relative bg-brand-background">
+                {selectedHighlight.image && (
+                  <img className="w-full h-full object-cover" src={selectedHighlight.image} alt={selectedHighlight.title} />
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/55 to-transparent" />
                 <button 
                   onClick={() => setSelectedHighlight(null)}
@@ -386,7 +365,7 @@ export default function DashboardView({ setActiveTab }: DashboardViewProps) {
               <span>Chat de Grupo</span>
             </h2>
             <span className="text-[9px] font-black bg-brand-background border border-brand-primary/5 px-2.5 py-1 rounded-none text-brand-on-surface-variant/85 uppercase tracking-widest">
-              6 ACTIVOS
+              {participants.length} ACTIVOS
             </span>
           </div>
 
@@ -396,8 +375,12 @@ export default function DashboardView({ setActiveTab }: DashboardViewProps) {
               const isCurrentUser = msg.sender.isCurrentUser;
               return (
                 <div key={msg.id} className={`flex gap-3 items-start ${isCurrentUser ? 'flex-row-reverse' : ''}`}>
-                  <div className="w-8 h-8 rounded-none overflow-hidden border border-brand-primary/10 shrink-0 shadow-none">
-                    <img className="w-full h-full object-cover" src={msg.sender.avatar} alt={msg.sender.name} />
+                  <div className="w-8 h-8 rounded-full overflow-hidden border border-brand-primary/10 shrink-0 shadow-none bg-brand-primary/10 flex items-center justify-center text-[10px] font-bold text-brand-primary">
+                    {msg.sender.avatar ? (
+                      <img className="w-full h-full object-cover" src={msg.sender.avatar} alt={msg.sender.name} />
+                    ) : (
+                      msg.sender.name.charAt(0).toUpperCase()
+                    )}
                   </div>
                   
                   <div className="max-w-[80%] flex flex-col">

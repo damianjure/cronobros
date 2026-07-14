@@ -11,10 +11,12 @@ import Toast from './components/Toast';
 import SettingsPanel from './components/SettingsPanel';
 
 import { ActiveTab, ItineraryActivity } from './types';
-import { friends } from './data';
 import { useTripStore } from './store/tripStore';
 import { useToastStore } from './store/toastStore';
-import { Mail, Check, UserPlus, X, Trash2 } from 'lucide-react';
+import { useTripsStore } from './store/tripsStore';
+import { useCurrentTrip } from './store/currentTripContext';
+import { useTripParticipants } from './store/participants';
+import { Mail, Check, UserPlus, X } from 'lucide-react';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
@@ -23,6 +25,9 @@ export default function App() {
 
   const addActivity = useTripStore(state => state.addActivity);
   const showToast = useToastStore(state => state.showToast);
+  const inviteMember = useTripsStore(state => state.inviteMember);
+  const currentTrip = useCurrentTrip();
+  const participants = useTripParticipants();
 
   // Smart Import Sidebar simulation states (UI-only; not itinerary/pins/
   // pendingPlaces/chatMessages data, so out of the state-layer dedup scope)
@@ -35,25 +40,25 @@ export default function App() {
 
   // Invitation states
   const [inviteEmail, setInviteEmail] = useState('');
-  const [invitedEmails, setInvitedEmails] = useState<string[]>([]);
   const [inviteSuccess, setInviteSuccess] = useState(false);
+
+  // PR5: real pending memberships from the current trip doc (replaces the
+  // local-only, never-persisted `invitedEmails` state — spec "Owner/editor
+  // invites a collaborator by email" writes a real membership record via
+  // `TripsRepository.inviteMember`).
+  const pendingInvites = Object.values(currentTrip?.pendingMemberships ?? {}).filter(m => m.pending);
 
   const handleSendInvite = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inviteEmail.trim() || !inviteEmail.includes('@')) return;
-    if (invitedEmails.includes(inviteEmail)) return;
+    if (!inviteEmail.trim() || !inviteEmail.includes('@') || !currentTrip) return;
 
-    setInvitedEmails(prev => [...prev, inviteEmail]);
+    void inviteMember(currentTrip.id, inviteEmail, 'editor');
     setInviteSuccess(true);
     setInviteEmail('');
-    
+
     setTimeout(() => {
       setInviteSuccess(false);
     }, 2500);
-  };
-
-  const handleRemoveInvite = (emailToRemove: string) => {
-    setInvitedEmails(prev => prev.filter(email => email !== emailToRemove));
   };
 
   // Simulate Smart Import PDF Parse (triggered from Sidebar)
@@ -75,7 +80,7 @@ export default function App() {
                 description: 'El vuelo FI-204 de Boston aterrizó a tiempo. Equipaje recogido en la banda 4. Recogida directa de Land Rover Defender alquilado.',
                 location: 'Aeropuerto Internacional de Keflavík',
                 status: 'Smart Imported',
-                people: friends.map(f => f.name)
+                people: participants,
               };
 
               addActivity('day-1', importedActivity);
@@ -164,7 +169,7 @@ export default function App() {
 
             <div className="flex items-center gap-2 mb-4 text-brand-primary">
               <UserPlus className="w-5 h-5 text-brand-secondary" />
-              <h3 className="font-display font-extrabold text-lg">Invitar Amigos a Verano en Islandia</h3>
+              <h3 className="font-display font-extrabold text-lg">Invitar Amigos a {currentTrip?.name ?? 'este viaje'}</h3>
             </div>
 
             <p className="text-xs text-brand-on-surface-variant font-semibold mb-4 leading-relaxed">
@@ -197,24 +202,18 @@ export default function App() {
               )}
             </form>
 
-            {/* Invited friends list */}
-            {invitedEmails.length > 0 && (
+            {/* Pending invites — real membership records now (PR5), read
+                from the current trip doc. No "cancel invite" port method
+                exists yet, so this list is read-only. */}
+            {pendingInvites.length > 0 && (
               <div className="mt-5 border-t border-brand-outline-variant/20 pt-4">
                 <h4 className="text-[10px] font-extrabold text-brand-outline uppercase tracking-wider mb-2">Invitaciones Pendientes</h4>
                 <div className="space-y-2 max-h-32 overflow-y-auto custom-scrollbar">
-                  {invitedEmails.map((email) => (
-                    <div key={email} className="flex items-center gap-2 px-3 py-1.5 bg-brand-surface-low border border-brand-outline-variant/15 rounded-lg text-xs font-semibold text-brand-primary">
+                  {pendingInvites.map((membership) => (
+                    <div key={membership.email} className="flex items-center gap-2 px-3 py-1.5 bg-brand-surface-low border border-brand-outline-variant/15 rounded-lg text-xs font-semibold text-brand-primary">
                       <Mail className="w-3.5 h-3.5 text-brand-outline" />
-                      <span>{email}</span>
+                      <span>{membership.email}</span>
                       <span className="text-[9px] text-brand-outline font-bold uppercase tracking-wide ml-auto">Pendiente</span>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveInvite(email)}
-                        aria-label={`Eliminar invitación de ${email}`}
-                        className="text-brand-outline hover:text-red-500 w-5 h-5 rounded-full hover:bg-red-50 transition-all flex items-center justify-center cursor-pointer shrink-0"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
                     </div>
                   ))}
                 </div>

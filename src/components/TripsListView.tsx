@@ -24,6 +24,7 @@ export default function TripsListView({ onSelectTrip }: TripsListViewProps) {
   const subscribeToUser = useTripsStore(state => state.subscribeToUser);
   const createTrip = useTripsStore(state => state.createTrip);
   const deleteTrip = useTripsStore(state => state.deleteTrip);
+  const activatePendingInvites = useTripsStore(state => state.activatePendingInvites);
   const user = useAuthStore(state => state.user);
 
   const uid = user?.uid ?? DEV_FALLBACK_UID;
@@ -33,6 +34,16 @@ export default function TripsListView({ onSelectTrip }: TripsListViewProps) {
     return subscribeToUser(uid);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid]);
+
+  // Spec: "Invited user signs in and membership activates" — best-effort;
+  // see FirestoreTripsRepository.activatePendingInvites for the documented
+  // rules-visibility gap that currently makes this a no-op for a genuine
+  // not-yet-a-member invitee.
+  useEffect(() => {
+    if (!user?.email) return;
+    void activatePendingInvites(uid, user.email);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [uid, user?.email]);
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();

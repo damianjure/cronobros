@@ -16,8 +16,6 @@ import {
   TrendingDown,
   Info
 } from 'lucide-react';
-import { Driver } from '../types';
-import { initialDrivers, activeVehicle } from '../data';
 import { useTripStore } from '../store/tripStore';
 import { useToastStore } from '../store/toastStore';
 import { useSettingsStore } from '../store/settingsStore';
@@ -37,9 +35,14 @@ import {
 
 export default function LogisticsView() {
   const itinerary = useTripStore(state => state.itinerary);
+  // PR5: sourced from the trip's real (Firestore-backed) logistics doc
+  // instead of `data.ts`'s Iceland fixture — a brand-new trip genuinely has
+  // no drivers and no vehicle assigned yet.
+  const logistics = useTripStore(state => state.logistics);
+  const drivers = logistics.drivers;
+  const activeVehicle = logistics.vehicle;
   const showToast = useToastStore(state => state.showToast);
   const currency = useSettingsStore(state => state.currency);
-  const [drivers] = useState<Driver[]>(initialDrivers);
   const [fuelBudgetUsed, setFuelBudgetUsed] = useState(420);
   const [fuelLimit] = useState(650);
   const [transactions, setTransactions] = useState([
@@ -143,73 +146,82 @@ export default function LogisticsView() {
         <div className="lg:col-span-8 space-y-6">
           
           {/* Vehicle card */}
-          <section className="bg-white rounded-none overflow-hidden border border-brand-primary/10 shadow-none grid grid-cols-1 md:grid-cols-2 group">
-            <div className="relative h-64 md:h-auto overflow-hidden">
-              <img 
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-101" 
-                src={activeVehicle.image} 
-                alt={activeVehicle.name} 
-              />
-              <div className="absolute top-4 left-4">
-                <span className="px-2.5 py-1 bg-brand-primary text-white text-[8px] font-black rounded-none uppercase tracking-widest shadow-none">
-                  Flota Activa
-                </span>
-              </div>
-            </div>
-            
-            <div className="p-6 md:p-8 flex flex-col justify-between">
-              <div>
-                <h2 className="font-serif text-2xl font-black italic text-brand-primary tracking-tight">
-                  {activeVehicle.name}
-                </h2>
-                <p className="text-[9px] font-black text-brand-outline uppercase mt-0.5 tracking-wider">
-                  ID de Alquiler: {activeVehicle.rentalId}
-                </p>
-                
-                <div className="space-y-3.5 mt-5">
-                  <div className="flex items-center gap-3 text-brand-on-surface-variant font-medium text-xs">
-                    <Building className="w-4 h-4 text-brand-primary/65 shrink-0" />
-                    <span>{activeVehicle.provider}</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-brand-on-surface-variant font-medium text-xs">
-                    <Phone className="w-4 h-4 text-brand-primary/65 shrink-0" />
-                    <span>{activeVehicle.phone}</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-brand-on-surface-variant font-medium text-xs">
-                    <Calendar className="w-4 h-4 text-brand-primary/65 shrink-0" />
-                    <span>{activeVehicle.dates}</span>
-                  </div>
+          {activeVehicle ? (
+            <section className="bg-white rounded-none overflow-hidden border border-brand-primary/10 shadow-none grid grid-cols-1 md:grid-cols-2 group">
+              <div className="relative h-64 md:h-auto overflow-hidden bg-brand-background">
+                {activeVehicle.image && (
+                  <img
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-101"
+                    src={activeVehicle.image}
+                    alt={activeVehicle.name}
+                  />
+                )}
+                <div className="absolute top-4 left-4">
+                  <span className="px-2.5 py-1 bg-brand-primary text-white text-[8px] font-black rounded-none uppercase tracking-widest shadow-none">
+                    Flota Activa
+                  </span>
                 </div>
               </div>
 
-              {/* Document download buttons */}
-              <div className="flex gap-3 mt-8">
-                <button 
-                  onClick={() => setShowDocModal('insurance')}
-                  className="flex-1 p-3.5 bg-brand-background hover:bg-brand-primary/5 border border-brand-primary/10 rounded-none flex items-center justify-between group cursor-pointer transition-colors active:scale-98"
-                  id="logistics-doc-insurance"
-                >
-                  <div className="flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4 text-brand-primary/70" />
-                    <span className="font-bold text-[10px] uppercase tracking-widest text-brand-primary">Póliza de Seguro</span>
+              <div className="p-6 md:p-8 flex flex-col justify-between">
+                <div>
+                  <h2 className="font-serif text-2xl font-black italic text-brand-primary tracking-tight">
+                    {activeVehicle.name}
+                  </h2>
+                  <p className="text-[9px] font-black text-brand-outline uppercase mt-0.5 tracking-wider">
+                    ID de Alquiler: {activeVehicle.rentalId}
+                  </p>
+
+                  <div className="space-y-3.5 mt-5">
+                    <div className="flex items-center gap-3 text-brand-on-surface-variant font-medium text-xs">
+                      <Building className="w-4 h-4 text-brand-primary/65 shrink-0" />
+                      <span>{activeVehicle.provider}</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-brand-on-surface-variant font-medium text-xs">
+                      <Phone className="w-4 h-4 text-brand-primary/65 shrink-0" />
+                      <span>{activeVehicle.phone}</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-brand-on-surface-variant font-medium text-xs">
+                      <Calendar className="w-4 h-4 text-brand-primary/65 shrink-0" />
+                      <span>{activeVehicle.dates}</span>
+                    </div>
                   </div>
-                  <ArrowUpRight className="w-4 h-4 text-brand-primary transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                </button>
-                
-                <button 
-                  onClick={() => setShowDocModal('agreement')}
-                  className="flex-1 p-3.5 bg-brand-background hover:bg-brand-primary/5 border border-brand-primary/10 rounded-none flex items-center justify-between group cursor-pointer transition-colors active:scale-98"
-                  id="logistics-doc-agreement"
-                >
-                  <div className="flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-brand-primary/70" />
-                    <span className="font-bold text-[10px] uppercase tracking-widest text-brand-primary">Contrato</span>
-                  </div>
-                  <ArrowUpRight className="w-4 h-4 text-brand-primary transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                </button>
+                </div>
+
+                {/* Document download buttons */}
+                <div className="flex gap-3 mt-8">
+                  <button
+                    onClick={() => setShowDocModal('insurance')}
+                    className="flex-1 p-3.5 bg-brand-background hover:bg-brand-primary/5 border border-brand-primary/10 rounded-none flex items-center justify-between group cursor-pointer transition-colors active:scale-98"
+                    id="logistics-doc-insurance"
+                  >
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck className="w-4 h-4 text-brand-primary/70" />
+                      <span className="font-bold text-[10px] uppercase tracking-widest text-brand-primary">Póliza de Seguro</span>
+                    </div>
+                    <ArrowUpRight className="w-4 h-4 text-brand-primary transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                  </button>
+
+                  <button
+                    onClick={() => setShowDocModal('agreement')}
+                    className="flex-1 p-3.5 bg-brand-background hover:bg-brand-primary/5 border border-brand-primary/10 rounded-none flex items-center justify-between group cursor-pointer transition-colors active:scale-98"
+                    id="logistics-doc-agreement"
+                  >
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-brand-primary/70" />
+                      <span className="font-bold text-[10px] uppercase tracking-widest text-brand-primary">Contrato</span>
+                    </div>
+                    <ArrowUpRight className="w-4 h-4 text-brand-primary transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                  </button>
+                </div>
               </div>
-            </div>
-          </section>
+            </section>
+          ) : (
+            <section className="bg-white rounded-none p-8 border border-brand-primary/10 shadow-none text-center">
+              <p className="font-serif font-bold italic text-brand-primary text-sm mb-1">Aún no hay vehículo asignado</p>
+              <p className="text-xs text-brand-outline">Cuando se asigne un vehículo a este viaje, aparecerá aquí.</p>
+            </section>
+          )}
 
           {/* Analysis Chart Card */}
           <section className="bg-white rounded-none p-6 md:p-8 border border-brand-primary/10 shadow-none space-y-6 animate-in fade-in duration-300" id="logistics-analytics-chart">
@@ -579,6 +591,9 @@ export default function LogisticsView() {
               Conductores Asignados
             </h3>
             
+            {drivers.length === 0 ? (
+              <p className="text-xs text-brand-outline">Todavía no hay conductores asignados a este viaje.</p>
+            ) : (
             <div className="space-y-4">
               {drivers.map((drv) => (
                 <div 
@@ -611,6 +626,7 @@ export default function LogisticsView() {
                 </div>
               ))}
             </div>
+            )}
           </section>
 
           {/* Pick-up Location Card with Map */}

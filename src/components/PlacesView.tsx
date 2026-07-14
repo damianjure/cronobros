@@ -9,9 +9,9 @@ import {
   Users
 } from 'lucide-react';
 import { PendingPlace } from '../types';
-import { friends } from '../data';
 import { useTripStore } from '../store/tripStore';
 import { useToastStore } from '../store/toastStore';
+import { useTripParticipants } from '../store/participants';
 
 export default function PlacesView() {
   const pendingPlaces = useTripStore(state => state.pendingPlaces);
@@ -20,13 +20,15 @@ export default function PlacesView() {
   const deletePendingPlace = useTripStore(state => state.deletePendingPlace);
   const approvePlace = useTripStore(state => state.approvePlace);
   const showToast = useToastStore(state => state.showToast);
+  // PR5: real trip participants instead of the global `friends` fixture.
+  const participants = useTripParticipants();
 
   // Form states
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<'Relajación' | 'Gastronomía' | 'Turismo' | 'Aventura' | 'Alojamiento'>('Turismo');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
-  const [selectedPeople, setSelectedPeople] = useState<string[]>(friends.map(f => f.name));
+  const [selectedPeople, setSelectedPeople] = useState<string[]>(participants);
 
   // Day selection per pending card
   const [selectedDays, setSelectedDays] = useState<Record<string, string>>({});
@@ -49,7 +51,7 @@ export default function PlacesView() {
       category,
       description: description || 'Sin descripción adicional.',
       location: location || 'Islandia',
-      people: selectedPeople.length > 0 ? selectedPeople : friends.map(f => f.name)
+      people: selectedPeople.length > 0 ? selectedPeople : participants,
     };
 
     addPendingPlace(newPlace);
@@ -58,7 +60,7 @@ export default function PlacesView() {
     setTitle('');
     setDescription('');
     setLocation('');
-    setSelectedPeople(friends.map(f => f.name));
+    setSelectedPeople(participants);
   };
 
   const handleDeletePending = (id: string) => {
@@ -146,25 +148,20 @@ export default function PlacesView() {
                 ¿Quiénes participan en este recorrido?
               </label>
               <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto custom-scrollbar p-1 border border-brand-primary/5 bg-brand-background/30">
-                {friends.map((friend) => {
-                  const isSelected = selectedPeople.includes(friend.name);
+                {participants.map((participantName) => {
+                  const isSelected = selectedPeople.includes(participantName);
                   return (
                     <button
                       type="button"
-                      key={friend.id}
-                      onClick={() => handleTogglePerson(friend.name)}
+                      key={participantName}
+                      onClick={() => handleTogglePerson(participantName)}
                       className={`flex items-center gap-2 p-1.5 border transition-all text-left ${
-                        isSelected 
-                          ? 'border-brand-primary/35 bg-white' 
+                        isSelected
+                          ? 'border-brand-primary/35 bg-white'
                           : 'border-transparent opacity-60'
                       }`}
                     >
-                      <img 
-                        src={friend.avatar} 
-                        alt={friend.name}
-                        className="w-5 h-5 rounded-full object-cover border border-brand-primary/10" 
-                      />
-                      <span className="text-[10px] font-bold text-brand-primary truncate">{friend.name}</span>
+                      <span className="text-[10px] font-bold text-brand-primary truncate">{participantName}</span>
                     </button>
                   );
                 })}
@@ -252,25 +249,15 @@ export default function PlacesView() {
                         <span>Integrantes del Recorrido ({place.people?.length || 0})</span>
                       </span>
                       <div className="flex flex-wrap gap-1">
-                        {place.people?.map((personName) => {
-                          const matchedFriend = friends.find(f => f.name === personName);
-                          return (
-                            <div 
-                              key={personName}
-                              className="flex items-center gap-1 px-2 py-0.5 bg-brand-background border border-brand-primary/5 rounded-none text-[9px] font-bold text-brand-primary"
-                              title={personName}
-                            >
-                              {matchedFriend && (
-                                <img 
-                                  src={matchedFriend.avatar} 
-                                  alt={personName}
-                                  className="w-3.5 h-3.5 rounded-full object-cover" 
-                                />
-                              )}
-                              <span>{personName}</span>
-                            </div>
-                          );
-                        })}
+                        {place.people?.map((personName) => (
+                          <div
+                            key={personName}
+                            className="flex items-center gap-1 px-2 py-0.5 bg-brand-background border border-brand-primary/5 rounded-none text-[9px] font-bold text-brand-primary"
+                            title={personName}
+                          >
+                            <span>{personName}</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>

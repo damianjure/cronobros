@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import type { ItineraryDay, PendingPlace, ChatMessage } from '../types';
+import type { ItineraryDay, PendingPlace, ChatMessage, TripLogistics } from '../types';
 import type { TripRepository } from './ports';
 
 export interface TripRepositorySeed {
@@ -7,6 +7,7 @@ export interface TripRepositorySeed {
   pins?: unknown[];
   pendingPlaces?: PendingPlace[];
   chat?: ChatMessage[];
+  logistics?: TripLogistics;
 }
 
 function makeDay(overrides: Partial<ItineraryDay> = {}): ItineraryDay {
@@ -292,7 +293,7 @@ export function runTripRepositoryContractTests(
         expect(latestPending).toHaveLength(0);
       });
 
-      it('falls back to the full friends list when the pending place has no people', async () => {
+      it('leaves people empty when the pending place has none (PR5: no global friends fixture to fall back to)', async () => {
         const tripId = `${label}-approve-fallback`;
         const place = makePendingPlace({ people: undefined });
         const repo = await createRepo(tripId, {
@@ -308,7 +309,7 @@ export function runTripRepositoryContractTests(
           itineraryCb,
           days => (days[0]?.activities.length ?? 0) === 1,
         );
-        expect(latestItinerary[0].activities[0].people?.length).toBeGreaterThan(1);
+        expect(latestItinerary[0].activities[0].people).toEqual([]);
       });
 
       it('is a no-op when the place does not exist', async () => {
@@ -345,6 +346,43 @@ export function runTripRepositoryContractTests(
 
         const latest = await waitForLatestCall<ChatMessage[]>(cb, messages => messages.length === 1);
         expect(latest).toEqual([message]);
+      });
+    });
+
+    describe('subscribeLogistics / updateLogistics', () => {
+      it('defaults to empty drivers and no vehicle for a brand-new trip', async () => {
+        const tripId = `${label}-logistics-default`;
+        const repo = await createRepo(tripId, {});
+        const cb = vi.fn();
+        repo.subscribeLogistics(tripId, cb);
+
+        const latest = await waitForLatestCall<TripLogistics>(cb, () => true);
+        expect(latest).toEqual({ drivers: [], vehicle: null });
+      });
+
+      it('updateLogistics persists drivers/vehicle and notifies subscribers', async () => {
+        const tripId = `${label}-logistics-update`;
+        const repo = await createRepo(tripId, {});
+        const cb = vi.fn();
+        repo.subscribeLogistics(tripId, cb);
+
+        const newLogistics: TripLogistics = {
+          drivers: [
+            { id: 'drv-1', name: 'Ana', avatar: '', status: 'On Shift', role: 'Conductora', shift: '08:00-14:00' },
+          ],
+          vehicle: {
+            name: 'Van',
+            rentalId: 'R-1',
+            provider: 'Rentals Co',
+            phone: '+1 555',
+            dates: '1-10 Ene',
+            image: '',
+          },
+        };
+        await repo.updateLogistics(tripId, newLogistics);
+
+        const latest = await waitForLatestCall<TripLogistics>(cb, logistics => logistics.drivers.length === 1);
+        expect(latest).toEqual(newLogistics);
       });
     });
   });

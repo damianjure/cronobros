@@ -1,11 +1,13 @@
 import { Users } from 'lucide-react';
 import { ItineraryDay, ItineraryActivity } from '../types';
-import { friends } from '../data';
+import { useTripParticipants } from '../store/participants';
 
-// Single source of the "everyone by default" participant list — used both
-// as the initial `people` value for new activities and as the display
-// fallback here when an activity has no explicit participants recorded yet.
-export const DEFAULT_PARTICIPANTS = friends.map(f => f.name);
+// PR5: the "everyone by default" participant list now comes from the
+// current trip's REAL membership (`useTripParticipants`) instead of the
+// global `friends` fixture — used both as the initial `people` value for
+// new activities and as the display fallback here when an activity has no
+// explicit participants recorded yet.
+export const useDefaultParticipants = useTripParticipants;
 
 interface FriendChipsProps {
   day: ItineraryDay;
@@ -30,7 +32,8 @@ export default function FriendChips({
   onClosePicker,
   onTogglePerson,
 }: FriendChipsProps) {
-  const currentPeople = activity.people && activity.people.length > 0 ? activity.people : DEFAULT_PARTICIPANTS;
+  const tripParticipants = useTripParticipants();
+  const currentPeople = activity.people && activity.people.length > 0 ? activity.people : tripParticipants;
 
   return (
     <div className="mt-4 pt-3 border-t border-brand-primary/5 flex flex-col gap-1.5 relative">
@@ -39,25 +42,15 @@ export default function FriendChips({
         <span>Amigos en este recorrido:</span>
       </span>
       <div className="flex flex-wrap items-center gap-1">
-        {currentPeople.map((personName) => {
-          const matchedFriend = friends.find(f => f.name === personName);
-          return (
-            <div
-              key={personName}
-              className="flex items-center gap-1 px-1.5 py-0.5 bg-brand-background border border-brand-primary/5 text-[9px] font-bold text-brand-primary"
-              title={personName}
-            >
-              {matchedFriend && (
-                <img
-                  src={matchedFriend.avatar}
-                  alt={personName}
-                  className="w-3.5 h-3.5 rounded-full object-cover shrink-0"
-                />
-              )}
-              <span>{personName}</span>
-            </div>
-          );
-        })}
+        {currentPeople.map((personName) => (
+          <div
+            key={personName}
+            className="flex items-center gap-1 px-1.5 py-0.5 bg-brand-background border border-brand-primary/5 text-[9px] font-bold text-brand-primary"
+            title={personName}
+          >
+            <span>{personName}</span>
+          </div>
+        ))}
 
         {/* Accessible multi-select trigger to add/remove participants */}
         <button
@@ -79,25 +72,20 @@ export default function FriendChips({
           aria-label={`Elegir integrantes de ${activity.title}`}
           className="absolute z-20 top-full left-0 mt-1 w-56 bg-white border border-brand-primary/15 shadow-lg p-2 grid grid-cols-1 gap-1"
         >
-          {friends.map((friend) => {
-            const isChecked = currentPeople.includes(friend.name);
+          {tripParticipants.map((participantName) => {
+            const isChecked = currentPeople.includes(participantName);
             return (
               <label
-                key={friend.id}
+                key={participantName}
                 className="flex items-center gap-2 px-1.5 py-1 hover:bg-brand-primary/5 cursor-pointer text-[10px] font-semibold text-brand-primary"
               >
                 <input
                   type="checkbox"
                   checked={isChecked}
-                  onChange={() => onTogglePerson(day, activity, friend.name)}
+                  onChange={() => onTogglePerson(day, activity, participantName)}
                   className="cursor-pointer"
                 />
-                <img
-                  src={friend.avatar}
-                  alt=""
-                  className="w-4 h-4 rounded-full object-cover shrink-0"
-                />
-                <span>{friend.name}</span>
+                <span>{participantName}</span>
               </label>
             );
           })}

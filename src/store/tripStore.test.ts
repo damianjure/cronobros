@@ -108,11 +108,13 @@ describe('tripStore', () => {
       const subscribePinsSpy = vi.spyOn(repo, 'subscribePins');
       const subscribePendingPlacesSpy = vi.spyOn(repo, 'subscribePendingPlaces');
       const subscribeChatSpy = vi.spyOn(repo, 'subscribeChat');
+      const subscribeLogisticsSpy = vi.spyOn(repo, 'subscribeLogistics');
 
       expect(subscribeItinerarySpy).not.toHaveBeenCalled();
       expect(subscribePinsSpy).not.toHaveBeenCalled();
       expect(subscribePendingPlacesSpy).not.toHaveBeenCalled();
       expect(subscribeChatSpy).not.toHaveBeenCalled();
+      expect(subscribeLogisticsSpy).not.toHaveBeenCalled();
 
       createTripStore(repo, 'trip-1');
 
@@ -120,18 +122,21 @@ describe('tripStore', () => {
       expect(subscribePinsSpy).toHaveBeenCalledTimes(1);
       expect(subscribePendingPlacesSpy).toHaveBeenCalledTimes(1);
       expect(subscribeChatSpy).toHaveBeenCalledTimes(1);
+      expect(subscribeLogisticsSpy).toHaveBeenCalledTimes(1);
     });
 
-    it('teardown() unsubscribes all four subscriptions', () => {
+    it('teardown() unsubscribes all five subscriptions', () => {
       const repo = new InMemoryTripRepository({ itinerary: [makeDay()] });
       const unsubscribeItinerary = vi.fn();
       const unsubscribePins = vi.fn();
       const unsubscribePendingPlaces = vi.fn();
       const unsubscribeChat = vi.fn();
+      const unsubscribeLogistics = vi.fn();
       vi.spyOn(repo, 'subscribeItinerary').mockReturnValue(unsubscribeItinerary);
       vi.spyOn(repo, 'subscribePins').mockReturnValue(unsubscribePins);
       vi.spyOn(repo, 'subscribePendingPlaces').mockReturnValue(unsubscribePendingPlaces);
       vi.spyOn(repo, 'subscribeChat').mockReturnValue(unsubscribeChat);
+      vi.spyOn(repo, 'subscribeLogistics').mockReturnValue(unsubscribeLogistics);
 
       const { teardown } = createTripStore(repo, 'trip-1');
       teardown();
@@ -140,6 +145,7 @@ describe('tripStore', () => {
       expect(unsubscribePins).toHaveBeenCalledTimes(1);
       expect(unsubscribePendingPlaces).toHaveBeenCalledTimes(1);
       expect(unsubscribeChat).toHaveBeenCalledTimes(1);
+      expect(unsubscribeLogistics).toHaveBeenCalledTimes(1);
     });
 
     it('switching tripId tears down the old subscriptions before the new store starts its own', () => {

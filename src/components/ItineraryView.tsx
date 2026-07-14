@@ -15,7 +15,7 @@ import { formatDateToDisplay, getDayOfWeekInSpanish } from '../utils/date';
 import { useTripStore } from '../store/tripStore';
 import ActivityCard from './ActivityCard';
 import NewEntryForm from './NewEntryForm';
-import { DEFAULT_PARTICIPANTS } from './FriendChips';
+import { useDefaultParticipants } from './FriendChips';
 
 interface ItineraryViewProps {
   setActiveTab: (tab: ActiveTab) => void;
@@ -33,6 +33,7 @@ export default function ItineraryView({
   const deleteActivity = useTripStore(state => state.deleteActivity);
   const addDay = useTripStore(state => state.addDay);
   const updateActivityPeople = useTripStore(state => state.updateActivityPeople);
+  const defaultParticipants = useDefaultParticipants();
 
   const [showShareToast, setShowShareToast] = useState(false);
 
@@ -60,7 +61,7 @@ export default function ItineraryView({
   };
 
   const handleToggleActivityPerson = (day: ItineraryDay, activity: ItineraryActivity, name: string) => {
-    const currentPeople = activity.people && activity.people.length > 0 ? activity.people : DEFAULT_PARTICIPANTS;
+    const currentPeople = activity.people && activity.people.length > 0 ? activity.people : defaultParticipants;
     const updatedPeople = currentPeople.includes(name)
       ? currentPeople.filter(p => p !== name)
       : [...currentPeople, name];
@@ -78,7 +79,7 @@ export default function ItineraryView({
       title: newTitle,
       description: newDesc,
       location: newLocation,
-      people: DEFAULT_PARTICIPANTS
+      people: defaultParticipants,
     };
 
     if (daySelectionType === 'calendar') {

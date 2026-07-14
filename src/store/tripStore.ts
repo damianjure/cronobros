@@ -7,14 +7,18 @@ import type {
   PinnedPoint,
   PendingPlace,
   ChatMessage,
+  TripLogistics,
 } from '../types';
 import type { TripRepository } from '../services/ports';
+
+const EMPTY_LOGISTICS: TripLogistics = { drivers: [], vehicle: null };
 
 export interface TripStoreState {
   itinerary: ItineraryDay[];
   pins: PinnedPoint[];
   pendingPlaces: PendingPlace[];
   chatMessages: ChatMessage[];
+  logistics: TripLogistics;
 
   addActivity: (dayId: string, activity: ItineraryActivity) => Promise<void>;
   deleteActivity: (dayId: string, activityId: string) => Promise<void>;
@@ -24,6 +28,7 @@ export interface TripStoreState {
   addPendingPlace: (place: PendingPlace) => Promise<void>;
   deletePendingPlace: (placeId: string) => Promise<void>;
   addChatMessage: (message: ChatMessage) => Promise<void>;
+  updateLogistics: (logistics: TripLogistics) => Promise<void>;
 }
 
 export interface TripStoreHandle {
@@ -51,6 +56,7 @@ export function createTripStore(repository: TripRepository, tripId: string): Tri
     pins: [],
     pendingPlaces: [],
     chatMessages: [],
+    logistics: EMPTY_LOGISTICS,
 
     addActivity: (dayId, activity) => repository.addActivity(tripId, dayId, activity),
     deleteActivity: (dayId, activityId) => repository.deleteActivity(tripId, dayId, activityId),
@@ -61,6 +67,7 @@ export function createTripStore(repository: TripRepository, tripId: string): Tri
     addPendingPlace: place => repository.addPendingPlace(tripId, place),
     deletePendingPlace: placeId => repository.deletePendingPlace(tripId, placeId),
     addChatMessage: message => repository.addChatMessage(tripId, message),
+    updateLogistics: logistics => repository.updateLogistics(tripId, logistics),
   }));
 
   // Subscribed AFTER `create()` returns: the repository fires each callback
@@ -77,6 +84,9 @@ export function createTripStore(repository: TripRepository, tripId: string): Tri
   const unsubscribeChat = repository.subscribeChat(tripId, chatMessages =>
     store.setState({ chatMessages }),
   );
+  const unsubscribeLogistics = repository.subscribeLogistics(tripId, logistics =>
+    store.setState({ logistics }),
+  );
 
   return {
     store,
@@ -85,6 +95,7 @@ export function createTripStore(repository: TripRepository, tripId: string): Tri
       unsubscribePins();
       unsubscribePendingPlaces();
       unsubscribeChat();
+      unsubscribeLogistics();
     },
   };
 }

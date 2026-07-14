@@ -25,6 +25,8 @@ function setTripsState(overrides: Partial<TripsStoreState> = {}) {
     subscribeToUser: vi.fn(),
     createTrip: vi.fn(),
     deleteTrip: vi.fn(),
+    inviteMember: vi.fn(),
+    activatePendingInvites: vi.fn(),
     ...overrides,
   };
   mockedUseTripsStore.mockImplementation(<T,>(selector: (s: TripsStoreState) => T) => selector(state));
@@ -101,5 +103,14 @@ describe('TripsListView', () => {
     await user.click(screen.getByRole('button', { name: /eliminar/i }));
 
     expect(state.deleteTrip).toHaveBeenCalledWith('trip-1');
+  });
+
+  it('activates pending invites for the signed-in uid/email on mount (spec: activation on sign-in)', () => {
+    setAuthState({ uid: 'user-1', email: 'user1@example.com' } as AuthState['user']);
+    const state = setTripsState();
+
+    render(<TripsListView onSelectTrip={vi.fn()} />);
+
+    expect(state.activatePendingInvites).toHaveBeenCalledWith('user-1', 'user1@example.com');
   });
 });
