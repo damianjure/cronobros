@@ -8,6 +8,7 @@ import LogisticsView from './components/LogisticsView';
 import MapView from './components/MapView';
 import PlacesView from './components/PlacesView';
 import Toast from './components/Toast';
+import SettingsPanel from './components/SettingsPanel';
 
 import { ActiveTab, ItineraryActivity } from './types';
 import { friends } from './data';
@@ -18,6 +19,7 @@ import { Mail, Check, UserPlus, X, Trash2 } from 'lucide-react';
 export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showSettings, setShowSettings] = useState(false);
 
   const addActivity = useTripStore(state => state.addActivity);
   const showToast = useToastStore(state => state.showToast);
@@ -99,7 +101,7 @@ export default function App() {
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         onNotificationClick={() => console.log('Centro de notificaciones abierto')}
-        onSettingsClick={() => showToast('¡Configuración cambiada! Parámetros de modo oscuro e idioma cargados en segundo plano.')}
+        onSettingsClick={() => setShowSettings(true)}
       />
 
       {/* Main Layout container */}
@@ -228,6 +230,8 @@ export default function App() {
           </div>
         </div>
       )}
+
+      <SettingsPanel isOpen={showSettings} onClose={() => setShowSettings(false)} />
 
       <Toast />
 

@@ -20,6 +20,8 @@ import { Driver } from '../types';
 import { initialDrivers, activeVehicle } from '../data';
 import { useTripStore } from '../store/tripStore';
 import { useToastStore } from '../store/toastStore';
+import { useSettingsStore } from '../store/settingsStore';
+import { formatCurrency } from '../utils/currency';
 import {
   ResponsiveContainer,
   AreaChart,
@@ -36,6 +38,7 @@ import {
 export default function LogisticsView() {
   const itinerary = useTripStore(state => state.itinerary);
   const showToast = useToastStore(state => state.showToast);
+  const currency = useSettingsStore(state => state.currency);
   const [drivers] = useState<Driver[]>(initialDrivers);
   const [fuelBudgetUsed, setFuelBudgetUsed] = useState(420);
   const [fuelLimit] = useState(650);
@@ -253,13 +256,13 @@ export default function LogisticsView() {
               <div className="space-y-1">
                 <span className="text-[8px] font-black uppercase tracking-widest text-brand-outline block">Total Proyectado</span>
                 <span className="text-lg font-serif font-black italic text-brand-primary block">
-                  {chartMetric === 'fuel' ? `${totalProjFuel} Litros` : `$${totalProjCost} USD`}
+                  {chartMetric === 'fuel' ? `${totalProjFuel} Litros` : formatCurrency(totalProjCost, currency)}
                 </span>
               </div>
               <div className="space-y-1">
                 <span className="text-[8px] font-black uppercase tracking-widest text-brand-outline block">Total Real (Simulado)</span>
                 <span className="text-lg font-serif font-black italic text-brand-primary block">
-                  {chartMetric === 'fuel' ? `${totalRealFuel} Litros` : `$${totalRealCost} USD`}
+                  {chartMetric === 'fuel' ? `${totalRealFuel} Litros` : formatCurrency(totalRealCost, currency)}
                 </span>
               </div>
               <div className="space-y-1">
@@ -281,12 +284,12 @@ export default function LogisticsView() {
                     costDiff >= 0 ? (
                       <>
                         <TrendingDown className="w-4 h-4 text-emerald-700 shrink-0" />
-                        <span className="text-xs font-bold text-emerald-700">-${Math.abs(costDiff)} USD (Bajo Pres.)</span>
+                        <span className="text-xs font-bold text-emerald-700">-{formatCurrency(Math.abs(costDiff), currency)} (Bajo Pres.)</span>
                       </>
                     ) : (
                       <>
                         <TrendingUp className="w-4 h-4 text-red-700 shrink-0" />
-                        <span className="text-xs font-bold text-red-700">+${Math.abs(costDiff)} USD (Sobre Pres.)</span>
+                        <span className="text-xs font-bold text-red-700">+{formatCurrency(Math.abs(costDiff), currency)} (Sobre Pres.)</span>
                       </>
                     )
                   )}
