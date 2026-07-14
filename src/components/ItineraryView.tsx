@@ -1,71 +1,47 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   Share,
   Plus,
   ChevronRight,
-  MoreHorizontal,
   MapPin,
   Clock,
   CheckCircle2,
   Bookmark,
-  FileText,
-  Upload,
   Bed,
   Star,
-  Compass,
   TrendingDown,
   Trash2,
   CalendarDays,
-  ExternalLink,
   Users
 } from 'lucide-react';
-import { ItineraryDay, ItineraryActivity } from '../types';
-
-export function formatDateToDisplay(dateStr: string): string {
-  if (!dateStr) return '';
-  if (dateStr.includes('Ago') || dateStr.includes('Ene') || dateStr.includes('Feb') || dateStr.includes('Mar') || dateStr.includes('Abr') || dateStr.includes('May') || dateStr.includes('Jun') || dateStr.includes('Jul') || dateStr.includes('Sep') || dateStr.includes('Oct') || dateStr.includes('Nov') || dateStr.includes('Dic')) {
-    return dateStr;
-  }
-  const dateParts = dateStr.split('-');
-  if (dateParts.length === 3) {
-    const d = new Date(Number(dateParts[0]), Number(dateParts[1]) - 1, Number(dateParts[2]));
-    if (isNaN(d.getTime())) return dateStr;
-    const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-    return `${d.getDate()} ${months[d.getMonth()]}`;
-  }
-  return dateStr;
-}
-
-export function getDayOfWeekInSpanish(dateStr: string): string {
-  const dateParts = dateStr.split('-');
-  if (dateParts.length === 3) {
-    const d = new Date(Number(dateParts[0]), Number(dateParts[1]) - 1, Number(dateParts[2]));
-    if (isNaN(d.getTime())) return 'Lunes';
-    const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-    return days[d.getDay()];
-  }
-  return 'Lunes';
-}
+import { ActiveTab, ItineraryDay, ItineraryActivity } from '../types';
+import { friends } from '../data';
+import { formatDateToDisplay, getDayOfWeekInSpanish } from '../utils/date';
+import { useTripStore } from '../store/tripStore';
 
 interface ItineraryViewProps {
-  itinerary: ItineraryDay[];
-  setItinerary: React.Dispatch<React.SetStateAction<ItineraryDay[]>>;
-  setActiveTab: (tab: string) => void;
+  setActiveTab: (tab: ActiveTab) => void;
   showNewEntryModal: boolean;
   setShowNewEntryModal: (show: boolean) => void;
 }
 
+const DEFAULT_PARTICIPANTS = friends.map(f => f.name);
+
 export default function ItineraryView({
-  itinerary,
-  setItinerary,
   setActiveTab,
   showNewEntryModal,
   setShowNewEntryModal,
 }: ItineraryViewProps) {
+  const itinerary = useTripStore(state => state.itinerary);
+  const addActivity = useTripStore(state => state.addActivity);
+  const deleteActivity = useTripStore(state => state.deleteActivity);
+  const addDay = useTripStore(state => state.addDay);
+  const updateActivityPeople = useTripStore(state => state.updateActivityPeople);
+
   const [showShareToast, setShowShareToast] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Which activity's participants popover is currently open (null = none)
+  const [openPeoplePickerId, setOpenPeoplePickerId] = useState<string | null>(null);
 
   // New activity form states
   const [newDayId, setNewDayId] = useState('day-1');
@@ -84,17 +60,15 @@ export default function ItineraryView({
   };
 
   const handleDeleteActivity = (dayId: string, actId: string) => {
-    setItinerary(prev =>
-      prev.map(day => {
-        if (day.id === dayId) {
-          return {
-            ...day,
-            activities: day.activities.filter(act => act.id !== actId)
-          };
-        }
-        return day;
-      })
-    );
+    deleteActivity(dayId, actId);
+  };
+
+  const handleToggleActivityPerson = (day: ItineraryDay, activity: ItineraryActivity, name: string) => {
+    const currentPeople = activity.people && activity.people.length > 0 ? activity.people : DEFAULT_PARTICIPANTS;
+    const updatedPeople = currentPeople.includes(name)
+      ? currentPeople.filter(p => p !== name)
+      : [...currentPeople, name];
+    updateActivityPeople(day.id, activity.id, updatedPeople);
   };
 
   const handleAddActivity = (e: React.FormEvent) => {
@@ -108,105 +82,34 @@ export default function ItineraryView({
       title: newTitle,
       description: newDesc,
       location: newLocation,
-      people: ['Alex Thorne', 'Sarah Miller', 'James', 'Maya', 'Sofía', 'Mateo']
+      people: DEFAULT_PARTICIPANTS
     };
 
-    setItinerary(prev => {
-      let updatedList = [...prev];
-      let targetDayId = newDayId;
-
-      if (daySelectionType === 'calendar') {
-        const existingDay = prev.find(day => day.date === newDayDate);
-        if (existingDay) {
-          targetDayId = existingDay.id;
-        } else {
-          const newDayIdStr = `day-${Date.now()}`;
-          const newDay: ItineraryDay = {
-            id: newDayIdStr,
-            dayNumber: 0,
-            date: newDayDate,
-            dayOfWeek: getDayOfWeekInSpanish(newDayDate),
-            title: `Exploración (${formatDateToDisplay(newDayDate)})`,
-            location: 'Islandia',
-            activities: []
-          };
-          updatedList.push(newDay);
-          targetDayId = newDayIdStr;
-        }
+    if (daySelectionType === 'calendar') {
+      const existingDay = itinerary.find(day => day.date === newDayDate);
+      if (existingDay) {
+        addActivity(existingDay.id, newActivity);
+      } else {
+        const newDay: ItineraryDay = {
+          id: `day-${Date.now()}`,
+          dayNumber: 0, // repository re-indexes all days after inserting
+          date: newDayDate,
+          dayOfWeek: getDayOfWeekInSpanish(newDayDate),
+          title: `Exploración (${formatDateToDisplay(newDayDate)})`,
+          location: 'Islandia',
+          activities: [newActivity]
+        };
+        addDay(newDay);
       }
-
-      updatedList = updatedList.map(day => {
-        if (day.id === targetDayId) {
-          return {
-            ...day,
-            activities: [...day.activities, newActivity]
-          };
-        }
-        return day;
-      });
-
-      // Sort chronologically by date
-      updatedList.sort((a, b) => a.date.localeCompare(b.date));
-
-      // Re-index all day numbers
-      updatedList = updatedList.map((day, index) => ({
-        ...day,
-        dayNumber: index + 1
-      }));
-
-      return updatedList;
-    });
+    } else {
+      addActivity(newDayId, newActivity);
+    }
 
     // Reset Form
     setNewTitle('');
     setNewDesc('');
     setNewLocation('');
     setShowNewEntryModal(false);
-  };
-
-  // Simulate Smart Import PDF Parse
-  const handleSmartImport = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setIsUploading(true);
-      setUploadProgress(10);
-      
-      const interval = setInterval(() => {
-        setUploadProgress(prev => {
-          if (prev >= 100) {
-            clearInterval(interval);
-            setTimeout(() => {
-              // Add a parsed parsed flight / ticket activity to Day 1
-              const importedActivity: ItineraryActivity = {
-                id: `act-import-${Date.now()}`,
-                time: '8:15 AM',
-                type: 'Adventure',
-                title: 'Llegada de Vuelo Analizada (KEF)',
-                description: 'El vuelo FI-204 de Boston aterrizó a tiempo. Equipaje recogido en la banda 4. Recogida directa de Land Rover Defender alquilado.',
-                location: 'Aeropuerto Internacional de Keflavík',
-                status: 'Smart Imported'
-              };
-
-              setItinerary(prev => 
-                prev.map(day => {
-                  if (day.id === 'day-1') {
-                    return {
-                      ...day,
-                      activities: [importedActivity, ...day.activities]
-                    };
-                  }
-                  return day;
-                })
-              );
-
-              setIsUploading(false);
-              setUploadProgress(0);
-            }, 800);
-            return 100;
-          }
-          return prev + 15;
-        });
-      }, 150);
-    }
   };
 
   return (
@@ -363,32 +266,25 @@ export default function ItineraryView({
                           </p>
 
                           {/* Friends / Participants list on the activity card */}
-                          <div className="mt-4 pt-3 border-t border-brand-primary/5 flex flex-col gap-1.5">
+                          <div className="mt-4 pt-3 border-t border-brand-primary/5 flex flex-col gap-1.5 relative">
                             <span className="text-[9px] font-black uppercase tracking-wider text-brand-outline flex items-center gap-1">
                               <Users className="w-3 h-3 text-brand-primary/50" />
                               <span>Amigos en este recorrido:</span>
                             </span>
                             <div className="flex flex-wrap items-center gap-1">
-                              {(activity.people && activity.people.length > 0 ? activity.people : ['Alex Thorne', 'Sarah Miller', 'James', 'Maya', 'Sofía', 'Mateo']).map((personName) => {
-                                const matchedFriend = [
-                                  { id: 'alex', name: 'Alex Thorne', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC4B5JPVpAuZzSoy3FOKnNgVzKzEXrZIk7UFw2O17ZbZ4SrNyqWuSDoPC39FZecjNMatQ4G4uhMHBavH8Or4Y_bMvbp6C8ow_I3MyoUbypn6bmancOLfJnbDOAHJBRbDJN-w94UqC0D8FSvrT6hP2Xg8LVOgF74_R9zOcZqkmSnGyt4OYBBt3Tj0YXhKICvDl8ZqncCGvfUBScEKQL2TcsOn1KYLe65ApjYQjol-ng4dRjrQDQ45DQgNIrY2ASp__0tOo1WXy1wI1kq' },
-                                  { id: 'sarah', name: 'Sarah Miller', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDfFQUgXGvEuDKvhZO0ButMHU_vysIYP7RkgQDECitwhIjeKNPxmnN1rqaSfnQ8TecNnu6Q9aCBg4daAI559ycoyReMPHCmO5QxkBvyNOB8Tizo1RC2OpDCVLouElZEdvhqHP4cpj-n5jw7GXqY8yeothMjnMQeHZeev1Gywxjn8n_yVtFXiHYQiVICXdf3bRCg8wlTqSw_oEMK0aMTiIu8PQTIO_HsKpkDm3w-Bj2Qdst45JVV7sKssASFgH-SYx1kU0BTFo5qVPLZ' },
-                                  { id: 'james', name: 'James', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCHjNJ4pnfvzfQ0YItd7YHU2x_L7AASDOE3HpbZvqrrwCbWgzGvwqMxFnSzl32YcK4JvjOl3zWq0Urs9TVYlhIGvKIaMrpVaTfAqF_d-xANEw5e_UfOPB53jcOYRYznBc9tyB9w3BUWCi6DcB_I2OPw71g25WOoMroD84ISG10pdoh0ouLDp-0o_BjV5JlcKzGjxUxj8j-69cm1nFsu4_zU1rG57lUYwuZr_Zp29F6tZb_P9d8dCDGT1mb4-0MKvtfPC1ccjSyKZebv' },
-                                  { id: 'maya', name: 'Maya', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBASr24FgG3vzWTsDBsDfYRpGRsrizvm6jVMGJpXnT_osDk3Xh2_4Pwsjb68JkpjHPd6dOtI9GYaAOI45_NtWBgPEUuVc21ouwj19OF4eehIMGE6ebp7gDNA9ZGeg8u4aiQU8_c--C9p360niDkPVg0TF_aVIH0gHiL7N4gkL1kJW_dh7ZdJn2vE8FQbY_g_bvjdTfxO-hXRARP-ZnjO-Wvc0o1WePDjEwaOboQLUaJ8O90ngK347qcjrwDkVs2ox-Z2QyjWdwH2p8c' },
-                                  { id: 'sofia', name: 'Sofía', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC_scvakiKbrrrRI_-Pm2qEKrgr42w-Zxnzfo1elMxW-rblu18TPbSGvrqUpslnCSJswJyezA3RB93Bj4MhSFwkTgD6OaZF2UOycSOQEP-ZGbSZYR2dUHB83651Y26BzJMxAGj0Je8w8OxXBsB-12sjBlVwtvZT2qO-9oZEYUt8JNzg0niZMMZTdvTaDa-hT-wzSCqzNgxoCv2rh_hg1LScTbdhGOY2CT77m02PSoTFnbTkdEtPfPofPPifuj0OfUpGXwwr-s10U-54' },
-                                  { id: 'mateo', name: 'Mateo', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&q=80' }
-                                ].find(f => f.name === personName);
+                              {(activity.people && activity.people.length > 0 ? activity.people : DEFAULT_PARTICIPANTS).map((personName) => {
+                                const matchedFriend = friends.find(f => f.name === personName);
                                 return (
-                                  <div 
+                                  <div
                                     key={personName}
                                     className="flex items-center gap-1 px-1.5 py-0.5 bg-brand-background border border-brand-primary/5 text-[9px] font-bold text-brand-primary"
                                     title={personName}
                                   >
                                     {matchedFriend && (
-                                      <img 
-                                        src={matchedFriend.avatar} 
+                                      <img
+                                        src={matchedFriend.avatar}
                                         alt={personName}
-                                        className="w-3.5 h-3.5 rounded-full object-cover shrink-0" 
+                                        className="w-3.5 h-3.5 rounded-full object-cover shrink-0"
                                       />
                                     )}
                                     <span>{personName}</span>
@@ -396,55 +292,58 @@ export default function ItineraryView({
                                 );
                               })}
 
-                              {/* Simple edit handler to add/remove friends */}
+                              {/* Accessible multi-select trigger to add/remove participants */}
                               <button
-                                onClick={() => {
-                                  const nameToToggle = prompt(
-                                    `Escribe el nombre de un amigo para agregarlo/quitarlo de esta actividad:\n- Alex Thorne\n- Sarah Miller\n- James\n- Maya\n- Sofía\n- Mateo`,
-                                    ""
-                                  );
-                                  if (nameToToggle) {
-                                    const validFriends = ['Alex Thorne', 'Sarah Miller', 'James', 'Maya', 'Sofía', 'Mateo'];
-                                    const matched = validFriends.find(f => f.toLowerCase().includes(nameToToggle.toLowerCase()));
-                                    if (matched) {
-                                      const currentPeople = activity.people && activity.people.length > 0
-                                        ? activity.people
-                                        : ['Alex Thorne', 'Sarah Miller', 'James', 'Maya', 'Sofía', 'Mateo'];
-                                      
-                                      let updatedPeople;
-                                      if (currentPeople.includes(matched)) {
-                                        updatedPeople = currentPeople.filter(p => p !== matched);
-                                      } else {
-                                        updatedPeople = [...currentPeople, matched];
-                                      }
-
-                                      // Save state using passed setItinerary
-                                      setItinerary(prevItinerary =>
-                                        prevItinerary.map(d => {
-                                          if (d.id === day.id) {
-                                            return {
-                                              ...d,
-                                              activities: d.activities.map(act => {
-                                                if (act.id === activity.id) {
-                                                  return { ...act, people: updatedPeople };
-                                                }
-                                                return act;
-                                              })
-                                            };
-                                          }
-                                          return d;
-                                        })
-                                      );
-                                    } else {
-                                      alert("Amigo no encontrado. Intenta con un nombre de la lista.");
-                                    }
-                                  }
-                                }}
+                                type="button"
+                                onClick={() => setOpenPeoplePickerId(prev => (prev === activity.id ? null : activity.id))}
+                                aria-haspopup="true"
+                                aria-expanded={openPeoplePickerId === activity.id}
+                                aria-controls={`people-picker-${activity.id}`}
                                 className="px-2 py-0.5 border border-dashed border-brand-primary/30 hover:bg-brand-primary/5 text-brand-primary text-[8px] font-bold uppercase tracking-wider flex items-center gap-1 transition-all cursor-pointer"
                               >
                                 <span>+ / - Integrantes</span>
                               </button>
                             </div>
+
+                            {openPeoplePickerId === activity.id && (
+                              <div
+                                id={`people-picker-${activity.id}`}
+                                role="group"
+                                aria-label={`Elegir integrantes de ${activity.title}`}
+                                className="absolute z-20 top-full left-0 mt-1 w-56 bg-white border border-brand-primary/15 shadow-lg p-2 grid grid-cols-1 gap-1"
+                              >
+                                {friends.map((friend) => {
+                                  const currentPeople = activity.people && activity.people.length > 0 ? activity.people : DEFAULT_PARTICIPANTS;
+                                  const isChecked = currentPeople.includes(friend.name);
+                                  return (
+                                    <label
+                                      key={friend.id}
+                                      className="flex items-center gap-2 px-1.5 py-1 hover:bg-brand-primary/5 cursor-pointer text-[10px] font-semibold text-brand-primary"
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        checked={isChecked}
+                                        onChange={() => handleToggleActivityPerson(day, activity, friend.name)}
+                                        className="cursor-pointer"
+                                      />
+                                      <img
+                                        src={friend.avatar}
+                                        alt=""
+                                        className="w-4 h-4 rounded-full object-cover shrink-0"
+                                      />
+                                      <span>{friend.name}</span>
+                                    </label>
+                                  );
+                                })}
+                                <button
+                                  type="button"
+                                  onClick={() => setOpenPeoplePickerId(null)}
+                                  className="mt-1 py-1 text-[9px] font-bold uppercase tracking-widest text-brand-outline hover:text-brand-primary cursor-pointer"
+                                >
+                                  Cerrar
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </div>
 
@@ -571,7 +470,7 @@ export default function ItineraryView({
                 <label className="block text-[8px] font-black text-brand-outline uppercase tracking-widest mb-1">Tipo</label>
                 <select 
                   value={newType}
-                  onChange={(e) => setNewType(e.target.value as any)}
+                  onChange={(e) => setNewType(e.target.value as ItineraryActivity['type'])}
                   className="w-full bg-white border border-brand-primary/10 rounded-none py-2 px-2.5 text-xs focus:outline-none focus:border-brand-primary/30 transition-all font-sans"
                 >
                   <option value="Relaxation">Relajación</option>
@@ -782,7 +681,7 @@ export default function ItineraryView({
                   <label className="block text-[9px] font-black text-brand-outline uppercase tracking-widest mb-1.5">Tipo</label>
                   <select 
                     value={newType}
-                    onChange={(e) => setNewType(e.target.value as any)}
+                    onChange={(e) => setNewType(e.target.value as ItineraryActivity['type'])}
                     className="w-full bg-white border border-brand-primary/10 rounded-none py-2.5 px-3 text-xs focus:outline-none focus:border-brand-primary/30 transition-all font-sans"
                   >
                     <option value="Relaxation">Relajación</option>

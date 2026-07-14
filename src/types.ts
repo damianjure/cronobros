@@ -81,3 +81,9 @@ export interface PendingPlace {
   location: string;
   people?: string[];
 }
+
+export interface Friend {
+  id: string;
+  name: string;
+  avatar: string;
+}

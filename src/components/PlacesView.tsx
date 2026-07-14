@@ -1,38 +1,33 @@
 import React, { useState } from 'react';
-import { 
-  MapPin, 
-  Plus, 
-  Check, 
-  Trash2, 
-  Sparkles, 
-  Bookmark, 
-  HelpCircle,
+import {
+  MapPin,
+  Plus,
+  Check,
+  Trash2,
+  Sparkles,
+  Bookmark,
   Users
 } from 'lucide-react';
-import { PendingPlace, ItineraryDay } from '../types';
+import { PendingPlace } from '../types';
+import { friends } from '../data';
+import { useTripStore } from '../store/tripStore';
+import { useToastStore } from '../store/toastStore';
 
-interface PlacesViewProps {
-  pendingPlaces: PendingPlace[];
-  setPendingPlaces: React.Dispatch<React.SetStateAction<PendingPlace[]>>;
-  onApprovePlace: (placeId: string, dayId: string) => void;
-  itinerary: ItineraryDay[];
-  friends: { id: string; name: string; avatar: string }[];
-}
+export default function PlacesView() {
+  const pendingPlaces = useTripStore(state => state.pendingPlaces);
+  const itinerary = useTripStore(state => state.itinerary);
+  const addPendingPlace = useTripStore(state => state.addPendingPlace);
+  const deletePendingPlace = useTripStore(state => state.deletePendingPlace);
+  const approvePlace = useTripStore(state => state.approvePlace);
+  const showToast = useToastStore(state => state.showToast);
 
-export default function PlacesView({
-  pendingPlaces,
-  setPendingPlaces,
-  onApprovePlace,
-  itinerary,
-  friends
-}: PlacesViewProps) {
   // Form states
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<'Relajación' | 'Gastronomía' | 'Turismo' | 'Aventura' | 'Alojamiento'>('Turismo');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
   const [selectedPeople, setSelectedPeople] = useState<string[]>(friends.map(f => f.name));
-  
+
   // Day selection per pending card
   const [selectedDays, setSelectedDays] = useState<Record<string, string>>({});
 
@@ -57,8 +52,8 @@ export default function PlacesView({
       people: selectedPeople.length > 0 ? selectedPeople : friends.map(f => f.name)
     };
 
-    setPendingPlaces(prev => [newPlace, ...prev]);
-    
+    addPendingPlace(newPlace);
+
     // Reset Form
     setTitle('');
     setDescription('');
@@ -67,7 +62,12 @@ export default function PlacesView({
   };
 
   const handleDeletePending = (id: string) => {
-    setPendingPlaces(prev => prev.filter(p => p.id !== id));
+    deletePendingPlace(id);
+  };
+
+  const handleApprovePlace = (placeId: string, dayId: string, placeTitle: string) => {
+    approvePlace(placeId, dayId);
+    showToast(`¡"${placeTitle}" ha sido aprobado! Se agregó al itinerario de ese día y como punto interactivo en el mapa.`);
   };
 
   return (
@@ -102,7 +102,7 @@ export default function PlacesView({
                 </label>
                 <select
                   value={category}
-                  onChange={(e) => setCategory(e.target.value as any)}
+                  onChange={(e) => setCategory(e.target.value as PendingPlace['category'])}
                   className="w-full bg-brand-background border border-brand-primary/10 rounded-none py-2.5 px-2 text-xs focus:outline-none focus:border-brand-primary/30 font-sans"
                 >
                   <option value="Turismo">Turismo</option>
@@ -293,7 +293,7 @@ export default function PlacesView({
                       </div>
 
                       <button
-                        onClick={() => onApprovePlace(place.id, currentDaySelection)}
+                        onClick={() => handleApprovePlace(place.id, currentDaySelection, place.title)}
                         className="w-full bg-brand-secondary hover:bg-brand-secondary/90 text-brand-primary py-2.5 rounded-none font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-none"
                       >
                         <Check className="w-3.5 h-3.5 stroke-[3px]" />

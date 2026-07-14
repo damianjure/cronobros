@@ -5,11 +5,8 @@ import {
   Calendar,
   Building,
   Fuel,
-  CreditCard,
-  Gauge,
   Clock,
   Navigation,
-  Compass,
   ArrowUpRight,
   MoreHorizontal,
   Plus,
@@ -19,8 +16,10 @@ import {
   TrendingDown,
   Info
 } from 'lucide-react';
-import { Driver, ItineraryDay } from '../types';
+import { Driver } from '../types';
 import { initialDrivers, activeVehicle } from '../data';
+import { useTripStore } from '../store/tripStore';
+import { useToastStore } from '../store/toastStore';
 import {
   ResponsiveContainer,
   AreaChart,
@@ -34,14 +33,12 @@ import {
   Legend
 } from 'recharts';
 
-interface LogisticsViewProps {
-  itinerary?: ItineraryDay[];
-}
-
-export default function LogisticsView({ itinerary = [] }: LogisticsViewProps) {
-  const [drivers, setDrivers] = useState<Driver[]>(initialDrivers);
+export default function LogisticsView() {
+  const itinerary = useTripStore(state => state.itinerary);
+  const showToast = useToastStore(state => state.showToast);
+  const [drivers] = useState<Driver[]>(initialDrivers);
   const [fuelBudgetUsed, setFuelBudgetUsed] = useState(420);
-  const [fuelLimit, setFuelLimit] = useState(650);
+  const [fuelLimit] = useState(650);
   const [transactions, setTransactions] = useState([
     { location: 'Selfoss N1', amount: 84.20, time: 'Ayer' },
     { location: 'Reykjavik Shell', amount: 95.50, time: '12 Ago' }
@@ -631,8 +628,8 @@ export default function LogisticsView({ itinerary = [] }: LogisticsViewProps) {
               </div>
             </div>
 
-            <button 
-              onClick={() => alert("Simulando el lanzamiento de las coordenadas de navegación de Google Maps: Aeropuerto de KEF - Zona B-4, Nordic Nomad Rentals.")}
+            <button
+              onClick={() => showToast('Simulando el lanzamiento de las coordenadas de navegación de Google Maps: Aeropuerto de KEF - Zona B-4, Nordic Nomad Rentals.')}
               className="w-full py-2.5 bg-brand-primary hover:bg-brand-primary/90 text-white rounded-none font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-none transition-all cursor-pointer active:scale-95"
             >
               <Navigation className="w-4 h-4 fill-current" />
@@ -663,8 +660,8 @@ export default function LogisticsView({ itinerary = [] }: LogisticsViewProps) {
             </p>
 
             <div className="mt-5 flex justify-end gap-3">
-              <button 
-                onClick={() => alert("Contrato PDF simulado descargado.")}
+              <button
+                onClick={() => showToast('Contrato PDF simulado descargado.')}
                 className="py-2 px-4 border border-brand-primary/10 text-brand-primary rounded-none font-bold text-[10px] uppercase tracking-widest hover:bg-brand-primary/5 transition-all cursor-pointer"
               >
                 Descargar PDF

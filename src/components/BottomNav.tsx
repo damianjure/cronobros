@@ -1,14 +1,12 @@
-import React from 'react';
-import { LayoutDashboard, Calendar, Plus, Map, Truck, MapPin } from 'lucide-react';
+import { LayoutDashboard, Calendar, Map, Truck, MapPin } from 'lucide-react';
 import { ActiveTab } from '../types';
 
 interface BottomNavProps {
   activeTab: ActiveTab;
   setActiveTab: (tab: ActiveTab) => void;
-  onAddClick: () => void;
 }
 
-export default function BottomNav({ activeTab, setActiveTab, onAddClick }: BottomNavProps) {
+export default function BottomNav({ activeTab, setActiveTab }: BottomNavProps) {
   return (
     <div className="md:hidden fixed bottom-0 left-0 w-full bg-white dark:bg-zinc-950 border-t border-brand-outline-variant/30 flex justify-around items-center h-16 shadow-[0_-4px_20px_rgba(0,30,64,0.05)] z-50">
       <button

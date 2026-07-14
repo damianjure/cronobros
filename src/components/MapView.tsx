@@ -1,28 +1,23 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
-  Map,
   Layers,
   ZoomIn,
   ZoomOut,
   Compass,
   Navigation,
   Share,
-  Pin,
   MapPin,
   Star,
-  Sparkles,
-  Search,
-  Check,
-  ChevronRight
+  Search
 } from 'lucide-react';
 import { PinnedPoint } from '../types';
+import { useTripStore } from '../store/tripStore';
+import { useToastStore } from '../store/toastStore';
 
-interface MapViewProps {
-  pins: PinnedPoint[];
-  setPins: React.Dispatch<React.SetStateAction<PinnedPoint[]>>;
-}
+export default function MapView() {
+  const pins = useTripStore(state => state.pins);
+  const showToast = useToastStore(state => state.showToast);
 
-export default function MapView({ pins, setPins }: MapViewProps) {
   const [activePin, setActivePin] = useState<PinnedPoint | null>(null);
   const [isTerrainActive, setIsTerrainActive] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1);
@@ -36,7 +31,7 @@ export default function MapView({ pins, setPins }: MapViewProps) {
   const handleStartNavigation = () => {
     setIsNavigating(true);
     setTimeout(() => {
-      alert("Navegación GPX en tiempo real simulada iniciada. Destino: Laguna Glaciar de Jökulsárlón.");
+      showToast('Navegación GPX en tiempo real simulada iniciada. Destino: Laguna Glaciar de Jökulsárlón.');
       setIsNavigating(false);
     }, 2000);
   };
@@ -126,8 +121,8 @@ export default function MapView({ pins, setPins }: MapViewProps) {
         {/* Sidebar Invitation prompt */}
         <div className="p-4 bg-brand-background border-t border-brand-primary/10 shrink-0">
           <p className="text-[9px] text-brand-outline text-center mb-2 font-black uppercase tracking-wider">¡Invita amigos para planificar la ruta!</p>
-          <button 
-            onClick={() => alert("¡Enlace de invitación copiado al portapapeles!")}
+          <button
+            onClick={() => showToast('¡Enlace de invitación copiado al portapapeles!')}
             className="w-full bg-brand-primary hover:bg-brand-primary/90 text-white py-2.5 rounded-none font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-1.5 shadow-none cursor-pointer active:scale-95"
           >
             <span>Compartir Espacio de Mapa</span>
@@ -318,8 +313,8 @@ export default function MapView({ pins, setPins }: MapViewProps) {
                 <span>{isNavigating ? "Iniciando..." : "Iniciar Navegación"}</span>
               </button>
               
-              <button 
-                onClick={() => alert("Archivo GPX de la ruta descargado.")}
+              <button
+                onClick={() => showToast('Archivo GPX de la ruta descargado.')}
                 className="p-3 border border-brand-primary/10 bg-white hover:bg-brand-background text-brand-primary rounded-none transition-all cursor-pointer active:scale-95"
                 title="Compartir coordenadas de ruta"
               >

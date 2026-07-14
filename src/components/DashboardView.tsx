@@ -1,43 +1,35 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Navigation, 
-  CheckCircle2, 
-  Clock, 
-  Heart, 
-  Send, 
-  ChevronRight, 
-  Compass, 
+import React, { useState } from 'react';
+import {
+  Navigation,
+  CheckCircle2,
+  Clock,
+  Heart,
+  Send,
+  ChevronRight,
+  Compass,
   MessageSquare,
   Sparkles,
   Info
 } from 'lucide-react';
 import { ChatMessage, UpcomingHighlight, ActiveTab } from '../types';
 import { upcomingHighlights as initialHighlights } from '../data';
+import { useTripStore } from '../store/tripStore';
 import CriticalEventsCard from './CriticalEventsCard';
 
 interface DashboardViewProps {
-  chatMessages: ChatMessage[];
-  setChatMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
   setActiveTab: (tab: ActiveTab) => void;
 }
 
-export default function DashboardView({ 
-  chatMessages, 
-  setChatMessages,
-  setActiveTab
-}: DashboardViewProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>(chatMessages);
+export default function DashboardView({ setActiveTab }: DashboardViewProps) {
+  const messages = useTripStore(state => state.chatMessages);
+  const addChatMessage = useTripStore(state => state.addChatMessage);
+
   const [inputValue, setInputValue] = useState('');
   const [activeNote, setActiveNote] = useState(
     "Recuerda empacar los filtros impermeables para drones para la sesión de fotos de Skógafoss."
   );
   const [selectedHighlight, setSelectedHighlight] = useState<UpcomingHighlight | null>(null);
   const [showNextStopDetails, setShowNextStopDetails] = useState(false);
-
-  // Sync messages state to parent if needed
-  useEffect(() => {
-    setChatMessages(messages);
-  }, [messages, setChatMessages]);
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,7 +47,7 @@ export default function DashboardView({
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    addChatMessage(userMessage);
     const currentInput = inputValue;
     setInputValue('');
 
@@ -86,7 +78,7 @@ export default function DashboardView({
           content: replyContent,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         };
-        setMessages(prev => [...prev, friendReply]);
+        addChatMessage(friendReply);
       }, 1500);
     }
   };

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Search, Bell, Settings, Sun, Moon } from 'lucide-react';
+import { useState } from 'react';
+import { Search, Bell, Settings } from 'lucide-react';
 import { ActiveTab } from '../types';
 
 interface HeaderProps {

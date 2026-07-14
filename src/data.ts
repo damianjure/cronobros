@@ -1,4 +1,15 @@
-import { ItineraryDay, ChatMessage, UpcomingHighlight, Driver, Vehicle, PinnedPoint } from './types';
+import { ItineraryDay, ChatMessage, UpcomingHighlight, Driver, Vehicle, PinnedPoint, PendingPlace, Friend } from './types';
+
+// Single source of truth for the trip's friend group (id/name/avatar tuples).
+// Previously duplicated inline in App.tsx and ItineraryView.tsx.
+export const friends: Friend[] = [
+  { id: 'alex', name: 'Alex Thorne', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC4B5JPVpAuZzSoy3FOKnNgVzKzEXrZIk7UFw2O17ZbZ4SrNyqWuSDoPC39FZecjNMatQ4G4uhMHBavH8Or4Y_bMvbp6C8ow_I3MyoUbypn6bmancOLfJnbDOAHJBRbDJN-w94UqC0D8FSvrT6hP2Xg8LVOgF74_R9zOcZqkmSnGyt4OYBBt3Tj0YXhKICvDl8ZqncCGvfUBScEKQL2TcsOn1KYLe65ApjYQjol-ng4dRjrQDQ45DQgNIrY2ASp__0tOo1WXy1wI1kq' },
+  { id: 'sarah', name: 'Sarah Miller', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDfFQUgXGvEuDKvhZO0ButMHU_vysIYP7RkgQDECitwhIjeKNPxmnN1rqaSfnQ8TecNnu6Q9aCBg4daAI559ycoyReMPHCmO5QxkBvyNOB8Tizo1RC2OpDCVLouElZEdvhqHP4cpj-n5jw7GXqY8yeothMjnMQeHZeev1Gywxjn8n_yVtFXiHYQiVICXdf3bRCg8wlTqSw_oEMK0aMTiIu8PQTIO_HsKpkDm3w-Bj2Qdst45JVV7sKssASFgH-SYx1kU0BTFo5qVPLZ' },
+  { id: 'james', name: 'James', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCHjNJ4pnfvzfQ0YItd7YHU2x_L7AASDOE3HpbZvqrrwCbWgzGvwqMxFnSzl32YcK4JvjOl3zWq0Urs9TVYlhIGvKIaMrpVaTfAqF_d-xANEw5e_UfOPB53jcOYRYznBc9tyB9w3BUWCi6DcB_I2OPw71g25WOoMroD84ISG10pdoh0ouLDp-0o_BjV5JlcKzGjxUxj8j-69cm1nFsu4_zU1rG57lUYwuZr_Zp29F6tZb_P9d8dCDGT1mb4-0MKvtfPC1ccjSyKZebv' },
+  { id: 'maya', name: 'Maya', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBASr24FgG3vzWTsDBsDfYRpGRsrizvm6jVMGJpXnT_osDk3Xh2_4Pwsjb68JkpjHPd6dOtI9GYaAOI45_NtWBgPEUuVc21ouwj19OF4eehIMGE6ebp7gDNA9ZGeg8u4aiQU8_c--C9p360niDkPVg0TF_aVIH0gHiL7N4gkL1kJW_dh7ZdJn2vE8FQbY_g_bvjdTfxO-hXRARP-ZnjO-Wvc0o1WePDjEwaOboQLUaJ8O90ngK347qcjrwDkVs2ox-Z2QyjWdwH2p8c' },
+  { id: 'sofia', name: 'Sofía', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC_scvakiKbrrrRI_-Pm2qEKrgr42w-Zxnzfo1elMxW-rblu18TPbSGvrqUpslnCSJswJyezA3RB93Bj4MhSFwkTgD6OaZF2UOycSOQEP-ZGbSZYR2dUHB83651Y26BzJMxAGj0Je8w8OxXBsB-12sjBlVwtvZT2qO-9oZEYUt8JNzg0niZMMZTdvTaDa-hT-wzSCqzNgxoCv2rh_hg1LScTbdhGOY2CT77m02PSoTFnbTkdEtPfPofPPifuj0OfUpGXwwr-s10U-54' },
+  { id: 'mateo', name: 'Mateo', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&q=80' }
+];
 
 export const initialItinerary: ItineraryDay[] = [
   {
@@ -175,5 +186,32 @@ export const pinnedPoints: PinnedPoint[] = [
     category: 'Kayak Disponible',
     image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDCvvsyBqnATybhE2W1X0nWWtsMb8ygt1WCI1c0m5dUiWAN81iJ3txqFnPdtuEYJWiBUAP9aAQps9ukg3V1fPSZlCVo-sMokt1pvEK3duYN9CbsaRdA0wdumVJfKx6XfQjhw-1P2QdWLeO107cDyzxM88YEWgaRJzUsapYCRlnmrky43bpG3VTKVQL-znOczr_Dv5o608I0RjQH0EjTGeW31mDoKj5NvYUc2qCEjeeK2F6QlU4pMWxsSxCETeRrN3HpKzc3rdDHAb0l',
     coords: { x: 890, y: 420 }
+  }
+];
+
+export const initialPendingPlaces: PendingPlace[] = [
+  {
+    id: 'pending-1',
+    title: 'Restaurante Dill',
+    category: 'Gastronomía',
+    description: 'Alta cocina nórdica galardonada. Menú degustación con ingredientes hiperlocales de Islandia.',
+    location: 'Reikiavik',
+    people: ['Alex Thorne', 'Sarah Miller', 'James', 'Maya', 'Sofía', 'Mateo']
+  },
+  {
+    id: 'pending-2',
+    title: 'Caminata Volcánica Fagradalsfjall',
+    category: 'Aventura',
+    description: 'Caminata para explorar los campos de lava recientes en la península de Reykjanes.',
+    location: 'Grindavík',
+    people: ['Alex Thorne', 'James', 'Mateo']
+  },
+  {
+    id: 'pending-3',
+    title: 'Río Termal Reykjadalur',
+    category: 'Relajación',
+    description: 'Báñate en un río de agua caliente natural que fluye por un hermoso valle verde.',
+    location: 'Hveragerði',
+    people: ['Sarah Miller', 'Maya', 'Sofía', 'Mateo']
   }
 ];

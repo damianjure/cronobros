@@ -1,18 +1,17 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Plane, 
-  Key, 
-  Car, 
-  MapPin, 
-  Clock, 
-  Compass, 
-  Activity, 
-  Navigation, 
+import { useState, useEffect } from 'react';
+import {
+  Plane,
+  Key,
+  Car,
+  MapPin,
+  Clock,
+  Activity,
   AlertTriangle,
   Locate,
-  RefreshCw,
-  Sparkles
+  RefreshCw
 } from 'lucide-react';
+import { calculateDistanceInKm } from '../utils/geo';
+import { calculateCountdown } from '../utils/date';
 
 // Define the critical events type
 interface CriticalEvent {
@@ -63,19 +62,6 @@ const CRITICAL_EVENTS: CriticalEvent[] = [
     warningMessage: '🚨 ¡IMPOSTERGABLE! Penalización de $150 USD por retrasos en la devolución de la SUV.'
   }
 ];
-
-// Helper to calculate distance in Km between two GPS points
-function calculateDistanceInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
-  const R = 6371; // Earth's radius in km
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = 
-    Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-    Math.sin(dLon/2) * Math.sin(dLon/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  return R * c;
-}
 
 export default function CriticalEventsCard() {
   // Simulator preset options
@@ -154,23 +140,10 @@ export default function CriticalEventsCard() {
   // Calculates the remaining time relative to the target hour on the current day
   useEffect(() => {
     const updateCountdown = () => {
-      const [targetHour, targetMin] = activeEvent.targetTimeStr.split(':').map(Number);
-      const now = new Date();
-      
-      let targetDate = new Date();
-      targetDate.setHours(targetHour, targetMin, 0, 0);
-
-      // If the target time for today has already passed, set it for tomorrow
-      if (now.getTime() > targetDate.getTime()) {
-        targetDate.setDate(targetDate.getDate() + 1);
-      }
-
-      const diffMs = targetDate.getTime() - now.getTime();
-      const diffSecs = Math.floor(diffMs / 1000);
-
-      const hours = Math.floor(diffSecs / 3600);
-      const minutes = Math.floor((diffSecs % 3600) / 60);
-      const seconds = diffSecs % 60;
+      const { hours, minutes, seconds, targetDate } = calculateCountdown(
+        activeEvent.targetTimeStr,
+        new Date()
+      );
 
       setTimeLeft({
         hours,
@@ -203,9 +176,6 @@ export default function CriticalEventsCard() {
         return <Key className="w-6 h-6 text-brand-sunset stroke-[2.5px]" />;
     }
   };
-
-  // Determine alert level styling based on distance or time
-  const isUrgent = distance < 45;
 
   return (
     <div className="bg-white border border-brand-primary/10 rounded-none p-5 md:p-6 shadow-none flex flex-col xl:flex-row gap-6 relative overflow-hidden" id="critical-events-card">

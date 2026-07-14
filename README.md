@@ -18,3 +18,7 @@ View your app in AI Studio: https://ai.studio/apps/7532f770-b4c4-4d35-adf8-727cd
 2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
 3. Run the app:
    `npm run dev`
+
+## Dependency notes
+
+- `@google/genai` is currently unused by `src/` but is kept intentionally: it is reserved for the Phase 3 server-side Gemini integration (Smart Import PDF parsing) planned in the roadmap.
