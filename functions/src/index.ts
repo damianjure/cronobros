@@ -3,7 +3,7 @@ import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { activatePendingInvitesForUser } from './invitations';
-import { extractTravelActivities } from './smartImport';
+import { extractTravelActivities, extractTravelDocument, validateTravelDocument } from './smartImport';
 
 initializeApp();
 
@@ -52,6 +52,24 @@ export const importTravelText = onCall(
     }
     try {
       return await extractTravelActivities(text.trim());
+    } catch {
+      throw new HttpsError('internal', 'Could not extract travel activities.');
+    }
+  },
+);
+
+export const importTravelDocument = onCall(
+  { timeoutSeconds: 120, memory: '1GiB' },
+  async request => {
+    if (!request.auth?.uid) throw new HttpsError('unauthenticated', 'Authentication is required.');
+    let document: { data: string; mimeType: string };
+    try {
+      document = validateTravelDocument(request.data?.data, request.data?.mimeType);
+    } catch (error) {
+      throw new HttpsError('invalid-argument', error instanceof Error ? error.message : 'Invalid document.');
+    }
+    try {
+      return await extractTravelDocument(document.data, document.mimeType);
     } catch {
       throw new HttpsError('internal', 'Could not extract travel activities.');
     }

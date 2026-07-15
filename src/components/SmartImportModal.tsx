@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { LoaderCircle, Sparkles, Trash2, X } from 'lucide-react';
+import { FileUp, LoaderCircle, Sparkles, Trash2, X } from 'lucide-react';
 import {
   IMPORTED_ACTIVITY_TYPES,
   importTravelTextCallable,
+  importTravelDocumentCallable,
   type ImportedActivity,
   type TravelTextExtractor,
 } from '../services/smartImportCallable';
@@ -12,6 +13,7 @@ interface SmartImportModalProps {
   onClose: () => void;
   onConfirm: (activities: ImportedActivity[]) => Promise<void>;
   extract?: TravelTextExtractor;
+  extractDocument?: typeof importTravelDocumentCallable;
 }
 
 const TYPE_LABELS: Record<ImportedActivity['type'], string> = {
@@ -28,6 +30,7 @@ export default function SmartImportModal({
   onClose,
   onConfirm,
   extract = importTravelTextCallable,
+  extractDocument = importTravelDocumentCallable,
 }: SmartImportModalProps) {
   const [text, setText] = useState('');
   const [activities, setActivities] = useState<ImportedActivity[]>([]);
@@ -61,6 +64,19 @@ export default function SmartImportModal({
       setActivities(result.activities);
     } catch {
       setError('No pudimos analizar ese texto. Revisalo e intentá nuevamente.');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const analyzeFile = async (file: File) => {
+    setIsAnalyzing(true);
+    setError('');
+    try {
+      const result = await extractDocument(file);
+      setActivities(result.activities);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'No pudimos analizar ese archivo.');
     } finally {
       setIsAnalyzing(false);
     }
@@ -114,7 +130,21 @@ export default function SmartImportModal({
               placeholder="Ej.: Vuelo AR1132, 14/08/2026 a las 08:15 desde Ezeiza..."
               className="w-full border border-brand-primary/20 p-4 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
             />
-            <div className="flex justify-end">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <label className="flex cursor-pointer items-center gap-2 border border-brand-primary/20 px-4 py-3 text-xs font-bold uppercase tracking-wider text-brand-primary hover:bg-brand-primary/5">
+                <FileUp className="h-4 w-4" /> PDF o imagen
+                <input
+                  type="file"
+                  accept="application/pdf,image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  disabled={isAnalyzing}
+                  onChange={event => {
+                    const file = event.target.files?.[0];
+                    if (file) void analyzeFile(file);
+                    event.target.value = '';
+                  }}
+                />
+              </label>
               <button type="button" onClick={analyze} disabled={isAnalyzing} className="flex items-center gap-2 bg-brand-primary px-5 py-3 text-xs font-bold uppercase tracking-widest text-white disabled:opacity-60">
                 {isAnalyzing && <LoaderCircle className="h-4 w-4 animate-spin" />}
                 Analizar con IA

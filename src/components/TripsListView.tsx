@@ -65,7 +65,7 @@ export default function TripsListView({ onSelectTrip }: TripsListViewProps) {
             <input
               id="trip-name"
               type="text"
-              placeholder="Ej. Islandia 2026"
+              placeholder="Ej. Vacaciones 2026"
               value={name}
               onChange={e => setName(e.target.value)}
               className="w-full bg-white border border-brand-primary/10 rounded-none py-2.5 px-3 text-xs focus:outline-none focus:border-brand-primary/30 font-sans"

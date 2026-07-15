@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { parseSmartImportResponse } = require('../lib/smartImport');
+const { parseSmartImportResponse, validateTravelDocument } = require('../lib/smartImport');
 
 test('parses and normalizes structured travel activities', () => {
   const result = parseSmartImportResponse(JSON.stringify({
@@ -26,6 +26,12 @@ test('parses and normalizes structured travel activities', () => {
       type: 'Transportation',
     },
   ]);
+});
+
+test('accepts supported travel documents and rejects unsafe payloads', () => {
+  assert.deepEqual(validateTravelDocument('YWJj', 'application/pdf'), { data: 'YWJj', mimeType: 'application/pdf' });
+  assert.throws(() => validateTravelDocument('YWJj', 'text/html'), /no permitido/i);
+  assert.throws(() => validateTravelDocument('not base64!', 'image/png'), /inválido/i);
 });
 
 test('rejects malformed or empty model output', () => {

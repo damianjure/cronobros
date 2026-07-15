@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('../services/smartImportCallable', () => ({
   IMPORTED_ACTIVITY_TYPES: ['Transportation', 'Accommodation', 'Dining', 'Sightseeing', 'Adventure', 'Relaxation'],
   importTravelTextCallable: vi.fn(),
+  importTravelDocumentCallable: vi.fn(),
 }));
 
 import SmartImportModal from './SmartImportModal';
@@ -45,5 +46,20 @@ describe('SmartImportModal', () => {
     expect(onConfirm).toHaveBeenCalledWith([
       expect.objectContaining({ title: 'Vuelo confirmado', type: 'Transportation' }),
     ]);
+  });
+
+  it('analyzes an uploaded PDF into the same editable preview', async () => {
+    const user = userEvent.setup();
+    const extractDocument = vi.fn().mockResolvedValue({ activities: [{
+      date: '2026-09-20', time: '10:00', title: 'Check-in', description: '', location: 'Hotel', type: 'Accommodation',
+    }] });
+    const { container } = render(
+      <SmartImportModal isOpen onClose={vi.fn()} onConfirm={vi.fn()} extract={vi.fn()} extractDocument={extractDocument} />,
+    );
+    const input = container.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File(['pdf'], 'reserva.pdf', { type: 'application/pdf' });
+    await user.upload(input, file);
+    expect(extractDocument).toHaveBeenCalledWith(file);
+    expect(await screen.findByDisplayValue('Check-in')).toBeInTheDocument();
   });
 });

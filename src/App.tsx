@@ -1,12 +1,7 @@
-import React, { useState } from 'react';
+import React, { Suspense, lazy, useState } from 'react';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import BottomNav from './components/BottomNav';
-import DashboardView from './components/DashboardView';
-import ItineraryView from './components/ItineraryView';
-import LogisticsView from './components/LogisticsView';
-import MapView from './components/MapView';
-import PlacesView from './components/PlacesView';
 import Toast from './components/Toast';
 import SettingsPanel from './components/SettingsPanel';
 import SmartImportModal from './components/SmartImportModal';
@@ -20,6 +15,12 @@ import { useTripParticipants } from './store/participants';
 import { Mail, Check, UserPlus, X } from 'lucide-react';
 import { saveImportedActivities } from './services/saveImportedActivities';
 import type { ImportedActivity } from './services/smartImportCallable';
+
+const DashboardView = lazy(() => import('./components/DashboardView'));
+const ItineraryView = lazy(() => import('./components/ItineraryView'));
+const LogisticsView = lazy(() => import('./components/LogisticsView'));
+const MapView = lazy(() => import('./components/MapView'));
+const PlacesView = lazy(() => import('./components/PlacesView'));
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
@@ -89,7 +90,7 @@ export default function App() {
         setActiveTab={setActiveTab}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
-        onNotificationClick={() => console.log('Centro de notificaciones abierto')}
+        onNotificationClick={() => undefined}
         onSettingsClick={() => setShowSettings(true)}
       />
 
@@ -111,6 +112,7 @@ export default function App() {
         {/* Main Content Area */}
         <main className="flex-1 md:ml-64 p-6 md:p-12 bg-brand-background dark:bg-zinc-950 overflow-x-hidden pb-24 md:pb-12">
           <div className="max-w-6xl mx-auto">
+            <Suspense fallback={<div className="py-20 text-center text-xs font-bold uppercase tracking-widest text-brand-outline">Cargando vista…</div>}>
             {activeTab === 'dashboard' && (
               <DashboardView setActiveTab={setActiveTab} />
             )}
@@ -128,6 +130,7 @@ export default function App() {
             {activeTab === 'logistics' && <LogisticsView />}
 
             {activeTab === 'map' && <MapView />}
+            </Suspense>
           </div>
         </main>
 

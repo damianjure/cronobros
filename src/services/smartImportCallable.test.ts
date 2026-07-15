@@ -29,4 +29,11 @@ describe('importTravelTextCallable', () => {
     expect(httpsCallable).toHaveBeenCalledWith({}, 'importTravelText');
     expect(callable).toHaveBeenCalledWith({ text: 'Reserva de vuelo a Madrid' });
   });
+
+  it('rejects unsupported files before calling Firebase', async () => {
+    const { importTravelDocumentCallable } = await import('./smartImportCallable');
+    const file = new File(['<html>'], 'reserva.html', { type: 'text/html' });
+    await expect(importTravelDocumentCallable(file)).rejects.toThrow(/formato no permitido/i);
+    expect(callable).not.toHaveBeenCalled();
+  });
 });

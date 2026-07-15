@@ -6,7 +6,6 @@ import {
   Building,
   Fuel,
   Clock,
-  Navigation,
   ArrowUpRight,
   MoreHorizontal,
   Plus,
@@ -17,7 +16,6 @@ import {
   Info
 } from 'lucide-react';
 import { useTripStore } from '../store/tripStore';
-import { useToastStore } from '../store/toastStore';
 import { useSettingsStore } from '../store/settingsStore';
 import { formatCurrency } from '../utils/currency';
 import {
@@ -41,14 +39,10 @@ export default function LogisticsView() {
   const logistics = useTripStore(state => state.logistics);
   const drivers = logistics.drivers;
   const activeVehicle = logistics.vehicle;
-  const showToast = useToastStore(state => state.showToast);
   const currency = useSettingsStore(state => state.currency);
-  const [fuelBudgetUsed, setFuelBudgetUsed] = useState(420);
+  const [fuelBudgetUsed, setFuelBudgetUsed] = useState(0);
   const [fuelLimit] = useState(650);
-  const [transactions, setTransactions] = useState([
-    { location: 'Selfoss N1', amount: 84.20, time: 'Ayer' },
-    { location: 'Reykjavik Shell', amount: 95.50, time: '12 Ago' }
-  ]);
+  const [transactions, setTransactions] = useState<{ location: string; amount: number; time: string }[]>([]);
   const [showAddPurchase, setShowAddPurchase] = useState(false);
   const [addAmount, setAddAmount] = useState('');
   const [addLoc, setAddLoc] = useState('');
@@ -650,32 +644,19 @@ export default function LogisticsView() {
             )}
           </section>
 
-          {/* Pick-up Location Card with Map */}
-          <section className="bg-white rounded-none p-5 border border-brand-primary/10 shadow-none">
-            <h3 className="font-serif font-black italic text-brand-primary text-base mb-3">
-              Lugar de Recogida
-            </h3>
-            
-            <div className="relative w-full h-44 rounded-none overflow-hidden border border-brand-primary/10 mb-4 group shadow-none">
-              <img 
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-102" 
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDqNpFs4bQd7_CVMCwC4ZdXxsR7ka_xiwpEw198H3OWI8uKnNRPqbXRLxIeLfL7XlWLzK2g3S_DLlOTzFNqofatd6oy2Dnolxmp6wqRDsqIDTlxfDjvYQAzcuvtlPpBWzSXZifQqb5mIx8Abn1cXshjsgMiRfy0yxl64tO4uBdtZA2RlFdpHRj2WfgtfSb399HL4Zxe9Xj5Eo5WqlpCMLksMFC08TWXbUnXip-9msUpku2sPZrCZNTGd5xaE-eECTgGqlPBfyQnPyaI" 
-                alt="Ubicación en mapa de Keflavik" 
-              />
-              <div className="absolute bottom-3 left-3 right-3 bg-white/95 backdrop-blur-sm p-3 rounded-none shadow-none border border-brand-primary/10">
-                <p className="font-serif font-black italic text-xs text-brand-primary leading-tight">Aeropuerto Internacional de Keflavík (KEF)</p>
-                <p className="text-[10px] text-brand-on-surface-variant/80 font-medium mt-0.5">Terminal de Llegadas P1, Zona B-4</p>
-              </div>
-            </div>
-
-            <button
-              onClick={() => showToast('Simulando el lanzamiento de las coordenadas de navegación de Google Maps: Aeropuerto de KEF - Zona B-4, Nordic Nomad Rentals.')}
-              className="w-full py-2.5 bg-brand-primary hover:bg-brand-primary/90 text-white rounded-none font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-none transition-all cursor-pointer active:scale-95"
-            >
-              <Navigation className="w-4 h-4 fill-current" />
-              <span>Abrir en Navegador</span>
-            </button>
-          </section>
+          {activeVehicle && (
+            <section className="bg-white rounded-none p-5 border border-brand-primary/10 shadow-none">
+              <h3 className="font-serif font-black italic text-brand-primary text-base mb-3">Contacto del proveedor</h3>
+              <p className="text-sm font-bold text-brand-primary">{activeVehicle.provider}</p>
+              <p className="mt-1 text-xs text-brand-on-surface-variant">Alquiler {activeVehicle.rentalId} · {activeVehicle.dates}</p>
+              <a
+                href={`tel:${activeVehicle.phone.replace(/[^+\d]/g, '')}`}
+                className="mt-4 w-full py-2.5 bg-brand-primary hover:bg-brand-primary/90 text-white font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-2"
+              >
+                <Phone className="w-4 h-4" /> Llamar al proveedor
+              </a>
+            </section>
+          )}
 
         </div>
 
@@ -684,27 +665,27 @@ export default function LogisticsView() {
       {/* Document View Modal */}
       {showDocModal && (
         <div className="fixed inset-0 bg-brand-primary/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-          <div className="bg-white rounded-none p-6 max-w-lg w-full shadow-none border border-brand-primary/10 animate-in zoom-in-95 duration-200 relative">
+          <div className="print-document bg-white rounded-none p-6 max-w-lg w-full shadow-none border border-brand-primary/10 animate-in zoom-in-95 duration-200 relative">
             <div className="flex items-center gap-2 text-brand-primary mb-3">
               <CheckCircle2 className="w-5 h-5 fill-current text-brand-primary" />
               <h4 className="font-serif font-black italic text-lg text-brand-primary">
-                {showDocModal === 'insurance' ? 'Póliza de Seguro de Alquiler Verificada' : 'Contrato de Alquiler Activo'}
+                {showDocModal === 'insurance' ? 'Resumen de seguro' : 'Resumen del alquiler'}
               </h4>
             </div>
 
             <p className="text-xs text-brand-on-surface-variant/90 font-sans leading-relaxed mt-1 border-t border-b border-brand-primary/10 py-4 italic">
-              {showDocModal === 'insurance' 
-                ? "Nivel de cobertura de alquiler: Oro Premium. Características: Exención total de CDW, protección contra daños por grava, protección contra arena y ceniza (SADW), cobertura sin deducible. Proporcionado por TM Tryggingar Iceland."
-                : "Cuenta del inquilino: Alex Thorne (Damian Group). Conductores autorizados: Alex Thorne, Sarah Miller. Tarifa base: $125.00/día. Estado del depósito de seguridad: Verificado y preautorizado. Detalles de devolución de llaves: Buzón de la Zona B-4."
+              {showDocModal === 'insurance'
+                ? 'No hay una póliza adjunta. Este resumen identifica el vehículo y el proveedor para solicitar la documentación correspondiente.'
+                : `${activeVehicle?.name ?? 'Vehículo'} · alquiler ${activeVehicle?.rentalId ?? 'sin ID'} · proveedor ${activeVehicle?.provider ?? 'sin proveedor'} · fechas ${activeVehicle?.dates ?? 'sin fechas'}.`
               }
             </p>
 
             <div className="mt-5 flex justify-end gap-3">
               <button
-                onClick={() => showToast('Contrato PDF simulado descargado.')}
+                onClick={() => window.print()}
                 className="py-2 px-4 border border-brand-primary/10 text-brand-primary rounded-none font-bold text-[10px] uppercase tracking-widest hover:bg-brand-primary/5 transition-all cursor-pointer"
               >
-                Descargar PDF
+                Imprimir / guardar PDF
               </button>
               <button 
                 onClick={() => setShowDocModal(null)}

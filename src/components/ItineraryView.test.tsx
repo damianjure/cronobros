@@ -73,7 +73,7 @@ describe('ItineraryView (behavior-preservation smoke tests)', () => {
     const user = userEvent.setup();
     renderItineraryView({ itinerary: [makeDay()] });
 
-    await user.type(screen.getByPlaceholderText('ej. Caminata por la cascada'), 'Caminata de prueba');
+    await user.type(screen.getByPlaceholderText('ej. Visita guiada'), 'Caminata de prueba');
     await user.click(screen.getByRole('button', { name: 'Guardar Entrada' }));
 
     expect(await screen.findByText('Caminata de prueba')).toBeInTheDocument();

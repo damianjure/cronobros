@@ -13,6 +13,26 @@ export interface SmartImportResult {
   activities: ImportedActivity[];
 }
 
+export const ALLOWED_TRAVEL_DOCUMENT_TYPES = new Set([
+  'application/pdf',
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+]);
+
+export function validateTravelDocument(data: unknown, mimeType: unknown): { data: string; mimeType: string } {
+  if (typeof mimeType !== 'string' || !ALLOWED_TRAVEL_DOCUMENT_TYPES.has(mimeType)) {
+    throw new Error('Tipo de documento no permitido.');
+  }
+  if (typeof data !== 'string' || data.length === 0 || !/^[A-Za-z0-9+/]+={0,2}$/.test(data)) {
+    throw new Error('Documento inválido.');
+  }
+  // Base64 expands binary data by roughly 4/3. Keep the original under 7 MiB
+  // so the full callable request remains comfortably below platform limits.
+  if (data.length > 9_800_000) throw new Error('Documento demasiado grande.');
+  return { data, mimeType };
+}
+
 const ACTIVITY_TYPES = new Set([
   'Transportation',
   'Accommodation',
@@ -79,6 +99,28 @@ export async function extractTravelActivities(text: string): Promise<SmartImport
       responseMimeType: 'application/json',
       temperature: 0.1,
     },
+  });
+  return parseSmartImportResponse(response.text ?? '');
+}
+
+export async function extractTravelDocument(data: string, mimeType: string): Promise<SmartImportResult> {
+  const document = validateTravelDocument(data, mimeType);
+  const ai = new GoogleGenAI({
+    vertexai: true,
+    project: 'crono-viajes-1779401310',
+    location: 'global',
+    apiVersion: 'v1',
+  });
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: [{
+      role: 'user',
+      parts: [
+        { text: 'Extraé actividades concretas de este documento de viaje. Devolvé solamente JSON con activities y campos date YYYY-MM-DD, time HH:mm, title, description, location y type Transportation|Accommodation|Dining|Sightseeing|Adventure|Relaxation. No inventes datos. Máximo 20 actividades.' },
+        { inlineData: document },
+      ],
+    }],
+    config: { responseMimeType: 'application/json', temperature: 0.1 },
   });
   return parseSmartImportResponse(response.text ?? '');
 }

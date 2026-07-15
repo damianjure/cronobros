@@ -139,7 +139,7 @@ export default function NewEntryForm({
           <label className="block text-[8px] font-black text-brand-outline uppercase tracking-widest mb-1">Título de la Actividad</label>
           <input
             type="text"
-            placeholder="ej. Caminata por la cascada"
+              placeholder="ej. Visita guiada"
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
             className="w-full bg-white border border-brand-primary/10 rounded-none py-2 px-2.5 text-xs focus:outline-none focus:border-brand-primary/30 transition-all font-sans"
@@ -151,7 +151,7 @@ export default function NewEntryForm({
           <label className="block text-[8px] font-black text-brand-outline uppercase tracking-widest mb-1">Ubicación</label>
           <input
             type="text"
-            placeholder="ej. Área de Geysir"
+            placeholder="ej. Centro histórico"
             value={newLocation}
             onChange={(e) => setNewLocation(e.target.value)}
             className="w-full bg-white border border-brand-primary/10 rounded-none py-2 px-2.5 text-xs focus:outline-none focus:border-brand-primary/30 transition-all font-sans"
@@ -256,7 +256,7 @@ export default function NewEntryForm({
         <label className="block text-[9px] font-black text-brand-outline uppercase tracking-widest mb-1.5">Título de la Actividad</label>
         <input
           type="text"
-          placeholder="ej. Caminata por la cascada Gullfoss"
+          placeholder="ej. Visita guiada"
           value={newTitle}
           onChange={(e) => setNewTitle(e.target.value)}
           className="w-full bg-white border border-brand-primary/10 rounded-none py-2.5 px-3 text-xs focus:outline-none focus:border-brand-primary/30 transition-all font-sans"
@@ -279,7 +279,7 @@ export default function NewEntryForm({
         <label className="block text-[9px] font-black text-brand-outline uppercase tracking-widest mb-1.5">Ubicación</label>
         <input
           type="text"
-          placeholder="ej. Área de Geysir, Islandia"
+          placeholder="ej. Centro histórico"
           value={newLocation}
           onChange={(e) => setNewLocation(e.target.value)}
           className="w-full bg-white border border-brand-primary/10 rounded-none py-2.5 px-3 text-xs focus:outline-none focus:border-brand-primary/30 transition-all font-sans"

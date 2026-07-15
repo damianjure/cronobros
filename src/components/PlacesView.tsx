@@ -121,7 +121,7 @@ export default function PlacesView() {
                 </label>
                 <input
                   type="text"
-                  placeholder="Ej. Costa Sur"
+                  placeholder="Ej. Centro histórico"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   className="w-full bg-brand-background border border-brand-primary/10 rounded-none py-2.5 px-3 text-xs focus:outline-none focus:border-brand-primary/30 font-sans"
