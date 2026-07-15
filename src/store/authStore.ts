@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import {
   GoogleAuthProvider,
   onAuthStateChanged,
-  signInWithPopup,
+  signInWithRedirect,
   signOut as firebaseSignOut,
   type User,
 } from 'firebase/auth';
@@ -30,7 +30,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   signIn: async () => {
     set({ error: null });
     try {
-      await signInWithPopup(auth, new GoogleAuthProvider());
+      await signInWithRedirect(auth, new GoogleAuthProvider());
     } catch {
       set({ error: 'No pudimos iniciar sesión. Intentá de nuevo.' });
     }
