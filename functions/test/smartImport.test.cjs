@@ -32,3 +32,16 @@ test('rejects malformed or empty model output', () => {
   assert.throws(() => parseSmartImportResponse('{"activities":[]}'), /no contiene actividades/i);
   assert.throws(() => parseSmartImportResponse('not-json'), /JSON válido/i);
 });
+
+test('allows missing times but rejects activity types outside the client domain', () => {
+  const result = parseSmartImportResponse(JSON.stringify({
+    activities: [{ date: '2026-09-20', time: '', title: 'Día libre', type: 'Relaxation' }],
+  }));
+  assert.equal(result.activities[0].time, '');
+  assert.throws(
+    () => parseSmartImportResponse(JSON.stringify({
+      activities: [{ date: '2026-09-20', time: '10:00', title: 'Evento', type: 'Unknown' }],
+    })),
+    /tipo inválido/i,
+  );
+});

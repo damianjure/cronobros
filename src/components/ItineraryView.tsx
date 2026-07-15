@@ -42,7 +42,7 @@ export default function ItineraryView({
   const [daySelectionType, setDaySelectionType] = useState<'existing' | 'calendar'>('existing');
   const [newDayDate, setNewDayDate] = useState('2026-08-14');
   const [newTime, setNewTime] = useState('11:00 AM');
-  const [newType, setNewType] = useState<'Relaxation' | 'Dining' | 'Sightseeing' | 'Adventure' | 'Accommodation'>('Relaxation');
+  const [newType, setNewType] = useState<ItineraryActivity['type']>('Relaxation');
   const [newTitle, setNewTitle] = useState('');
   const [newDesc, setNewDesc] = useState('');
   const [newLocation, setNewLocation] = useState('');

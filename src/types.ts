@@ -3,7 +3,7 @@ export type ActiveTab = 'dashboard' | 'itinerary' | 'logistics' | 'map' | 'place
 export interface ItineraryActivity {
   id: string;
   time: string;
-  type: 'Relaxation' | 'Dining' | 'Sightseeing' | 'Adventure' | 'Accommodation';
+  type: 'Relaxation' | 'Dining' | 'Sightseeing' | 'Adventure' | 'Accommodation' | 'Transportation';
   title: string;
   description: string;
   image?: string;

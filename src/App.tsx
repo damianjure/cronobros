@@ -9,14 +9,17 @@ import MapView from './components/MapView';
 import PlacesView from './components/PlacesView';
 import Toast from './components/Toast';
 import SettingsPanel from './components/SettingsPanel';
+import SmartImportModal from './components/SmartImportModal';
 
-import { ActiveTab, ItineraryActivity } from './types';
+import { ActiveTab } from './types';
 import { useTripStore } from './store/tripStore';
 import { useToastStore } from './store/toastStore';
 import { useTripsStore } from './store/tripsStore';
 import { useCurrentTrip } from './store/currentTripContext';
 import { useTripParticipants } from './store/participants';
 import { Mail, Check, UserPlus, X } from 'lucide-react';
+import { saveImportedActivities } from './services/saveImportedActivities';
+import type { ImportedActivity } from './services/smartImportCallable';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
@@ -24,15 +27,15 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
 
   const addActivity = useTripStore(state => state.addActivity);
+  const addDay = useTripStore(state => state.addDay);
+  const itinerary = useTripStore(state => state.itinerary);
   const showToast = useToastStore(state => state.showToast);
   const inviteMember = useTripsStore(state => state.inviteMember);
   const currentTrip = useCurrentTrip();
   const participants = useTripParticipants();
 
-  // Smart Import Sidebar simulation states (UI-only; not itinerary/pins/
-  // pendingPlaces/chatMessages data, so out of the state-layer dedup scope)
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
+  const [showSmartImport, setShowSmartImport] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
 
   // Modal states
   const [showNewEntryModal, setShowNewEntryModal] = useState(false);
@@ -61,39 +64,20 @@ export default function App() {
     }, 2500);
   };
 
-  // Simulate Smart Import PDF Parse (triggered from Sidebar)
-  const handleSmartImport = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setIsUploading(true);
-      setUploadProgress(10);
-
-      const interval = setInterval(() => {
-        setUploadProgress(prev => {
-          if (prev >= 100) {
-            clearInterval(interval);
-            setTimeout(() => {
-              const importedActivity: ItineraryActivity = {
-                id: `act-import-${Date.now()}`,
-                time: '08:15 AM',
-                type: 'Adventure',
-                title: 'Llegada de Vuelo Analizada (KEF)',
-                description: 'El vuelo FI-204 de Boston aterrizó a tiempo. Equipaje recogido en la banda 4. Recogida directa de Land Rover Defender alquilado.',
-                location: 'Aeropuerto Internacional de Keflavík',
-                status: 'Smart Imported',
-                people: participants,
-              };
-
-              addActivity('day-1', importedActivity);
-
-              setIsUploading(false);
-              setUploadProgress(0);
-              showToast('¡Importación inteligente de boleto completada con éxito! Actividad añadida al Día 1.');
-            }, 800);
-            return 100;
-          }
-          return prev + 15;
-        });
-      }, 150);
+  const handleSmartImportConfirm = async (activities: ImportedActivity[]) => {
+    setIsImporting(true);
+    try {
+      await saveImportedActivities({
+        imported: activities,
+        itinerary,
+        participants,
+        addActivity,
+        addDay,
+      });
+      setActiveTab('itinerary');
+      showToast(`${activities.length} ${activities.length === 1 ? 'actividad importada' : 'actividades importadas'} correctamente.`);
+    } finally {
+      setIsImporting(false);
     }
   };
 
@@ -118,9 +102,9 @@ export default function App() {
             activeTab={activeTab}
             setActiveTab={setActiveTab}
             onInviteClick={() => setShowInviteModal(true)}
-            onSmartImport={handleSmartImport}
-            isUploading={isUploading}
-            uploadProgress={uploadProgress}
+            onSmartImport={() => setShowSmartImport(true)}
+            isUploading={isImporting}
+            uploadProgress={isImporting ? 100 : 0}
           />
         </div>
 
@@ -231,6 +215,12 @@ export default function App() {
       )}
 
       <SettingsPanel isOpen={showSettings} onClose={() => setShowSettings(false)} />
+
+      <SmartImportModal
+        isOpen={showSmartImport}
+        onClose={() => setShowSmartImport(false)}
+        onConfirm={handleSmartImportConfirm}
+      />
 
       <Toast />
 

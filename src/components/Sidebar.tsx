@@ -1,4 +1,3 @@
-import React, { useRef } from 'react';
 import {
   LayoutDashboard,
   Calendar,
@@ -9,7 +8,7 @@ import {
   Archive,
   Compass,
   MapPin,
-  Upload
+  Sparkles
 } from 'lucide-react';
 import { ActiveTab } from '../types';
 import { useCurrentTrip } from '../store/currentTripContext';
@@ -18,7 +17,7 @@ interface SidebarProps {
   activeTab: ActiveTab;
   setActiveTab: (tab: ActiveTab) => void;
   onInviteClick: () => void;
-  onSmartImport: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onSmartImport: () => void;
   isUploading: boolean;
   uploadProgress: number;
 }
@@ -31,7 +30,6 @@ export default function Sidebar({
   isUploading,
   uploadProgress
 }: SidebarProps) {
-  const sidebarFileInputRef = useRef<HTMLInputElement>(null);
   // PR5: the real selected trip's name/member count instead of the
   // hardcoded "Verano en Islandia" fixture.
   const trip = useCurrentTrip();
@@ -101,7 +99,7 @@ export default function Sidebar({
           <span>Sincronizar con IA</span>
         </h4>
         <p className="text-[10px] text-white/80 font-medium leading-relaxed mb-3">
-          Sube tus PDFs, pasajes o boletos de viaje para sincronizar automáticamente el itinerario.
+          Pegá reservas, pasajes o un itinerario y revisá las actividades detectadas antes de guardarlas.
         </p>
 
         {isUploading ? (
@@ -118,20 +116,14 @@ export default function Sidebar({
             </div>
           </div>
         ) : (
-          <div 
-            onClick={() => sidebarFileInputRef.current?.click()}
+          <button
+            type="button"
+            onClick={onSmartImport}
             className="border border-dashed border-white/25 hover:border-white/50 bg-white/5 hover:bg-white/10 p-2.5 text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-1"
           >
-            <Upload className="w-4 h-4 text-white/80" />
-            <span className="text-[9px] font-bold text-white/95">Haz clic para subir boleto</span>
-            <input 
-              type="file" 
-              ref={sidebarFileInputRef} 
-              onChange={onSmartImport} 
-              className="hidden" 
-              accept=".pdf,.png,.jpg,.jpeg" 
-            />
-          </div>
+            <Sparkles className="w-4 h-4 text-white/80" />
+            <span className="text-[9px] font-bold text-white/95">Importar texto con IA</span>
+          </button>
         )}
       </div>
 

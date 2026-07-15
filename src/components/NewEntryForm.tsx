@@ -130,6 +130,7 @@ export default function NewEntryForm({
               <option value="Sightseeing">Turismo</option>
               <option value="Adventure">Aventura</option>
               <option value="Accommodation">Alojamiento</option>
+              <option value="Transportation">Traslado</option>
             </select>
           </div>
         </div>
@@ -246,6 +247,7 @@ export default function NewEntryForm({
             <option value="Sightseeing">Turismo</option>
             <option value="Adventure">Aventura</option>
             <option value="Accommodation">Alojamiento</option>
+            <option value="Transportation">Traslado</option>
           </select>
         </div>
       </div>

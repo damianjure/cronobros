@@ -13,6 +13,15 @@ export interface SmartImportResult {
   activities: ImportedActivity[];
 }
 
+const ACTIVITY_TYPES = new Set([
+  'Transportation',
+  'Accommodation',
+  'Dining',
+  'Sightseeing',
+  'Adventure',
+  'Relaxation',
+]);
+
 function requiredString(value: unknown, field: string): string {
   if (typeof value !== 'string' || value.trim() === '') {
     throw new Error(`La actividad no contiene ${field}.`);
@@ -42,13 +51,15 @@ export function parseSmartImportResponse(raw: string): SmartImportResult {
       const value = item as Record<string, unknown>;
       const date = requiredString(value.date, 'fecha');
       if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error('La actividad contiene una fecha inválida.');
+      const type = requiredString(value.type, 'tipo');
+      if (!ACTIVITY_TYPES.has(type)) throw new Error('La actividad contiene un tipo inválido.');
       return {
         date,
-        time: requiredString(value.time, 'hora'),
+        time: typeof value.time === 'string' ? value.time.trim() : '',
         title: requiredString(value.title, 'título'),
         description: typeof value.description === 'string' ? value.description.trim() : '',
         location: typeof value.location === 'string' ? value.location.trim() : '',
-        type: requiredString(value.type, 'tipo'),
+        type,
       };
     }),
   };
