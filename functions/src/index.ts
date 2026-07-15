@@ -1,6 +1,8 @@
 import { onDocumentDeleted } from 'firebase-functions/v2/firestore';
+import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
+import { activatePendingInvitesForUser } from './invitations';
 
 initializeApp();
 
@@ -19,4 +21,17 @@ export const cascadeDeleteTripSubcollections = onDocumentDeleted('trips/{tripId}
   const tripRef = event.data?.ref;
   if (!tripRef) return;
   await getFirestore().recursiveDelete(tripRef);
+});
+
+export const activatePendingInvites = onCall(async request => {
+  const uid = request.auth?.uid;
+  const email = request.auth?.token.email;
+  if (!uid) {
+    throw new HttpsError('unauthenticated', 'Authentication is required.');
+  }
+  if (typeof email !== 'string' || email.trim() === '') {
+    throw new HttpsError('failed-precondition', 'The authenticated account has no email.');
+  }
+
+  return activatePendingInvitesForUser(getFirestore(), uid, email);
 });

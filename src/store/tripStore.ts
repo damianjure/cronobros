@@ -8,6 +8,7 @@ import type {
   PendingPlace,
   ChatMessage,
   TripLogistics,
+  CriticalEvent,
 } from '../types';
 import type { TripRepository } from '../services/ports';
 
@@ -19,6 +20,7 @@ export interface TripStoreState {
   pendingPlaces: PendingPlace[];
   chatMessages: ChatMessage[];
   logistics: TripLogistics;
+  criticalEvents: CriticalEvent[];
 
   addActivity: (dayId: string, activity: ItineraryActivity) => Promise<void>;
   deleteActivity: (dayId: string, activityId: string) => Promise<void>;
@@ -57,6 +59,7 @@ export function createTripStore(repository: TripRepository, tripId: string): Tri
     pendingPlaces: [],
     chatMessages: [],
     logistics: EMPTY_LOGISTICS,
+    criticalEvents: [],
 
     addActivity: (dayId, activity) => repository.addActivity(tripId, dayId, activity),
     deleteActivity: (dayId, activityId) => repository.deleteActivity(tripId, dayId, activityId),
@@ -87,6 +90,9 @@ export function createTripStore(repository: TripRepository, tripId: string): Tri
   const unsubscribeLogistics = repository.subscribeLogistics(tripId, logistics =>
     store.setState({ logistics }),
   );
+  const unsubscribeCriticalEvents = repository.subscribeCriticalEvents(tripId, criticalEvents =>
+    store.setState({ criticalEvents }),
+  );
 
   return {
     store,
@@ -96,6 +102,7 @@ export function createTripStore(repository: TripRepository, tripId: string): Tri
       unsubscribePendingPlaces();
       unsubscribeChat();
       unsubscribeLogistics();
+      unsubscribeCriticalEvents();
     },
   };
 }

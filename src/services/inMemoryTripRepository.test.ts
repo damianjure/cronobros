@@ -11,5 +11,7 @@ runTripRepositoryContractTests('InMemoryTripRepository', async (_tripId, seed) =
     pins: seed?.pins as PinnedPoint[] | undefined,
     pendingPlaces: seed?.pendingPlaces,
     chat: seed?.chat,
+    logistics: seed?.logistics,
+    criticalEvents: seed?.criticalEvents,
   });
 });

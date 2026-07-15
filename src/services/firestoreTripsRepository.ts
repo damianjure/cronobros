@@ -1,19 +1,15 @@
 import {
-  arrayRemove,
   arrayUnion,
   collection,
-  deleteField,
   doc,
   deleteDoc,
   FieldPath,
   getDoc,
-  getDocs,
   onSnapshot,
   query,
   setDoc,
   updateDoc,
   where,
-  writeBatch,
   type CollectionReference,
   type DocumentData,
   type Firestore,
@@ -22,6 +18,10 @@ import type { Trip, Role } from '../types';
 import type { Unsubscribe } from './ports';
 import type { TripsRepository } from './tripsPort';
 import { db as defaultDb } from '../lib/firebase';
+import {
+  activatePendingInvitesCallable,
+  type PendingInvitesActivator,
+} from './pendingInvitesCallable';
 
 /**
  * Firestore adapter for `TripsRepository` (design decision "Trip/membership
@@ -37,9 +37,14 @@ import { db as defaultDb } from '../lib/firebase';
  */
 export class FirestoreTripsRepository implements TripsRepository {
   private readonly db: Firestore;
+  private readonly pendingInvitesActivator: PendingInvitesActivator;
 
-  constructor(firestoreDb: Firestore = defaultDb) {
+  constructor(
+    firestoreDb: Firestore = defaultDb,
+    pendingInvitesActivator: PendingInvitesActivator = activatePendingInvitesCallable,
+  ) {
     this.db = firestoreDb;
+    this.pendingInvitesActivator = pendingInvitesActivator;
   }
 
   private tripsRef(): CollectionReference<DocumentData> {
@@ -72,6 +77,7 @@ export class FirestoreTripsRepository implements TripsRepository {
   }
 
   async inviteMember(tripId: string, email: string, role: Role): Promise<void> {
+    const normalizedEmail = email.trim().toLowerCase();
     // `pendingMemberships` is additive (untouched by `firestore.rules`'
     // `membershipUnchanged()` guard), so an owner/editor's write here is
     // allowed by the existing rules with zero rule changes. `pendingEmails`
@@ -83,58 +89,20 @@ export class FirestoreTripsRepository implements TripsRepository {
     // nested-field separators.
     await updateDoc(
       doc(this.tripsRef(), tripId),
-      new FieldPath('pendingMemberships', email),
-      { email, role, pending: true },
+      new FieldPath('pendingMemberships', normalizedEmail),
+      { email: normalizedEmail, role, pending: true },
       new FieldPath('pendingEmails'),
-      arrayUnion(email),
+      arrayUnion(normalizedEmail),
     );
   }
 
   /**
-   * Activates every pending invite matching `email` into `members`/
-   * `memberUids` for the given `uid` (spec: "Invited user signs in and
-   * membership activates"). KNOWN GAP: `firestore.rules`' read rule
-   * (`isMemberOf()`) only allows a trip's own members to read/list it — a
-   * genuine invitee (not yet a member) has no visibility into the trip they
-   * were invited to, so this query returns zero results for them until
-   * rules or a Cloud Function grant that visibility. The write mechanics
-   * below are correct and will activate automatically the moment that
-   * visibility gap closes, with no client-code change needed.
+   * Delegates activation to a callable Cloud Function. The server derives
+   * uid/email from the verified Firebase Auth context and uses Admin SDK, so
+   * an invitee never needs pre-membership read access to the trip document.
    */
   async activatePendingInvites(uid: string, email: string): Promise<void> {
-    const q = query(this.tripsRef(), where('pendingEmails', 'array-contains', email));
-    let snapshot;
-    try {
-      snapshot = await getDocs(q);
-    } catch {
-      // Expected today for a genuine invitee: `firestore.rules` can't prove
-      // this query obeys `isMemberOf()` without a `memberUids` constraint
-      // (which the invitee, not yet a member, can't supply), so Firestore
-      // rejects the whole query outright rather than filtering it — see the
-      // KNOWN GAP note on this method's docstring. Swallow it as a no-op.
-      return;
-    }
-    if (snapshot.empty) return;
-
-    const batch = writeBatch(this.db);
-    snapshot.docs.forEach(tripDoc => {
-      const trip = tripDoc.data() as Trip;
-      const pending = trip.pendingMemberships?.[email];
-      if (!pending || !pending.pending) return;
-
-      batch.update(
-        tripDoc.ref,
-        new FieldPath('members', uid),
-        pending.role,
-        new FieldPath('memberUids'),
-        arrayUnion(uid),
-        new FieldPath('pendingMemberships', email),
-        deleteField(),
-        new FieldPath('pendingEmails'),
-        arrayRemove(email),
-      );
-    });
-    await batch.commit();
+    await this.pendingInvitesActivator(uid, email.trim().toLowerCase());
   }
 
   async updateRole(tripId: string, uid: string, role: Role): Promise<void> {

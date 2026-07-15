@@ -12,68 +12,20 @@ import {
 } from 'lucide-react';
 import { calculateDistanceInKm } from '../utils/geo';
 import { calculateCountdown } from '../utils/date';
-
-// Define the critical events type
-interface CriticalEvent {
-  id: string;
-  type: 'hotel' | 'flight' | 'car';
-  title: string;
-  subType: string;
-  locationName: string;
-  coords: { lat: number; lon: number };
-  targetTimeStr: string; // e.g. "15:00"
-  description: string;
-  warningMessage: string;
-}
-
-// Fixed critical events in Iceland
-const CRITICAL_EVENTS: CriticalEvent[] = [
-  {
-    id: 'vik-suites',
-    type: 'hotel',
-    subType: 'Check-in de Alojamiento',
-    title: 'Vík Black Beach Suites',
-    locationName: 'Costa Sur (Vík)',
-    coords: { lat: 63.4186, lon: -19.0060 },
-    targetTimeStr: '15:00',
-    description: 'Registro de entrada en las suites de playa negra de Vík. Límite estricto de ingreso.',
-    warningMessage: '⚠️ Debes llegar antes del cierre de recepción para evitar la autogestión de llaves en la nieve.'
-  },
-  {
-    id: 'akureyri-guesthouse',
-    type: 'hotel',
-    subType: 'Check-in de Hotel',
-    title: 'Akureyri Countryside Guesthouse',
-    locationName: 'Norte de Islandia (Akureyri)',
-    coords: { lat: 65.6835, lon: -18.0878 },
-    targetTimeStr: '16:00',
-    description: 'Check-in y asignación de habitaciones cerca de la capital del norte.',
-    warningMessage: '⚠️ El camino de acceso de grava requiere Land Rover si hay lluvias intensas por la tarde.'
-  },
-  {
-    id: 'car-flight-kef',
-    type: 'flight',
-    subType: 'Retorno de Auto y Vuelo FI-205',
-    title: 'Devolución SUV & Despegue KEF',
-    locationName: 'Aeropuerto Internacional de Keflavík',
-    coords: { lat: 63.9850, lon: -22.6056 },
-    targetTimeStr: '14:00',
-    description: 'Devolver Land Rover Defender lavado y tanque lleno en Hertz KEF. Boarding del vuelo FI-205.',
-    warningMessage: '🚨 ¡IMPOSTERGABLE! Penalización de $150 USD por retrasos en la devolución de la SUV.'
-  }
-];
+import { useTripStore } from '../store/tripStore';
 
 export default function CriticalEventsCard() {
-  // Simulator preset options
-  const presets = [
-    { name: 'Keflavík / Reikiavik', lat: 64.1265, lon: -21.8174, label: 'Suroeste (Cerca Aeropuerto)' },
-    { name: 'Vík í Mýrdal', lat: 63.4186, lon: -19.0060, label: 'Costa Sur' },
-    { name: 'Akureyri', lat: 65.6835, lon: -18.0878, label: 'Región Norte' },
-    { name: 'Jökulsárlón', lat: 64.0489, lon: -16.1778, label: 'Región Este' }
-  ];
+  const criticalEvents = useTripStore(state => state.criticalEvents);
+  const presets = criticalEvents.map(event => ({
+    id: event.id,
+    name: event.title,
+    label: event.locationName,
+    ...event.coords,
+  }));
 
-  // Coordinates state: default to Reykjavik preset
-  const [currentCoords, setCurrentCoords] = useState({ lat: 64.1265, lon: -21.8174 });
+  // Until real GPS is requested, use the first persisted event as a neutral
+  // simulator origin. No destination-specific coordinates live in the UI.
+  const [currentCoords, setCurrentCoords] = useState<{ lat: number; lon: number } | null>(null);
   const [coordsSource, setCoordsSource] = useState<'simulated' | 'gps'>('simulated');
   const [gpsError, setGpsError] = useState<string | null>(null);
   const [isGpsLoading, setIsGpsLoading] = useState(false);
@@ -82,12 +34,21 @@ export default function CriticalEventsCard() {
   const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0, activeTarget: '' });
 
   // 1. Identify which is the closest critical event based on user's current coordinates
-  const getClosestEvent = (): { event: CriticalEvent; distance: number } => {
-    let closestEvent = CRITICAL_EVENTS[0];
+  const effectiveCoords = currentCoords ?? criticalEvents[0]?.coords ?? null;
+
+  const getClosestEvent = () => {
+    if (!effectiveCoords || criticalEvents.length === 0) return null;
+
+    let closestEvent = criticalEvents[0];
     let minDistance = Infinity;
 
-    CRITICAL_EVENTS.forEach(ev => {
-      const dist = calculateDistanceInKm(currentCoords.lat, currentCoords.lon, ev.coords.lat, ev.coords.lon);
+    criticalEvents.forEach(ev => {
+      const dist = calculateDistanceInKm(
+        effectiveCoords.lat,
+        effectiveCoords.lon,
+        ev.coords.lat,
+        ev.coords.lon,
+      );
       if (dist < minDistance) {
         minDistance = dist;
         closestEvent = ev;
@@ -97,7 +58,9 @@ export default function CriticalEventsCard() {
     return { event: closestEvent, distance: minDistance };
   };
 
-  const { event: activeEvent, distance } = getClosestEvent();
+  const closestEvent = getClosestEvent();
+  const activeEvent = closestEvent?.event ?? null;
+  const distance = closestEvent?.distance ?? 0;
 
   // 2. Fetch real GPS Geolocation from browser
   const handleGetRealGps = () => {
@@ -139,6 +102,11 @@ export default function CriticalEventsCard() {
   // 3. Dynamic countdown setup
   // Calculates the remaining time relative to the target hour on the current day
   useEffect(() => {
+    if (!activeEvent) {
+      setTimeLeft({ hours: 0, minutes: 0, seconds: 0, activeTarget: '' });
+      return;
+    }
+
     const updateCountdown = () => {
       const { hours, minutes, seconds, targetDate } = calculateCountdown(
         activeEvent.targetTimeStr,
@@ -167,7 +135,7 @@ export default function CriticalEventsCard() {
 
   // Get matching icon based on event type
   const getEventIcon = () => {
-    switch (activeEvent.type) {
+    switch (activeEvent?.type) {
       case 'flight':
         return <Plane className="w-6 h-6 text-brand-sunset stroke-[2.5px]" />;
       case 'car':
@@ -176,6 +144,30 @@ export default function CriticalEventsCard() {
         return <Key className="w-6 h-6 text-brand-sunset stroke-[2.5px]" />;
     }
   };
+
+  if (!activeEvent || !effectiveCoords) {
+    return (
+      <div
+        className="bg-white border border-brand-primary/10 p-6 relative overflow-hidden"
+        id="critical-events-card"
+      >
+        <div className="absolute top-0 left-0 right-0 h-1 bg-brand-sunset" />
+        <div className="flex items-start gap-3">
+          <div className="p-3 bg-brand-background border border-brand-primary/10">
+            <Clock className="w-5 h-5 text-brand-outline" />
+          </div>
+          <div>
+            <h3 className="font-serif font-black italic text-brand-primary text-xl">
+              Sin eventos críticos
+            </h3>
+            <p className="text-xs text-brand-on-surface-variant mt-1">
+              Este viaje todavía no tiene horarios impostergables cargados.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white border border-brand-primary/10 rounded-none p-5 md:p-6 shadow-none flex flex-col xl:flex-row gap-6 relative overflow-hidden" id="critical-events-card">
@@ -297,7 +289,7 @@ export default function CriticalEventsCard() {
             <div className="flex justify-between items-baseline">
               <span className="text-[9px] text-brand-outline font-bold uppercase tracking-wider">Coordenadas:</span>
               <span className="text-[9px] font-mono font-medium text-brand-primary">
-                {currentCoords.lat.toFixed(4)}°, {currentCoords.lon.toFixed(4)}°
+                {effectiveCoords.lat.toFixed(4)}°, {effectiveCoords.lon.toFixed(4)}°
               </span>
             </div>
           </div>
@@ -309,10 +301,10 @@ export default function CriticalEventsCard() {
           {/* Preset drop-down simulation */}
           <div>
             <label className="block text-[8px] font-black uppercase tracking-widest text-brand-outline mb-1">
-              Simular mi posición en Islandia:
+              Simular mi posición:
             </label>
             <select
-              value={`${currentCoords.lat},${currentCoords.lon}`}
+              value={`${effectiveCoords.lat},${effectiveCoords.lon}`}
               onChange={(e) => {
                 const [lat, lon] = e.target.value.split(',').map(Number);
                 setCurrentCoords({ lat, lon });
@@ -321,8 +313,8 @@ export default function CriticalEventsCard() {
               }}
               className="w-full bg-white border border-brand-primary/10 py-1.5 px-2 text-[10px] font-bold focus:outline-none focus:border-brand-primary/30"
             >
-              {presets.map((p, idx) => (
-                <option key={idx} value={`${p.lat},${p.lon}`}>
+              {presets.map(p => (
+                <option key={p.id} value={`${p.lat},${p.lon}`}>
                   {p.name} ({p.label})
                 </option>
               ))}

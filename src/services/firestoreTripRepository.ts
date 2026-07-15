@@ -19,6 +19,7 @@ import type {
   PendingPlace,
   ChatMessage,
   TripLogistics,
+  CriticalEvent,
 } from '../types';
 import { mapCategoryToActivityType } from '../utils/category';
 import { db as defaultDb } from '../lib/firebase';
@@ -31,7 +32,7 @@ const APPROVED_PLACE_PIN_IMAGE =
 
 /**
  * Firestore adapter for `TripRepository` (spec "firestore-trip-data" domain:
- * zero behavior drift from `InMemoryTripRepository`, same 12-method
+ * zero behavior drift from `InMemoryTripRepository`, same port-method
  * signatures, verified by the shared `tripRepository.contract.ts` suite
  * against the local emulator). Firestore layout per design: one document per
  * `ItineraryDay` (nested `activities[]`), one document per pin/pending
@@ -64,6 +65,10 @@ export class FirestoreTripRepository implements TripRepository {
 
   private chatRef(tripId: string): CollectionReference<DocumentData> {
     return collection(this.db, 'trips', tripId, 'chat');
+  }
+
+  private criticalEventsRef(tripId: string): CollectionReference<DocumentData> {
+    return collection(this.db, 'trips', tripId, 'criticalEvents');
   }
 
   private logisticsDocRef(tripId: string) {
@@ -103,6 +108,15 @@ export class FirestoreTripRepository implements TripRepository {
   subscribeLogistics(tripId: string, cb: (logistics: TripLogistics) => void): Unsubscribe {
     return onSnapshot(this.logisticsDocRef(tripId), snapshot => {
       cb(snapshot.exists() ? (snapshot.data() as TripLogistics) : EMPTY_LOGISTICS);
+    });
+  }
+
+  subscribeCriticalEvents(tripId: string, cb: (events: CriticalEvent[]) => void): Unsubscribe {
+    return onSnapshot(this.criticalEventsRef(tripId), snapshot => {
+      const events = snapshot.docs
+        .map(d => d.data() as CriticalEvent)
+        .sort((a, b) => a.id.localeCompare(b.id));
+      cb(events);
     });
   }
 

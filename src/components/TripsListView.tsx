@@ -35,13 +35,12 @@ export default function TripsListView({ onSelectTrip }: TripsListViewProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid]);
 
-  // Spec: "Invited user signs in and membership activates" — best-effort;
-  // see FirestoreTripsRepository.activatePendingInvites for the documented
-  // rules-visibility gap that currently makes this a no-op for a genuine
-  // not-yet-a-member invitee.
+  // Spec: "Invited user signs in and membership activates". The repository
+  // delegates to an authenticated callable so the invitee does not need
+  // pre-membership Firestore read access.
   useEffect(() => {
     if (!user?.email) return;
-    void activatePendingInvites(uid, user.email);
+    void Promise.resolve(activatePendingInvites(uid, user.email)).catch(() => undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid, user?.email]);
 

@@ -1,5 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
-import type { ItineraryDay, PendingPlace, ChatMessage, TripLogistics } from '../types';
+import type {
+  ItineraryDay,
+  PendingPlace,
+  ChatMessage,
+  TripLogistics,
+  CriticalEvent,
+} from '../types';
 import type { TripRepository } from './ports';
 
 export interface TripRepositorySeed {
@@ -8,6 +14,7 @@ export interface TripRepositorySeed {
   pendingPlaces?: PendingPlace[];
   chat?: ChatMessage[];
   logistics?: TripLogistics;
+  criticalEvents?: CriticalEvent[];
 }
 
 function makeDay(overrides: Partial<ItineraryDay> = {}): ItineraryDay {
@@ -383,6 +390,41 @@ export function runTripRepositoryContractTests(
 
         const latest = await waitForLatestCall<TripLogistics>(cb, logistics => logistics.drivers.length === 1);
         expect(latest).toEqual(newLogistics);
+      });
+    });
+
+    describe('subscribeCriticalEvents', () => {
+      it('defaults to no events for a brand-new trip', async () => {
+        const tripId = `${label}-critical-events-default`;
+        const repo = await createRepo(tripId, {});
+        const cb = vi.fn();
+
+        repo.subscribeCriticalEvents(tripId, cb);
+
+        const latest = await waitForLatestCall<CriticalEvent[]>(cb, () => true);
+        expect(latest).toEqual([]);
+      });
+
+      it('delivers the critical events persisted for the selected trip', async () => {
+        const tripId = `${label}-critical-events-seeded`;
+        const event: CriticalEvent = {
+          id: 'flight-1',
+          type: 'flight',
+          title: 'Vuelo de regreso',
+          subType: 'Vuelo',
+          locationName: 'Aeropuerto',
+          coords: { lat: -34.8222, lon: -58.5358 },
+          targetTimeStr: '18:30',
+          description: 'Llegar con anticipación.',
+          warningMessage: 'Check-in cierra una hora antes.',
+        };
+        const repo = await createRepo(tripId, { criticalEvents: [event] });
+        const cb = vi.fn();
+
+        repo.subscribeCriticalEvents(tripId, cb);
+
+        const latest = await waitForLatestCall<CriticalEvent[]>(cb, events => events.length === 1);
+        expect(latest).toEqual([event]);
       });
     });
   });

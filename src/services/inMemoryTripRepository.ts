@@ -5,6 +5,7 @@ import type {
   PendingPlace,
   ChatMessage,
   TripLogistics,
+  CriticalEvent,
 } from '../types';
 import { initialItinerary, initialChatMessages, pinnedPoints, initialPendingPlaces } from '../data';
 import { mapCategoryToActivityType } from '../utils/category';
@@ -20,6 +21,7 @@ interface InMemoryTripRepositorySeed {
   pendingPlaces?: PendingPlace[];
   chat?: ChatMessage[];
   logistics?: TripLogistics;
+  criticalEvents?: CriticalEvent[];
 }
 
 const APPROVED_PLACE_PIN_IMAGE =
@@ -41,12 +43,14 @@ export class InMemoryTripRepository implements TripRepository {
   private pendingPlaces: PendingPlace[];
   private chat: ChatMessage[];
   private logistics: TripLogistics;
+  private criticalEvents: CriticalEvent[];
 
   private itineraryListeners = new Set<Listener<ItineraryDay[]>>();
   private pinsListeners = new Set<Listener<PinnedPoint[]>>();
   private pendingPlacesListeners = new Set<Listener<PendingPlace[]>>();
   private chatListeners = new Set<Listener<ChatMessage[]>>();
   private logisticsListeners = new Set<Listener<TripLogistics>>();
+  private criticalEventsListeners = new Set<Listener<CriticalEvent[]>>();
 
   constructor(seed: InMemoryTripRepositorySeed = {}) {
     this.itinerary = seed.itinerary ?? initialItinerary;
@@ -54,6 +58,7 @@ export class InMemoryTripRepository implements TripRepository {
     this.pendingPlaces = seed.pendingPlaces ?? initialPendingPlaces;
     this.chat = seed.chat ?? initialChatMessages;
     this.logistics = seed.logistics ?? EMPTY_LOGISTICS;
+    this.criticalEvents = seed.criticalEvents ?? [];
   }
 
   subscribeItinerary(_tripId: string, cb: Listener<ItineraryDay[]>): Unsubscribe {
@@ -84,6 +89,12 @@ export class InMemoryTripRepository implements TripRepository {
     this.logisticsListeners.add(cb);
     cb(this.logistics);
     return () => this.logisticsListeners.delete(cb);
+  }
+
+  subscribeCriticalEvents(_tripId: string, cb: Listener<CriticalEvent[]>): Unsubscribe {
+    this.criticalEventsListeners.add(cb);
+    cb(this.criticalEvents);
+    return () => this.criticalEventsListeners.delete(cb);
   }
 
   async updateLogistics(_tripId: string, logistics: TripLogistics): Promise<void> {

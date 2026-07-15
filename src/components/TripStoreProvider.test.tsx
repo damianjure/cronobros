@@ -19,6 +19,9 @@ function spyOnRepository() {
     subscribePendingPlaces: vi.spyOn(tripRepository, 'subscribePendingPlaces').mockImplementation(noopUnsubscribe),
     subscribeChat: vi.spyOn(tripRepository, 'subscribeChat').mockImplementation(noopUnsubscribe),
     subscribeLogistics: vi.spyOn(tripRepository, 'subscribeLogistics').mockImplementation(noopUnsubscribe),
+    subscribeCriticalEvents: vi
+      .spyOn(tripRepository, 'subscribeCriticalEvents')
+      .mockImplementation(noopUnsubscribe),
   };
 }
 
@@ -36,12 +39,14 @@ describe('TripStoreProvider', () => {
     expect(spies.subscribePendingPlaces).not.toHaveBeenCalled();
     expect(spies.subscribeChat).not.toHaveBeenCalled();
     expect(spies.subscribeLogistics).not.toHaveBeenCalled();
+    expect(spies.subscribeCriticalEvents).not.toHaveBeenCalled();
 
     spies.subscribeItinerary.mockRestore();
     spies.subscribePins.mockRestore();
     spies.subscribePendingPlaces.mockRestore();
     spies.subscribeChat.mockRestore();
     spies.subscribeLogistics.mockRestore();
+    spies.subscribeCriticalEvents.mockRestore();
   });
 
   it('subscribes for the given tripId once mounted, and children can read the store via useTripStore', () => {
@@ -58,12 +63,14 @@ describe('TripStoreProvider', () => {
     expect(spies.subscribePendingPlaces).toHaveBeenCalledWith('trip-a', expect.any(Function));
     expect(spies.subscribeChat).toHaveBeenCalledWith('trip-a', expect.any(Function));
     expect(spies.subscribeLogistics).toHaveBeenCalledWith('trip-a', expect.any(Function));
+    expect(spies.subscribeCriticalEvents).toHaveBeenCalledWith('trip-a', expect.any(Function));
 
     spies.subscribeItinerary.mockRestore();
     spies.subscribePins.mockRestore();
     spies.subscribePendingPlaces.mockRestore();
     spies.subscribeChat.mockRestore();
     spies.subscribeLogistics.mockRestore();
+    spies.subscribeCriticalEvents.mockRestore();
   });
 
   it('tears down trip A subscriptions before starting trip B subscriptions when tripId changes', () => {
@@ -95,6 +102,12 @@ describe('TripStoreProvider', () => {
         cb({ drivers: [], vehicle: null });
         return vi.fn();
       });
+    const subscribeCriticalEventsSpy = vi
+      .spyOn(tripRepository, 'subscribeCriticalEvents')
+      .mockImplementation((_tripId, cb) => {
+        cb([]);
+        return vi.fn();
+      });
 
     const { rerender } = render(
       <TripStoreProvider tripId="trip-a">
@@ -117,6 +130,7 @@ describe('TripStoreProvider', () => {
     subscribePendingPlacesSpy.mockRestore();
     subscribeChatSpy.mockRestore();
     subscribeLogisticsSpy.mockRestore();
+    subscribeCriticalEventsSpy.mockRestore();
   });
 
   it('renders nothing (no children) before the store for the current tripId exists', () => {
@@ -140,5 +154,6 @@ describe('TripStoreProvider', () => {
     spies.subscribePendingPlaces.mockRestore();
     spies.subscribeChat.mockRestore();
     spies.subscribeLogistics.mockRestore();
+    spies.subscribeCriticalEvents.mockRestore();
   });
 });

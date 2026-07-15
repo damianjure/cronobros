@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { initializeFirestore } from 'firebase/firestore';
+import { getFunctions } from 'firebase/functions';
 
 // Firebase Web SDK config is non-secret (restricted by referrer/API key
 // rules on the Firebase project itself), but still injected via `VITE_`
@@ -18,6 +19,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
+export const functions = getFunctions(app);
 
 // `ignoreUndefinedProperties` (PR3, sdd/cronobros-firebase): several domain
 // types have optional fields (e.g. `ItineraryActivity.people`) that are

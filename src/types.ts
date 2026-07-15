@@ -126,3 +126,15 @@ export interface TripLogistics {
   drivers: Driver[];
   vehicle: Vehicle | null;
 }
+
+export interface CriticalEvent {
+  id: string;
+  type: 'hotel' | 'flight' | 'car';
+  title: string;
+  subType: string;
+  locationName: string;
+  coords: { lat: number; lon: number };
+  targetTimeStr: string;
+  description: string;
+  warningMessage: string;
+}

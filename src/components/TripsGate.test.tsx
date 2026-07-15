@@ -21,6 +21,7 @@ function stubTripRepositorySubscriptions() {
     vi.spyOn(tripRepository, 'subscribePendingPlaces').mockImplementation(noopUnsubscribe),
     vi.spyOn(tripRepository, 'subscribeChat').mockImplementation(noopUnsubscribe),
     vi.spyOn(tripRepository, 'subscribeLogistics').mockImplementation(noopUnsubscribe),
+    vi.spyOn(tripRepository, 'subscribeCriticalEvents').mockImplementation(noopUnsubscribe),
   ];
 }
 

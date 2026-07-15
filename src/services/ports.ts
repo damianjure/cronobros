@@ -5,6 +5,7 @@ import type {
   PendingPlace,
   ChatMessage,
   TripLogistics,
+  CriticalEvent,
 } from '../types';
 
 export type Unsubscribe = () => void;
@@ -23,6 +24,7 @@ export interface TripRepository {
   subscribePins(tripId: string, cb: (pins: PinnedPoint[]) => void): Unsubscribe;
   subscribePendingPlaces(tripId: string, cb: (places: PendingPlace[]) => void): Unsubscribe;
   subscribeChat(tripId: string, cb: (messages: ChatMessage[]) => void): Unsubscribe;
+  subscribeCriticalEvents(tripId: string, cb: (events: CriticalEvent[]) => void): Unsubscribe;
 
   addActivity(tripId: string, dayId: string, activity: ItineraryActivity): Promise<void>;
   deleteActivity(tripId: string, dayId: string, activityId: string): Promise<void>;
