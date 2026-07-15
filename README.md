@@ -47,7 +47,7 @@ Antes de desplegar Hosting, construí con la configuración pública correcta de
 - Nunca guardar claves, tokens o archivos `.env` en Git.
 - Las callables requieren Firebase Auth.
 - Los documentos importados se validan en cliente y servidor y se limitan a 7 MiB.
-- App Check todavía no se fuerza: primero debe registrarse un proveedor web y desplegarse el cliente para evitar bloquear usuarios legítimos.
+- El cliente ya soporta App Check con `VITE_FIREBASE_APP_CHECK_SITE_KEY`. El enforcement todavía no se fuerza: primero debe registrarse el proveedor reCAPTCHA Enterprise y desplegar su site key para evitar bloquear usuarios legítimos.
 
 ## Pendientes externos
 
