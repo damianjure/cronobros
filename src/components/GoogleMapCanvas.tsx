@@ -20,7 +20,11 @@ export default function GoogleMapCanvas({
   const containerRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
-  const mapId = (import.meta.env.VITE_GOOGLE_MAP_ID as string | undefined) || 'DEMO_MAP_ID';
+  // Map IDs are public configuration. This vector Map ID is managed in the
+  // same Google Cloud project; VITE_GOOGLE_MAP_ID remains an override for
+  // preview/staging environments.
+  const mapId =
+    (import.meta.env.VITE_GOOGLE_MAP_ID as string | undefined) || '35df5878fedbf537ea89f982';
 
   useEffect(() => {
     if (!apiKey || !containerRef.current) return;
