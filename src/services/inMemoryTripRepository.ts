@@ -7,7 +7,6 @@ import type {
   TripLogistics,
   CriticalEvent,
 } from '../types';
-import { initialItinerary, initialChatMessages, pinnedPoints, initialPendingPlaces } from '../data';
 import { mapCategoryToActivityType } from '../utils/category';
 import type { TripRepository, Unsubscribe } from './ports';
 
@@ -24,8 +23,7 @@ interface InMemoryTripRepositorySeed {
   criticalEvents?: CriticalEvent[];
 }
 
-const APPROVED_PLACE_PIN_IMAGE =
-  'https://lh3.googleusercontent.com/aida-public/AB6AXuC8kbbAVSGnOTZjuDOJbgKxvomdkFv5dlPjxQlL8K4RSkPMJynCQ4XkYX-8nN_ieyYhjFAimCZlGiwUXYJfrIfR8xfU4_5aR9W6jAP36Qtk_Tvi0IZaTtS6mGiabINpPHyHmdVY6G6smwzHqNZGww_PiqileoStp0VHXbxZzzHkQbhDpOLVxIelUlB_IhB4m6m-nTXBkqaE79Wyy9pcbbcQrfpTJ_iOzrVMtd_4wN1Wrnk1_kd2hXCvD1to7uznxceO9gusiK382DnK';
+const APPROVED_PLACE_PIN_IMAGE = '';
 
 /**
  * In-memory adapter over `data.ts`, implementing the `TripRepository` port.
@@ -53,10 +51,10 @@ export class InMemoryTripRepository implements TripRepository {
   private criticalEventsListeners = new Set<Listener<CriticalEvent[]>>();
 
   constructor(seed: InMemoryTripRepositorySeed = {}) {
-    this.itinerary = seed.itinerary ?? initialItinerary;
-    this.pins = seed.pins ?? pinnedPoints;
-    this.pendingPlaces = seed.pendingPlaces ?? initialPendingPlaces;
-    this.chat = seed.chat ?? initialChatMessages;
+    this.itinerary = seed.itinerary ?? [];
+    this.pins = seed.pins ?? [];
+    this.pendingPlaces = seed.pendingPlaces ?? [];
+    this.chat = seed.chat ?? [];
     this.logistics = seed.logistics ?? EMPTY_LOGISTICS;
     this.criticalEvents = seed.criticalEvents ?? [];
   }

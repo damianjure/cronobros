@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { MapPin, Plus, Trash2 } from 'lucide-react';
+import { Archive, MapPin, Plus, RotateCcw, Trash2 } from 'lucide-react';
 import { useTripsStore } from '../store/tripsStore';
 import { useAuthStore } from '../store/authStore';
 
@@ -24,11 +24,14 @@ export default function TripsListView({ onSelectTrip }: TripsListViewProps) {
   const subscribeToUser = useTripsStore(state => state.subscribeToUser);
   const createTrip = useTripsStore(state => state.createTrip);
   const deleteTrip = useTripsStore(state => state.deleteTrip);
+  const setArchived = useTripsStore(state => state.setArchived);
   const activatePendingInvites = useTripsStore(state => state.activatePendingInvites);
   const user = useAuthStore(state => state.user);
 
   const uid = user?.uid ?? DEV_FALLBACK_UID;
   const [name, setName] = useState('');
+  const [showArchived, setShowArchived] = useState(false);
+  const visibleTrips = trips.filter(trip => Boolean(trip.archivedAt) === showArchived);
 
   useEffect(() => {
     return subscribeToUser(uid);
@@ -55,7 +58,12 @@ export default function TripsListView({ onSelectTrip }: TripsListViewProps) {
   return (
     <div className="min-h-screen bg-brand-background p-6 md:p-12">
       <div className="max-w-3xl mx-auto space-y-8">
-        <h1 className="font-serif text-2xl font-black italic text-brand-primary">Tus Viajes</h1>
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="font-serif text-2xl font-black italic text-brand-primary">{showArchived ? 'Viajes archivados' : 'Tus Viajes'}</h1>
+          <button type="button" onClick={() => setShowArchived(value => !value)} className="flex items-center gap-2 border border-brand-primary/15 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-brand-primary">
+            {showArchived ? <RotateCcw className="h-3.5 w-3.5" /> : <Archive className="h-3.5 w-3.5" />}{showArchived ? 'Ver activos' : 'Ver archivo'}
+          </button>
+        </div>
 
         <form onSubmit={handleCreate} className="flex gap-3">
           <div className="flex-1">
@@ -80,26 +88,35 @@ export default function TripsListView({ onSelectTrip }: TripsListViewProps) {
           </button>
         </form>
 
-        {trips.length === 0 ? (
+        {visibleTrips.length === 0 ? (
           <div className="p-12 bg-white border border-brand-primary/10 rounded-none text-center">
             <MapPin className="w-8 h-8 text-brand-outline/40 mx-auto mb-3" />
-            <p className="font-serif font-bold italic text-brand-primary text-sm mb-1">No tenés viajes todavía</p>
-            <p className="text-xs text-brand-outline">Creá tu primer viaje con el formulario de arriba.</p>
+            <p className="font-serif font-bold italic text-brand-primary text-sm mb-1">{showArchived ? 'No hay viajes archivados' : 'No tenés viajes todavía'}</p>
+            <p className="text-xs text-brand-outline">{showArchived ? 'Los viajes que archives aparecerán acá.' : 'Creá tu primer viaje con el formulario de arriba.'}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {trips.map(trip => (
+            {visibleTrips.map(trip => (
               <div
                 key={trip.id}
                 className="bg-white border border-brand-primary/10 rounded-none p-5 flex items-center justify-between gap-3"
               >
-                <button
+                {trip.members[uid] !== 'viewer' && <button
+                  type="button"
+                  onClick={() => setArchived(trip.id, !showArchived)}
+                  aria-label={`${showArchived ? 'Restaurar' : 'Archivar'} ${trip.name}`}
+                  title={showArchived ? 'Restaurar viaje' : 'Archivar viaje'}
+                  className="text-brand-outline hover:text-brand-primary transition-colors cursor-pointer shrink-0"
+                >
+                  {showArchived ? <RotateCcw className="w-4 h-4" /> : <Archive className="w-4 h-4" />}
+                </button>}
+                {trip.ownerUid === uid && <button
                   type="button"
                   onClick={() => onSelectTrip(trip.id)}
                   className="font-serif font-black italic text-brand-primary text-base text-left flex-1 cursor-pointer"
                 >
                   {trip.name}
-                </button>
+                </button>}
                 <button
                   type="button"
                   onClick={() => deleteTrip(trip.id)}

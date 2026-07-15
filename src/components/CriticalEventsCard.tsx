@@ -34,10 +34,9 @@ export default function CriticalEventsCard() {
     ...event.coords,
   }));
 
-  // Until real GPS is requested, use the first persisted event as a neutral
-  // simulator origin. No destination-specific coordinates live in the UI.
+  // Until real GPS is requested, use a persisted event as a manual reference.
   const [currentCoords, setCurrentCoords] = useState<{ lat: number; lon: number } | null>(null);
-  const [coordsSource, setCoordsSource] = useState<'simulated' | 'gps'>('simulated');
+  const [coordsSource, setCoordsSource] = useState<'manual' | 'gps'>('manual');
   const [gpsError, setGpsError] = useState<string | null>(null);
   const [isGpsLoading, setIsGpsLoading] = useState(false);
 
@@ -299,7 +298,7 @@ export default function CriticalEventsCard() {
         </div>
       </div>
 
-      {/* Geolocation & Simulated GPS Panel */}
+      {/* Geolocation and manual reference panel */}
       <div className="bg-brand-background border border-brand-primary/5 p-5 min-w-[260px] flex flex-col justify-between">
         
         {/* Dynamic header depending on source */}
@@ -310,7 +309,7 @@ export default function CriticalEventsCard() {
               <span>Geolocalización Adaptativa</span>
             </span>
             <span className="text-[8px] font-extrabold px-1.5 py-0.5 bg-brand-primary text-white uppercase tracking-widest">
-              {coordsSource === 'gps' ? 'GPS REAL' : 'SIMULADOR'}
+              {coordsSource === 'gps' ? 'GPS REAL' : 'REFERENCIA'}
             </span>
           </div>
 
@@ -340,17 +339,17 @@ export default function CriticalEventsCard() {
         {/* Selector & Actions */}
         <div className="space-y-2.5 mt-4">
           
-          {/* Preset drop-down simulation */}
+          {/* Persisted event reference point */}
           <div>
             <label className="block text-[8px] font-black uppercase tracking-widest text-brand-outline mb-1">
-              Simular mi posición:
+              Punto de referencia:
             </label>
             <select
               value={`${effectiveCoords.lat},${effectiveCoords.lon}`}
               onChange={(e) => {
                 const [lat, lon] = e.target.value.split(',').map(Number);
                 setCurrentCoords({ lat, lon });
-                setCoordsSource('simulated');
+                setCoordsSource('manual');
                 setGpsError(null);
               }}
               className="w-full bg-white border border-brand-primary/10 py-1.5 px-2 text-[10px] font-bold focus:outline-none focus:border-brand-primary/30"

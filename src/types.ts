@@ -117,6 +117,7 @@ export interface Trip {
   members: Record<string, Role>;
   memberUids: string[];
   pendingMemberships?: Record<string, Membership>;
+  archivedAt?: string | null;
 }
 
 // PR5: per-trip logistics doc (design's LogisticsView migration decision —

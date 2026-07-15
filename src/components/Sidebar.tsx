@@ -4,6 +4,7 @@ import {
   Truck,
   Map as MapIcon,
   UserPlus,
+  HelpCircle,
   Compass,
   MapPin,
   Sparkles
@@ -16,6 +17,7 @@ interface SidebarProps {
   setActiveTab: (tab: ActiveTab) => void;
   onInviteClick: () => void;
   onSmartImport: () => void;
+  onHelpClick: () => void;
   isUploading: boolean;
   uploadProgress: number;
 }
@@ -25,6 +27,7 @@ export default function Sidebar({
   setActiveTab,
   onInviteClick,
   onSmartImport,
+  onHelpClick,
   isUploading,
   uploadProgress
 }: SidebarProps) {
@@ -124,6 +127,10 @@ export default function Sidebar({
           </button>
         )}
       </div>
+
+      <button type="button" onClick={onHelpClick} className="flex items-center gap-3 border-t border-brand-primary/10 p-3 text-xs font-bold uppercase tracking-wider text-brand-on-surface-variant hover:text-brand-primary">
+        <HelpCircle className="h-3.5 w-3.5" /> Ayuda
+      </button>
 
     </aside>
   );

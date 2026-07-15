@@ -63,6 +63,18 @@ describe('InMemoryTripsRepository', () => {
     });
   });
 
+  it('archives and restores a trip without deleting memberships', async () => {
+    const repo = new InMemoryTripsRepository();
+    await repo.createTrip('Viaje', 'user-1');
+    const cb = vi.fn();
+    repo.subscribeTrips('user-1', cb);
+    const tripId = cb.mock.calls.at(-1)![0][0].id;
+    await repo.setArchived(tripId, true);
+    expect(cb.mock.calls.at(-1)![0][0].archivedAt).toEqual(expect.any(String));
+    await repo.setArchived(tripId, false);
+    expect(cb.mock.calls.at(-1)![0][0]).toMatchObject({ archivedAt: null, memberUids: ['user-1'] });
+  });
+
   describe('inviteMember (spec: "Owner/editor invites a collaborator by email")', () => {
     it('writes a pending membership record keyed by email, without touching members/memberUids', async () => {
       const repo = new InMemoryTripsRepository();
@@ -80,6 +92,17 @@ describe('InMemoryTripsRepository', () => {
       expect(trip.members).toEqual({ 'user-1': 'owner' });
       expect(trip.memberUids).toEqual(['user-1']);
     });
+  });
+
+  it('cancels a pending invitation without changing active members', async () => {
+    const repo = new InMemoryTripsRepository();
+    await repo.createTrip('Viaje', 'user-1');
+    const cb = vi.fn();
+    repo.subscribeTrips('user-1', cb);
+    const tripId = cb.mock.calls.at(-1)![0][0].id;
+    await repo.inviteMember(tripId, 'friend@example.com', 'editor');
+    await repo.cancelInvite(tripId, 'friend@example.com');
+    expect(cb.mock.calls.at(-1)![0][0]).toMatchObject({ pendingMemberships: {}, members: { 'user-1': 'owner' } });
   });
 
   describe('activatePendingInvites (spec: "Invited user signs in and membership activates")', () => {

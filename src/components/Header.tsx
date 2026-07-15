@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Search, Bell, Settings } from 'lucide-react';
 import { ActiveTab } from '../types';
 import { useAuthStore } from '../store/authStore';
+import { useTripStore } from '../store/tripStore';
+import { useCurrentTrip } from '../store/currentTripContext';
 
 interface HeaderProps {
   activeTab: ActiveTab;
@@ -22,7 +24,18 @@ export default function Header({
 }: HeaderProps) {
   const [showNotificationsDropdown, setShowNotificationsDropdown] = useState(false);
   const user = useAuthStore(state => state.user);
+  const criticalEvents = useTripStore(state => state.criticalEvents);
+  const currentTrip = useCurrentTrip();
   const displayName = user?.displayName ?? user?.email ?? 'Viajero';
+  const pendingInvites = Object.values(currentTrip?.pendingMemberships ?? {}).filter(invite => invite.pending);
+  const notifications = [
+    ...criticalEvents.map(event => ({
+      id: `event-${event.id}`,
+      title: event.title,
+      detail: `${event.targetDate || 'Sin fecha'} · ${event.targetTimeStr}${event.warningMessage ? ` · ${event.warningMessage}` : ''}`,
+    })),
+    ...pendingInvites.map(invite => ({ id: `invite-${invite.email}`, title: 'Invitación pendiente', detail: `${invite.email} · ${invite.role}` })),
+  ].slice(0, 8);
 
   const navItems: { label: string; tab: ActiveTab }[] = [
     { label: 'Panel', tab: 'dashboard' },
@@ -41,7 +54,7 @@ export default function Header({
           className="font-serif text-2xl font-black italic text-brand-primary cursor-pointer select-none tracking-tight hover:opacity-90 active:scale-98 transition-transform"
           id="header-brand-logo"
         >
-          Horizon
+          Cronobros
         </span>
 
         {/* Center navigation links */}
@@ -92,6 +105,7 @@ export default function Header({
             id="header-notifications-btn"
           >
             <Bell className="w-4.5 h-4.5" />
+            {notifications.length > 0 && <span className="absolute right-0.5 top-0.5 min-w-4 rounded-full bg-brand-sunset px-1 text-center text-[8px] font-black text-white">{notifications.length}</span>}
           </button>
 
           {showNotificationsDropdown && (
@@ -99,10 +113,17 @@ export default function Header({
               <div className="px-4 py-2 border-b border-brand-primary/10 flex justify-between items-center">
                 <span className="font-bold text-[10px] text-brand-primary uppercase tracking-widest">Alertas y Actualizaciones</span>
               </div>
-              <div className="px-4 py-6 text-center">
+              {notifications.length === 0 ? <div className="px-4 py-6 text-center">
                 <p className="text-xs font-bold text-brand-primary font-serif italic">Sin novedades</p>
                 <p className="text-[10px] text-brand-outline mt-1">Las actualizaciones reales del viaje aparecerán aquí.</p>
-              </div>
+              </div> : <div className="max-h-80 overflow-y-auto">
+                {notifications.map(notification => (
+                  <button key={notification.id} type="button" onClick={() => { setActiveTab('dashboard'); setShowNotificationsDropdown(false); }} className="block w-full border-b border-brand-primary/5 px-4 py-3 text-left hover:bg-brand-primary/5">
+                    <strong className="block text-xs text-brand-primary">{notification.title}</strong>
+                    <span className="mt-0.5 block text-[10px] text-brand-outline">{notification.detail}</span>
+                  </button>
+                ))}
+              </div>}
             </div>
           )}
         </div>

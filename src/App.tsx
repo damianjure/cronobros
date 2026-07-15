@@ -5,6 +5,8 @@ import BottomNav from './components/BottomNav';
 import Toast from './components/Toast';
 import SettingsPanel from './components/SettingsPanel';
 import SmartImportModal from './components/SmartImportModal';
+import TripSearchResults from './components/TripSearchResults';
+import HelpPanel from './components/HelpPanel';
 
 import { ActiveTab } from './types';
 import { useTripStore } from './store/tripStore';
@@ -26,12 +28,14 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
   const [searchQuery, setSearchQuery] = useState('');
   const [showSettings, setShowSettings] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
 
   const addActivity = useTripStore(state => state.addActivity);
   const addDay = useTripStore(state => state.addDay);
   const itinerary = useTripStore(state => state.itinerary);
   const showToast = useToastStore(state => state.showToast);
   const inviteMember = useTripsStore(state => state.inviteMember);
+  const cancelInvite = useTripsStore(state => state.cancelInvite);
   const currentTrip = useCurrentTrip();
   const participants = useTripParticipants();
 
@@ -93,6 +97,7 @@ export default function App() {
         onNotificationClick={() => undefined}
         onSettingsClick={() => setShowSettings(true)}
       />
+      <TripSearchResults query={searchQuery} onClose={() => setSearchQuery('')} onNavigate={setActiveTab} />
 
       {/* Main Layout container */}
       <div className="flex min-h-screen pt-16">
@@ -104,6 +109,7 @@ export default function App() {
             setActiveTab={setActiveTab}
             onInviteClick={() => setShowInviteModal(true)}
             onSmartImport={() => setShowSmartImport(true)}
+            onHelpClick={() => setShowHelp(true)}
             isUploading={isImporting}
             uploadProgress={isImporting ? 100 : 0}
           />
@@ -189,9 +195,7 @@ export default function App() {
               )}
             </form>
 
-            {/* Pending invites — real membership records now (PR5), read
-                from the current trip doc. No "cancel invite" port method
-                exists yet, so this list is read-only. */}
+            {/* Pending invitations from the real trip membership record. */}
             {pendingInvites.length > 0 && (
               <div className="mt-5 border-t border-brand-outline-variant/20 pt-4">
                 <h4 className="text-[10px] font-extrabold text-brand-outline uppercase tracking-wider mb-2">Invitaciones Pendientes</h4>
@@ -200,7 +204,7 @@ export default function App() {
                     <div key={membership.email} className="flex items-center gap-2 px-3 py-1.5 bg-brand-surface-low border border-brand-outline-variant/15 rounded-lg text-xs font-semibold text-brand-primary">
                       <Mail className="w-3.5 h-3.5 text-brand-outline" />
                       <span>{membership.email}</span>
-                      <span className="text-[9px] text-brand-outline font-bold uppercase tracking-wide ml-auto">Pendiente</span>
+                      <button type="button" onClick={() => currentTrip && void cancelInvite(currentTrip.id, membership.email)} className="ml-auto text-[9px] font-bold uppercase tracking-wide text-red-600">Cancelar</button>
                     </div>
                   ))}
                 </div>
@@ -224,6 +228,7 @@ export default function App() {
         onClose={() => setShowSmartImport(false)}
         onConfirm={handleSmartImportConfirm}
       />
+      <HelpPanel isOpen={showHelp} onClose={() => setShowHelp(false)} />
 
       <Toast />
 

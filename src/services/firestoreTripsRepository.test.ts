@@ -135,6 +135,20 @@ describe('FirestoreTripsRepository', () => {
     unsubscribe();
   });
 
+  it('archives and restores a trip without changing membership', async () => {
+    const cb = vi.fn();
+    const unsubscribe = repo.subscribeTrips(testUid, cb);
+    await repo.createTrip('Viaje archivable', testUid);
+    const created = await waitForLatestCall<{ id: string }[]>(cb, trips => trips.length === 1);
+    await repo.setArchived(created[0].id, true);
+    const archived = await waitForLatestCall<{ archivedAt?: string; memberUids: string[] }[]>(cb, trips => Boolean(trips[0]?.archivedAt));
+    expect(archived[0].memberUids).toEqual([testUid]);
+    await repo.setArchived(created[0].id, false);
+    const restored = await waitForLatestCall<{ archivedAt?: string | null }[]>(cb, trips => trips[0]?.archivedAt === null);
+    expect(restored[0].archivedAt).toBeNull();
+    unsubscribe();
+  });
+
   it('updateRole updates a single member role without touching other members', async () => {
     const cb = vi.fn();
     const unsubscribe = repo.subscribeTrips(testUid, cb);
@@ -201,6 +215,19 @@ describe('FirestoreTripsRepository', () => {
     });
     expect(latest[0].members).toEqual({ [testUid]: 'owner' });
     expect(latest[0].memberUids).toEqual([testUid]);
+    unsubscribe();
+  });
+
+  it('cancels a pending invitation and its query mirror', async () => {
+    const cb = vi.fn();
+    const unsubscribe = repo.subscribeTrips(testUid, cb);
+    await repo.createTrip('Viaje con cancelación', testUid);
+    const created = await waitForLatestCall<{ id: string }[]>(cb, trips => trips.length === 1);
+    await repo.inviteMember(created[0].id, 'cancel@example.com', 'editor');
+    await waitForLatestCall<{ pendingMemberships?: Record<string, unknown> }[]>(cb, trips => Boolean(trips[0]?.pendingMemberships?.['cancel@example.com']));
+    await repo.cancelInvite(created[0].id, 'cancel@example.com');
+    const latest = await waitForLatestCall<{ pendingMemberships?: Record<string, unknown>; pendingEmails?: string[] }[]>(cb, trips => !trips[0]?.pendingMemberships?.['cancel@example.com']);
+    expect(latest[0].pendingEmails ?? []).not.toContain('cancel@example.com');
     unsubscribe();
   });
 

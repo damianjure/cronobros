@@ -2,13 +2,6 @@ import { Users } from 'lucide-react';
 import { ItineraryDay, ItineraryActivity } from '../types';
 import { useTripParticipants } from '../store/participants';
 
-// PR5: the "everyone by default" participant list now comes from the
-// current trip's REAL membership (`useTripParticipants`) instead of the
-// global `friends` fixture — used both as the initial `people` value for
-// new activities and as the display fallback here when an activity has no
-// explicit participants recorded yet.
-export const useDefaultParticipants = useTripParticipants;
-
 interface FriendChipsProps {
   day: ItineraryDay;
   activity: ItineraryActivity;

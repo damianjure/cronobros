@@ -43,6 +43,11 @@ export class InMemoryTripsRepository implements TripsRepository {
     this.notify();
   }
 
+  async setArchived(tripId: string, archived: boolean): Promise<void> {
+    this.trips = this.trips.map(trip => trip.id === tripId ? { ...trip, archivedAt: archived ? new Date().toISOString() : null } : trip);
+    this.notify();
+  }
+
   async inviteMember(tripId: string, email: string, role: Role): Promise<void> {
     const normalizedEmail = email.trim().toLowerCase();
     this.trips = this.trips.map(trip =>
@@ -56,6 +61,17 @@ export class InMemoryTripsRepository implements TripsRepository {
           }
         : trip,
     );
+    this.notify();
+  }
+
+  async cancelInvite(tripId: string, email: string): Promise<void> {
+    const normalizedEmail = email.trim().toLowerCase();
+    this.trips = this.trips.map(trip => {
+      if (trip.id !== tripId) return trip;
+      const { [normalizedEmail]: _removed, ...pendingMemberships } = trip.pendingMemberships ?? {};
+      void _removed;
+      return { ...trip, pendingMemberships };
+    });
     this.notify();
   }
 

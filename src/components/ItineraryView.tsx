@@ -11,7 +11,7 @@ import { formatDateToDisplay, getDayOfWeekInSpanish } from '../utils/date';
 import { useTripStore } from '../store/tripStore';
 import ActivityCard from './ActivityCard';
 import NewEntryForm from './NewEntryForm';
-import { useDefaultParticipants } from './FriendChips';
+import { useTripParticipants } from '../store/participants';
 import { useCurrentTrip } from '../store/currentTripContext';
 
 interface ItineraryViewProps {
@@ -29,7 +29,7 @@ export default function ItineraryView({
   const deleteActivity = useTripStore(state => state.deleteActivity);
   const addDay = useTripStore(state => state.addDay);
   const updateActivityPeople = useTripStore(state => state.updateActivityPeople);
-  const defaultParticipants = useDefaultParticipants();
+  const defaultParticipants = useTripParticipants();
   const currentTrip = useCurrentTrip();
 
   const [showShareToast, setShowShareToast] = useState(false);

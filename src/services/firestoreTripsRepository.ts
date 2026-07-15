@@ -1,8 +1,10 @@
 import {
   arrayUnion,
+  arrayRemove,
   collection,
   doc,
   deleteDoc,
+  deleteField,
   FieldPath,
   getDoc,
   onSnapshot,
@@ -76,6 +78,10 @@ export class FirestoreTripsRepository implements TripsRepository {
     await deleteDoc(doc(this.tripsRef(), tripId));
   }
 
+  async setArchived(tripId: string, archived: boolean): Promise<void> {
+    await updateDoc(doc(this.tripsRef(), tripId), { archivedAt: archived ? new Date().toISOString() : null });
+  }
+
   async inviteMember(tripId: string, email: string, role: Role): Promise<void> {
     const normalizedEmail = email.trim().toLowerCase();
     // `pendingMemberships` is additive (untouched by `firestore.rules`'
@@ -93,6 +99,17 @@ export class FirestoreTripsRepository implements TripsRepository {
       { email: normalizedEmail, role, pending: true },
       new FieldPath('pendingEmails'),
       arrayUnion(normalizedEmail),
+    );
+  }
+
+  async cancelInvite(tripId: string, email: string): Promise<void> {
+    const normalizedEmail = email.trim().toLowerCase();
+    await updateDoc(
+      doc(this.tripsRef(), tripId),
+      new FieldPath('pendingMemberships', normalizedEmail),
+      deleteField(),
+      new FieldPath('pendingEmails'),
+      arrayRemove(normalizedEmail),
     );
   }
 

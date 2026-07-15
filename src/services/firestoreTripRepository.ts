@@ -27,8 +27,7 @@ import type { TripRepository, Unsubscribe } from './ports';
 
 const EMPTY_LOGISTICS: TripLogistics = { drivers: [], vehicle: null };
 
-const APPROVED_PLACE_PIN_IMAGE =
-  'https://lh3.googleusercontent.com/aida-public/AB6AXuC8kbbAVSGnOTZjuDOJbgKxvomdkFv5dlPjxQlL8K4RSkPMJynCQ4XkYX-8nN_ieyYhjFAimCZlGiwUXYJfrIfR8xfU4_5aR9W6jAP36Qtk_Tvi0IZaTtS6mGiabINpPHyHmdVY6G6smwzHqNZGww_PiqileoStp0VHXbxZzzHkQbhDpOLVxIelUlB_IhB4m6m-nTXBkqaE79Wyy9pcbbcQrfpTJ_iOzrVMtd_4wN1Wrnk1_kd2hXCvD1to7uznxceO9gusiK382DnK';
+const APPROVED_PLACE_PIN_IMAGE = '';
 
 /**
  * Firestore adapter for `TripRepository` (spec "firestore-trip-data" domain:
