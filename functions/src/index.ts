@@ -1,5 +1,6 @@
 import { onDocumentDeleted } from 'firebase-functions/v2/firestore';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
+import { logger } from 'firebase-functions';
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { activatePendingInvitesForUser } from './invitations';
@@ -34,7 +35,9 @@ export const activatePendingInvites = onCall(async request => {
     throw new HttpsError('failed-precondition', 'The authenticated account has no email.');
   }
 
-  return activatePendingInvitesForUser(getFirestore(), uid, email);
+  const result = await activatePendingInvitesForUser(getFirestore(), uid, email);
+  logger.info('pending_invites_activation_completed', { uid });
+  return result;
 });
 
 export const importTravelText = onCall(
@@ -50,9 +53,13 @@ export const importTravelText = onCall(
     if (text.length > 20_000) {
       throw new HttpsError('invalid-argument', 'Travel text is too long.');
     }
+    const startedAt = Date.now();
     try {
-      return await extractTravelActivities(text.trim());
-    } catch {
+      const result = await extractTravelActivities(text.trim());
+      logger.info('smart_import_text_completed', { uid: request.auth.uid, durationMs: Date.now() - startedAt, activityCount: result.activities.length, textLength: text.length });
+      return result;
+    } catch (error) {
+      logger.error('smart_import_text_failed', { uid: request.auth.uid, durationMs: Date.now() - startedAt, error: error instanceof Error ? error.message : 'unknown' });
       throw new HttpsError('internal', 'Could not extract travel activities.');
     }
   },
@@ -68,9 +75,13 @@ export const importTravelDocument = onCall(
     } catch (error) {
       throw new HttpsError('invalid-argument', error instanceof Error ? error.message : 'Invalid document.');
     }
+    const startedAt = Date.now();
     try {
-      return await extractTravelDocument(document.data, document.mimeType);
-    } catch {
+      const result = await extractTravelDocument(document.data, document.mimeType);
+      logger.info('smart_import_document_completed', { uid: request.auth.uid, durationMs: Date.now() - startedAt, activityCount: result.activities.length, mimeType: document.mimeType, encodedBytes: document.data.length });
+      return result;
+    } catch (error) {
+      logger.error('smart_import_document_failed', { uid: request.auth.uid, durationMs: Date.now() - startedAt, mimeType: document.mimeType, error: error instanceof Error ? error.message : 'unknown' });
       throw new HttpsError('internal', 'Could not extract travel activities.');
     }
   },
