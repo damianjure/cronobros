@@ -134,6 +134,7 @@ export interface CriticalEvent {
   subType: string;
   locationName: string;
   coords: { lat: number; lon: number };
+  targetDate?: string;
   targetTimeStr: string;
   description: string;
   warningMessage: string;

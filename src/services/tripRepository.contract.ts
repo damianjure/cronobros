@@ -414,6 +414,7 @@ export function runTripRepositoryContractTests(
           subType: 'Vuelo',
           locationName: 'Aeropuerto',
           coords: { lat: -34.8222, lon: -58.5358 },
+          targetDate: '2026-09-20',
           targetTimeStr: '18:30',
           description: 'Llegar con anticipación.',
           warningMessage: 'Check-in cierra una hora antes.',
@@ -425,6 +426,41 @@ export function runTripRepositoryContractTests(
 
         const latest = await waitForLatestCall<CriticalEvent[]>(cb, events => events.length === 1);
         expect(latest).toEqual([event]);
+      });
+
+      it('creates, updates, and deletes a critical event reactively', async () => {
+        const tripId = `${label}-critical-events-crud`;
+        const repo = await createRepo(tripId, { criticalEvents: [] });
+        const cb = vi.fn();
+        repo.subscribeCriticalEvents(tripId, cb);
+
+        const event: CriticalEvent = {
+          id: 'hotel-1',
+          type: 'hotel',
+          title: 'Check-in',
+          subType: 'Alojamiento',
+          locationName: 'Hotel central',
+          coords: { lat: 40.4, lon: -3.7 },
+          targetDate: '2026-10-01',
+          targetTimeStr: '15:00',
+          description: 'Presentar documentación.',
+          warningMessage: 'Recepción cierra a las 18.',
+        };
+
+        await repo.upsertCriticalEvent(tripId, event);
+        let latest = await waitForLatestCall<CriticalEvent[]>(cb, events => events.length === 1);
+        expect(latest[0]).toEqual(event);
+
+        await repo.upsertCriticalEvent(tripId, { ...event, title: 'Check-in actualizado' });
+        latest = await waitForLatestCall<CriticalEvent[]>(
+          cb,
+          events => events[0]?.title === 'Check-in actualizado',
+        );
+        expect(latest).toHaveLength(1);
+
+        await repo.deleteCriticalEvent(tripId, event.id);
+        latest = await waitForLatestCall<CriticalEvent[]>(cb, events => events.length === 0);
+        expect(latest).toEqual([]);
       });
     });
   });

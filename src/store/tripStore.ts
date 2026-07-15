@@ -31,6 +31,8 @@ export interface TripStoreState {
   deletePendingPlace: (placeId: string) => Promise<void>;
   addChatMessage: (message: ChatMessage) => Promise<void>;
   updateLogistics: (logistics: TripLogistics) => Promise<void>;
+  upsertCriticalEvent: (event: CriticalEvent) => Promise<void>;
+  deleteCriticalEvent: (eventId: string) => Promise<void>;
 }
 
 export interface TripStoreHandle {
@@ -71,6 +73,8 @@ export function createTripStore(repository: TripRepository, tripId: string): Tri
     deletePendingPlace: placeId => repository.deletePendingPlace(tripId, placeId),
     addChatMessage: message => repository.addChatMessage(tripId, message),
     updateLogistics: logistics => repository.updateLogistics(tripId, logistics),
+    upsertCriticalEvent: event => repository.upsertCriticalEvent(tripId, event),
+    deleteCriticalEvent: eventId => repository.deleteCriticalEvent(tripId, eventId),
   }));
 
   // Subscribed AFTER `create()` returns: the repository fires each callback

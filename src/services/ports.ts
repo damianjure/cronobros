@@ -25,6 +25,8 @@ export interface TripRepository {
   subscribePendingPlaces(tripId: string, cb: (places: PendingPlace[]) => void): Unsubscribe;
   subscribeChat(tripId: string, cb: (messages: ChatMessage[]) => void): Unsubscribe;
   subscribeCriticalEvents(tripId: string, cb: (events: CriticalEvent[]) => void): Unsubscribe;
+  upsertCriticalEvent(tripId: string, event: CriticalEvent): Promise<void>;
+  deleteCriticalEvent(tripId: string, eventId: string): Promise<void>;
 
   addActivity(tripId: string, dayId: string, activity: ItineraryActivity): Promise<void>;
   deleteActivity(tripId: string, dayId: string, activityId: string): Promise<void>;

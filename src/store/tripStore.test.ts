@@ -37,6 +37,7 @@ describe('tripStore', () => {
       subType: 'Alquiler',
       locationName: 'Agencia',
       coords: { lat: -34.6, lon: -58.4 },
+      targetDate: '2026-09-20',
       targetTimeStr: '16:00',
       description: 'Entregar con tanque lleno.',
       warningMessage: 'Hay cargo por demora.',
@@ -46,6 +47,29 @@ describe('tripStore', () => {
     const { store } = createTripStore(repo, 'trip-1');
 
     expect(store.getState().criticalEvents).toEqual([event]);
+  });
+
+  it('delegates critical-event create/update/delete to the selected trip repository', async () => {
+    const repo = new InMemoryTripRepository({ criticalEvents: [] });
+    const { store } = createTripStore(repo, 'trip-1');
+    const event: CriticalEvent = {
+      id: 'event-1',
+      type: 'flight',
+      title: 'Vuelo',
+      subType: 'Salida',
+      locationName: 'Aeropuerto',
+      coords: { lat: 1, lon: 2 },
+      targetDate: '2026-09-20',
+      targetTimeStr: '09:30',
+      description: 'Llegar temprano.',
+      warningMessage: 'Cierra el embarque.',
+    };
+
+    await store.getState().upsertCriticalEvent(event);
+    expect(store.getState().criticalEvents).toEqual([event]);
+
+    await store.getState().deleteCriticalEvent(event.id);
+    expect(store.getState().criticalEvents).toEqual([]);
   });
 
   it('addActivity delegates to the repository (scoped to the given tripId) and updates store state reactively', async () => {

@@ -8,14 +8,25 @@ import {
   Activity,
   AlertTriangle,
   Locate,
-  RefreshCw
+  RefreshCw,
+  Settings2,
 } from 'lucide-react';
 import { calculateDistanceInKm } from '../utils/geo';
 import { calculateCountdown } from '../utils/date';
 import { useTripStore } from '../store/tripStore';
+import { useAuthStore } from '../store/authStore';
+import { useCurrentTrip } from '../store/currentTripContext';
+import CriticalEventsManager from './CriticalEventsManager';
 
 export default function CriticalEventsCard() {
   const criticalEvents = useTripStore(state => state.criticalEvents);
+  const upsertCriticalEvent = useTripStore(state => state.upsertCriticalEvent);
+  const deleteCriticalEvent = useTripStore(state => state.deleteCriticalEvent);
+  const user = useAuthStore(state => state.user);
+  const currentTrip = useCurrentTrip();
+  const role = user ? currentTrip?.members[user.uid] : undefined;
+  const canManage = role === 'owner' || role === 'editor';
+  const [showManager, setShowManager] = useState(false);
   const presets = criticalEvents.map(event => ({
     id: event.id,
     name: event.title,
@@ -110,7 +121,8 @@ export default function CriticalEventsCard() {
     const updateCountdown = () => {
       const { hours, minutes, seconds, targetDate } = calculateCountdown(
         activeEvent.targetTimeStr,
-        new Date()
+        new Date(),
+        activeEvent.targetDate,
       );
 
       setTimeLeft({
@@ -127,7 +139,7 @@ export default function CriticalEventsCard() {
     return () => clearInterval(interval);
   }, [activeEvent]);
 
-  // Est. travel time calculation (assuming average 80 km/h speed in Iceland roads)
+  // Rough travel-time estimate using an 80 km/h average.
   const estTravelTimeMin = Math.round((distance / 80) * 60);
   const formattedEstTime = estTravelTimeMin > 60 
     ? `${Math.floor(estTravelTimeMin / 60)}h ${estTravelTimeMin % 60}m`
@@ -147,30 +159,50 @@ export default function CriticalEventsCard() {
 
   if (!activeEvent || !effectiveCoords) {
     return (
-      <div
-        className="bg-white border border-brand-primary/10 p-6 relative overflow-hidden"
-        id="critical-events-card"
-      >
-        <div className="absolute top-0 left-0 right-0 h-1 bg-brand-sunset" />
-        <div className="flex items-start gap-3">
-          <div className="p-3 bg-brand-background border border-brand-primary/10">
-            <Clock className="w-5 h-5 text-brand-outline" />
-          </div>
-          <div>
-            <h3 className="font-serif font-black italic text-brand-primary text-xl">
-              Sin eventos críticos
-            </h3>
-            <p className="text-xs text-brand-on-surface-variant mt-1">
-              Este viaje todavía no tiene horarios impostergables cargados.
-            </p>
+      <>
+        <div
+          className="bg-white border border-brand-primary/10 p-6 relative overflow-hidden"
+          id="critical-events-card"
+        >
+          <div className="absolute top-0 left-0 right-0 h-1 bg-brand-sunset" />
+          <div className="flex items-start gap-3">
+            <div className="p-3 bg-brand-background border border-brand-primary/10">
+              <Clock className="w-5 h-5 text-brand-outline" />
+            </div>
+            <div>
+              <h3 className="font-serif font-black italic text-brand-primary text-xl">
+                Sin eventos críticos
+              </h3>
+              <p className="text-xs text-brand-on-surface-variant mt-1">
+                Este viaje todavía no tiene horarios impostergables cargados.
+              </p>
+            </div>
+            {canManage && (
+              <button
+                type="button"
+                onClick={() => setShowManager(true)}
+                className="ml-auto border border-brand-primary px-3 py-2 text-[9px] font-black uppercase tracking-wider text-brand-primary hover:bg-brand-primary hover:text-white"
+              >
+                Agregar evento crítico
+              </button>
+            )}
           </div>
         </div>
-      </div>
+        {showManager && (
+          <CriticalEventsManager
+            events={criticalEvents}
+            onSave={upsertCriticalEvent}
+            onDelete={deleteCriticalEvent}
+            onClose={() => setShowManager(false)}
+          />
+        )}
+      </>
     );
   }
 
   return (
-    <div className="bg-white border border-brand-primary/10 rounded-none p-5 md:p-6 shadow-none flex flex-col xl:flex-row gap-6 relative overflow-hidden" id="critical-events-card">
+    <>
+      <div className="bg-white border border-brand-primary/10 rounded-none p-5 md:p-6 shadow-none flex flex-col xl:flex-row gap-6 relative overflow-hidden" id="critical-events-card">
       
       {/* Absolute Decorative Line */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-brand-sunset" />
@@ -187,6 +219,16 @@ export default function CriticalEventsCard() {
           <span className="border border-brand-primary/10 text-brand-primary bg-brand-background text-[9px] font-extrabold uppercase tracking-widest px-2.5 py-1">
             {activeEvent.subType}
           </span>
+          {canManage && (
+            <button
+              type="button"
+              onClick={() => setShowManager(true)}
+              className="ml-auto border border-brand-primary/15 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-brand-primary flex items-center gap-1.5 hover:bg-brand-background"
+            >
+              <Settings2 className="w-3 h-3" />
+              Gestionar eventos
+            </button>
+          )}
         </div>
 
         {/* Event Header */}
@@ -353,6 +395,15 @@ export default function CriticalEventsCard() {
           </p>
         </div>
       </div>
-    </div>
+      </div>
+      {showManager && (
+        <CriticalEventsManager
+          events={criticalEvents}
+          onSave={upsertCriticalEvent}
+          onDelete={deleteCriticalEvent}
+          onClose={() => setShowManager(false)}
+        />
+      )}
+    </>
   );
 }

@@ -97,6 +97,19 @@ export class InMemoryTripRepository implements TripRepository {
     return () => this.criticalEventsListeners.delete(cb);
   }
 
+  async upsertCriticalEvent(_tripId: string, event: CriticalEvent): Promise<void> {
+    const exists = this.criticalEvents.some(current => current.id === event.id);
+    this.criticalEvents = exists
+      ? this.criticalEvents.map(current => (current.id === event.id ? event : current))
+      : [...this.criticalEvents, event];
+    this.criticalEventsListeners.forEach(cb => cb(this.criticalEvents));
+  }
+
+  async deleteCriticalEvent(_tripId: string, eventId: string): Promise<void> {
+    this.criticalEvents = this.criticalEvents.filter(event => event.id !== eventId);
+    this.criticalEventsListeners.forEach(cb => cb(this.criticalEvents));
+  }
+
   async updateLogistics(_tripId: string, logistics: TripLogistics): Promise<void> {
     this.logistics = logistics;
     this.logisticsListeners.forEach(cb => cb(this.logistics));

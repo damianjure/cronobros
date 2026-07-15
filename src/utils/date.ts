@@ -33,17 +33,26 @@ export interface Countdown {
 
 // Computes the remaining time until the next occurrence of `targetTimeStr` (HH:MM),
 // rolling over to tomorrow if that time has already passed today relative to `now`.
-export function calculateCountdown(targetTimeStr: string, now: Date): Countdown {
+export function calculateCountdown(
+  targetTimeStr: string,
+  now: Date,
+  targetDateStr?: string,
+): Countdown {
   const [targetHour, targetMin] = targetTimeStr.split(':').map(Number);
 
-  const targetDate = new Date(now);
-  targetDate.setHours(targetHour, targetMin, 0, 0);
-
-  if (now.getTime() > targetDate.getTime()) {
-    targetDate.setDate(targetDate.getDate() + 1);
+  let targetDate: Date;
+  if (targetDateStr) {
+    const [year, month, day] = targetDateStr.split('-').map(Number);
+    targetDate = new Date(year, month - 1, day, targetHour, targetMin, 0, 0);
+  } else {
+    targetDate = new Date(now);
+    targetDate.setHours(targetHour, targetMin, 0, 0);
+    if (now.getTime() > targetDate.getTime()) {
+      targetDate.setDate(targetDate.getDate() + 1);
+    }
   }
 
-  const diffMs = targetDate.getTime() - now.getTime();
+  const diffMs = Math.max(0, targetDate.getTime() - now.getTime());
   const diffSecs = Math.floor(diffMs / 1000);
 
   const hours = Math.floor(diffSecs / 3600);

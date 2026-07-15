@@ -115,9 +115,21 @@ export class FirestoreTripRepository implements TripRepository {
     return onSnapshot(this.criticalEventsRef(tripId), snapshot => {
       const events = snapshot.docs
         .map(d => d.data() as CriticalEvent)
-        .sort((a, b) => a.id.localeCompare(b.id));
+        .sort((a, b) =>
+          `${a.targetDate ?? ''}-${a.targetTimeStr}-${a.id}`.localeCompare(
+            `${b.targetDate ?? ''}-${b.targetTimeStr}-${b.id}`,
+          ),
+        );
       cb(events);
     });
+  }
+
+  async upsertCriticalEvent(tripId: string, event: CriticalEvent): Promise<void> {
+    await setDoc(doc(this.criticalEventsRef(tripId), event.id), event);
+  }
+
+  async deleteCriticalEvent(tripId: string, eventId: string): Promise<void> {
+    await deleteDoc(doc(this.criticalEventsRef(tripId), eventId));
   }
 
   async updateLogistics(tripId: string, logistics: TripLogistics): Promise<void> {
