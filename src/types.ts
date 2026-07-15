@@ -70,7 +70,9 @@ export interface PinnedPoint {
   category: string;
   image: string;
   isTopPick?: boolean;
-  coords: { x: number; y: number };
+  // Phase 2 persists geographic coordinates. The x/y variant remains
+  // readable for legacy prototype documents and is ignored by the real map.
+  coords: { lat: number; lon: number } | { x: number; y: number };
 }
 
 export interface PendingPlace {

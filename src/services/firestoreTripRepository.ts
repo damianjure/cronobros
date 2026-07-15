@@ -93,6 +93,10 @@ export class FirestoreTripRepository implements TripRepository {
     });
   }
 
+  async upsertPin(tripId: string, pin: PinnedPoint): Promise<void> {
+    await setDoc(doc(this.pinsRef(tripId), pin.id), pin);
+  }
+
   subscribePendingPlaces(tripId: string, cb: (places: PendingPlace[]) => void): Unsubscribe {
     return onSnapshot(this.pendingPlacesRef(tripId), snapshot => {
       cb(snapshot.docs.map(d => d.data() as PendingPlace));

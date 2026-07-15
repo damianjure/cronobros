@@ -5,6 +5,7 @@ import type {
   ChatMessage,
   TripLogistics,
   CriticalEvent,
+  PinnedPoint,
 } from '../types';
 import type { TripRepository } from './ports';
 
@@ -260,6 +261,29 @@ export function runTripRepositoryContractTests(
 
         const latest = await waitForLatestCall<PendingPlace[]>(cb, places => places.length === 0);
         expect(latest).toEqual([]);
+      });
+    });
+
+    describe('upsertPin', () => {
+      it('persists a geographic map point and updates subscribers reactively', async () => {
+        const tripId = `${label}-upsert-pin`;
+        const repo = await createRepo(tripId, { pins: [] });
+        const cb = vi.fn();
+        repo.subscribePins(tripId, cb);
+
+        const pin: PinnedPoint = {
+          id: 'pin-real-1',
+          title: 'Estación central',
+          description: 'Punto de encuentro',
+          category: 'Transporte',
+          image: '',
+          coords: { lat: 40.4168, lon: -3.7038 },
+        };
+
+        await repo.upsertPin(tripId, pin);
+
+        const latest = await waitForLatestCall<PinnedPoint[]>(cb, pins => pins.length === 1);
+        expect(latest).toEqual([pin]);
       });
     });
 

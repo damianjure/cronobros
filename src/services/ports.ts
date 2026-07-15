@@ -25,6 +25,7 @@ export interface TripRepository {
   subscribePendingPlaces(tripId: string, cb: (places: PendingPlace[]) => void): Unsubscribe;
   subscribeChat(tripId: string, cb: (messages: ChatMessage[]) => void): Unsubscribe;
   subscribeCriticalEvents(tripId: string, cb: (events: CriticalEvent[]) => void): Unsubscribe;
+  upsertPin(tripId: string, pin: PinnedPoint): Promise<void>;
   upsertCriticalEvent(tripId: string, event: CriticalEvent): Promise<void>;
   deleteCriticalEvent(tripId: string, eventId: string): Promise<void>;
 

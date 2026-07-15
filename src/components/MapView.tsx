@@ -1,337 +1,206 @@
-import { useState } from 'react';
-import {
-  Layers,
-  ZoomIn,
-  ZoomOut,
-  Compass,
-  Navigation,
-  Share,
-  MapPin,
-  Star,
-  Search
-} from 'lucide-react';
-import { PinnedPoint } from '../types';
+import { useCallback, useMemo, useState, type FormEvent } from 'react';
+import { MapPin, Navigation, Plus, Search, X } from 'lucide-react';
 import { useTripStore } from '../store/tripStore';
-import { useToastStore } from '../store/toastStore';
 import { useCurrentTrip } from '../store/currentTripContext';
 import { useTripParticipants } from '../store/participants';
+import { useAuthStore } from '../store/authStore';
+import type { PinnedPoint } from '../types';
+import type { MapPoint, RouteSummary } from '../lib/googleMaps';
+import GoogleMapCanvas from './GoogleMapCanvas';
+
+function geographicPosition(pin: PinnedPoint): google.maps.LatLngLiteral | null {
+  if ('lat' in pin.coords && 'lon' in pin.coords) {
+    return { lat: pin.coords.lat, lng: pin.coords.lon };
+  }
+  return null;
+}
+
+function formatDuration(durationMillis: number | null): string {
+  if (!durationMillis) return 'Sin estimación';
+  const totalMinutes = Math.round(durationMillis / 60_000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return hours > 0 ? `${hours} h ${minutes} min` : `${minutes} min`;
+}
 
 export default function MapView() {
   const pins = useTripStore(state => state.pins);
-  const showToast = useToastStore(state => state.showToast);
+  const criticalEvents = useTripStore(state => state.criticalEvents);
+  const upsertPin = useTripStore(state => state.upsertPin);
   const currentTrip = useCurrentTrip();
   const participants = useTripParticipants();
+  const user = useAuthStore(state => state.user);
+  const role = user ? currentTrip?.members[user.uid] : undefined;
+  const canEdit = role === 'owner' || role === 'editor';
 
-  const [activePin, setActivePin] = useState<PinnedPoint | null>(null);
-  const [isTerrainActive, setIsTerrainActive] = useState(false);
-  const [zoomLevel, setZoomLevel] = useState(1);
-  const [isNavigating, setIsNavigating] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedPointId, setSelectedPointId] = useState<string | null>(null);
+  const [draftPosition, setDraftPosition] = useState<google.maps.LatLngLiteral | null>(null);
+  const [title, setTitle] = useState('');
+  const [category, setCategory] = useState('Lugar');
+  const [description, setDescription] = useState('');
+  const [routeSummary, setRouteSummary] = useState<RouteSummary | null>(null);
 
-  const handlePinClick = (pin: PinnedPoint) => {
-    setActivePin(pin);
-  };
-
-  const handleStartNavigation = () => {
-    setIsNavigating(true);
-    setTimeout(() => {
-      showToast('Navegación GPX en tiempo real simulada iniciada.');
-      setIsNavigating(false);
-    }, 2000);
-  };
-
-  const filteredPins = pins.filter(pin => 
-    pin.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    pin.category.toLowerCase().includes(searchTerm.toLowerCase())
+  const geographicPins = useMemo(
+    () => pins.flatMap(pin => {
+      const position = geographicPosition(pin);
+      return position ? [{ id: pin.id, title: pin.title, position }] : [];
+    }),
+    [pins],
   );
+
+  const mapPoints: MapPoint[] = useMemo(
+    () => [
+      ...geographicPins,
+      ...criticalEvents.map(event => ({
+        id: `critical:${event.id}`,
+        title: event.title,
+        position: { lat: event.coords.lat, lng: event.coords.lon },
+      })),
+    ],
+    [criticalEvents, geographicPins],
+  );
+
+  const filteredPins = pins.filter(pin =>
+    `${pin.title} ${pin.category}`.toLowerCase().includes(searchTerm.toLowerCase()),
+  );
+  const selectedPin = pins.find(pin => pin.id === selectedPointId) ?? null;
+
+  const handleMapClick = useCallback((position: google.maps.LatLngLiteral) => {
+    setDraftPosition(position);
+  }, []);
+  const handlePointClick = useCallback((id: string) => setSelectedPointId(id), []);
+  const handleRouteSummary = useCallback((summary: RouteSummary | null) => setRouteSummary(summary), []);
+
+  const handleSavePin = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!draftPosition || !title.trim()) return;
+    await upsertPin({
+      id: globalThis.crypto?.randomUUID?.() ?? `pin-${Date.now()}`,
+      title: title.trim(),
+      category: category.trim() || 'Lugar',
+      description: description.trim(),
+      image: '',
+      coords: { lat: draftPosition.lat, lon: draftPosition.lng },
+    });
+    setDraftPosition(null);
+    setTitle('');
+    setCategory('Lugar');
+    setDescription('');
+  };
+
+  const openRoute = () => {
+    if (mapPoints.length < 2) return;
+    const origin = mapPoints[0].position;
+    const destination = mapPoints[mapPoints.length - 1].position;
+    const url = new URL('https://www.google.com/maps/dir/');
+    url.searchParams.set('api', '1');
+    url.searchParams.set('origin', `${origin.lat},${origin.lng}`);
+    url.searchParams.set('destination', `${destination.lat},${destination.lng}`);
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
 
   return (
     <div className="flex flex-col lg:flex-row h-[calc(100vh-100px)] -mx-6 md:-mx-16 -mb-12 relative overflow-hidden bg-brand-background">
-      
-      {/* Map sidebar on the left */}
-      <aside className="w-full lg:w-80 bg-white border-r border-brand-primary/10 flex flex-col h-1/2 lg:h-full z-10 shadow-none">
-        
-        {/* Sidebar Header */}
+      <aside className="w-full lg:w-80 bg-white border-r border-brand-primary/10 flex flex-col h-1/2 lg:h-full z-10">
         <div className="px-6 py-5 border-b border-brand-primary/10 shrink-0">
-          <h2 className="font-serif font-black italic text-brand-primary text-xl">
-            {currentTrip?.name ?? 'Tu viaje'}
-          </h2>
+          <h2 className="font-serif font-black italic text-brand-primary text-xl">{currentTrip?.name ?? 'Tu viaje'}</h2>
           <p className="text-[10px] font-black uppercase tracking-widest text-brand-on-surface-variant/75 mt-1">
-            Grupo de {participants.length}
+            Grupo de {participants.length} · {mapPoints.length} puntos geográficos
           </p>
-
-          {/* Search Pins inside Sidebar */}
           <div className="relative mt-3">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-outline w-3.5 h-3.5" />
-            <input 
-              type="text" 
-              placeholder="Filtrar lugares..." 
+            <input
+              type="text"
+              placeholder="Filtrar lugares..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 bg-brand-background border border-brand-primary/10 rounded-none text-xs focus:outline-none focus:border-brand-primary/30 transition-all font-sans animate-none"
+              onChange={event => setSearchTerm(event.target.value)}
+              className="w-full pl-9 pr-3 py-2 bg-brand-background border border-brand-primary/10 text-xs focus:outline-none focus:border-brand-primary/30"
             />
           </div>
         </div>
 
-        {/* Scrollable list of Pinned Points */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
-          <div className="flex items-center gap-1.5 px-2 text-brand-primary font-black text-[10px] uppercase tracking-widest">
-            <MapPin className="w-4 h-4 text-brand-primary/60 fill-current" />
-            <span>Puntos Guardados</span>
-          </div>
-
-          <div className="space-y-3">
-            {filteredPins.map((pin) => (
-              <div 
-                key={pin.id}
-                onClick={() => handlePinClick(pin)}
-                className={`p-3 rounded-none border transition-all cursor-pointer group active:scale-[0.98] ${
-                  activePin?.id === pin.id
-                    ? 'bg-brand-background border-brand-primary shadow-none'
-                    : 'bg-white border-brand-primary/10 shadow-none hover:border-brand-primary/30'
-                }`}
-                id={`pinned-card-${pin.id}`}
-              >
-                <div className="flex gap-3">
-                  <div className="w-16 h-16 rounded-none overflow-hidden shrink-0 border border-brand-primary/5">
-                    <img 
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-102" 
-                      src={pin.image} 
-                      alt={pin.title} 
-                    />
-                  </div>
-                  
-                  <div className="flex flex-col justify-center overflow-hidden">
-                    <h4 className="font-serif font-black italic text-sm text-brand-primary truncate leading-snug">
-                      {pin.title}
-                    </h4>
-                    {pin.isTopPick ? (
-                      <div className="flex items-center gap-1 mt-1">
-                        <Star className="w-3 h-3 text-brand-sunset fill-brand-sunset" />
-                        <span className="text-[8px] text-brand-sunset font-black uppercase tracking-widest">Recomendado</span>
-                      </div>
-                    ) : (
-                      <span className="text-[8px] text-brand-outline font-black uppercase tracking-widest mt-1 truncate">
-                        {pin.category === 'Hot Springs' ? 'Aguas Termales' : pin.category === 'Town' ? 'Pueblo' : pin.category === 'Waterfalls' ? 'Cascadas' : pin.category}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          {filteredPins.length === 0 ? (
+            <div className="p-6 text-center border border-brand-primary/10 bg-brand-background">
+              <MapPin className="w-5 h-5 mx-auto text-brand-primary/50 mb-2" />
+              <p className="text-xs font-bold text-brand-primary">Sin lugares marcados</p>
+              <p className="text-[10px] text-brand-outline mt-1">
+                {canEdit ? 'Hacé clic en el mapa para guardar el primero.' : 'Los editores pueden agregar puntos.'}
+              </p>
+            </div>
+          ) : filteredPins.map(pin => (
+            <button
+              key={pin.id}
+              onClick={() => setSelectedPointId(pin.id)}
+              className={`w-full text-left p-3 border transition-colors ${selectedPointId === pin.id ? 'bg-brand-background border-brand-primary' : 'border-brand-primary/10 hover:border-brand-primary/30'}`}
+            >
+              <span className="font-serif font-black italic text-sm text-brand-primary block">{pin.title}</span>
+              <span className="text-[9px] text-brand-outline font-black uppercase tracking-widest">{pin.category}</span>
+            </button>
+          ))}
         </div>
-
-        {/* Sidebar Invitation prompt */}
-        <div className="p-4 bg-brand-background border-t border-brand-primary/10 shrink-0">
-          <p className="text-[9px] text-brand-outline text-center mb-2 font-black uppercase tracking-wider">¡Invita amigos para planificar la ruta!</p>
-          <button
-            onClick={() => showToast('¡Enlace de invitación copiado al portapapeles!')}
-            className="w-full bg-brand-primary hover:bg-brand-primary/90 text-white py-2.5 rounded-none font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-1.5 shadow-none cursor-pointer active:scale-95"
-          >
-            <span>Compartir Espacio de Mapa</span>
-          </button>
-        </div>
-
       </aside>
 
-      {/* Main Map canvas */}
       <main className="flex-1 relative h-1/2 lg:h-full overflow-hidden">
-        
-        {/* Satellite Map snapshot background */}
-        <div
-          className={`absolute inset-0 w-full h-full shadow-inner select-none bg-brand-surface-low ${
-            isTerrainActive ? 'bg-[radial-gradient(circle_at_center,_rgba(0,51,102,0.12),_transparent_65%)]' : ''
-          }`}
-          style={{ transform: `scale(${1 + (zoomLevel - 1) * 0.02})` }}
-        >
-          <div className="absolute inset-0 bg-brand-primary/10 pointer-events-none" />
+        <GoogleMapCanvas
+          points={mapPoints}
+          editable={canEdit}
+          onMapClick={handleMapClick}
+          onPointClick={handlePointClick}
+          onRouteSummary={handleRouteSummary}
+        />
 
-          {/* SVG Route overlay */}
-          {pins.length > 1 && <svg className="absolute inset-0 w-full h-full pointer-events-none z-10" viewBox="0 0 1000 600" preserveAspectRatio="none">
-            {/* Draw curve path representing the ring road */}
-            <path 
-              className="route-path" 
-              d="M 120,290 C 250,330 380,440 450,470 S 680,530 710,510 S 840,430 890,420" 
-              fill="none" 
-              stroke="#FF9F1C" 
-              strokeWidth="4" 
-              strokeLinecap="round"
-              opacity="0.9"
-              style={{ strokeDasharray: '8', animation: isNavigating ? 'dash 15s linear infinite' : 'none' }}
-            />
-
-            {/* Glowing route background line */}
-            <path 
-              d="M 120,290 C 250,330 380,440 450,470 S 680,530 710,510 S 840,430 890,420" 
-              fill="none" 
-              stroke="#003366" 
-              strokeWidth="8" 
-              strokeLinecap="round"
-              opacity="0.35"
-            />
-          </svg>}
-
-          {pins.length === 0 && (
-            <div className="absolute inset-0 flex items-center justify-center p-8 text-center">
-              <div className="max-w-sm bg-white border border-brand-primary/10 p-8">
-                <MapPin className="w-7 h-7 text-brand-primary/50 mx-auto mb-3" />
-                <p className="font-serif font-black italic text-brand-primary">Todavía no hay lugares en el mapa</p>
-                <p className="text-xs text-brand-outline mt-2">Agregá o aprobá lugares para empezar a construir la ruta.</p>
-              </div>
-            </div>
-          )}
-
-          {/* Map pin markers positioned dynamically */}
-          <div className="absolute inset-0 z-20 pointer-events-auto">
-            {pins.map((pin) => {
-              const isSelected = activePin?.id === pin.id;
-              return (
-                <div 
-                  key={pin.id}
-                  onClick={() => handlePinClick(pin)}
-                  className="absolute cursor-pointer -translate-x-1/2 -translate-y-1/2 transition-all duration-300"
-                  style={{ left: `${pin.coords.x / 10}%`, top: `${pin.coords.y / 6}%` }}
-                >
-                  <div className="relative group">
-                    {/* Ring animation for top pick / selection */}
-                    <span className={`absolute -inset-2.5 rounded-full bg-brand-sunset/30 ${
-                      isSelected ? 'animate-ping duration-1000 opacity-100' : 'opacity-0'
-                    }`} />
-                    
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shadow-lg border-2 border-white transition-all ${
-                      isSelected 
-                        ? 'bg-brand-sunset scale-125 text-white' 
-                        : 'bg-brand-primary text-brand-primary-fixed-dim hover:scale-115'
-                    }`}>
-                      <MapPin className="w-4.5 h-4.5 fill-current" />
-                    </div>
-
-                    {/* Tiny Floating label */}
-                    <div className={`absolute bottom-9 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-brand-primary/95 text-white text-[9px] font-extrabold uppercase rounded-md tracking-wider shadow-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity ${
-                      isSelected ? 'opacity-100' : ''
-                    }`}>
-                      {pin.title}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Map Control Buttons */}
-        <div className="absolute top-6 right-6 flex flex-col gap-3 z-30">
-          <div className="flex flex-col bg-white rounded-none border border-brand-primary/10 shadow-none overflow-hidden">
-            <button 
-              onClick={() => setZoomLevel(prev => Math.min(3, prev + 0.25))}
-              className="p-3 hover:bg-brand-background text-brand-primary border-b border-brand-primary/10 transition-colors cursor-pointer"
-            >
-              <ZoomIn className="w-4 h-4" />
-            </button>
-            <button 
-              onClick={() => setZoomLevel(prev => Math.max(1, prev - 0.25))}
-              className="p-3 hover:bg-brand-background text-brand-primary transition-colors cursor-pointer"
-            >
-              <ZoomOut className="w-4 h-4" />
-            </button>
-          </div>
-
-          <button 
-            onClick={() => setIsTerrainActive(!isTerrainActive)}
-            className={`p-3 rounded-none border transition-all flex items-center gap-1.5 font-bold cursor-pointer select-none shadow-none ${
-              isTerrainActive 
-                ? 'bg-brand-primary text-white border-brand-primary' 
-                : 'bg-white text-brand-primary border-brand-primary/10 hover:bg-brand-background'
-            }`}
-          >
-            <Layers className="w-4 h-4" />
-            <span className="text-[8px] uppercase font-black tracking-widest hidden sm:inline">Relieve</span>
-          </button>
-
-          <button 
-            onClick={() => setActivePin(pins[0])}
-            className="p-3 bg-white hover:bg-brand-background text-brand-primary rounded-none border border-brand-primary/10 transition-all cursor-pointer shadow-none"
-          >
-            <Compass className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Active Pin Detailed Overlay Card inside Map */}
-        {activePin && (
-          <div className="absolute top-6 left-6 max-w-sm w-full bg-white border border-brand-primary/10 rounded-none p-4 shadow-lg z-30 animate-in slide-in-from-left-4 duration-300">
-            <div className="flex justify-between items-start mb-2">
-              <span className="text-[8px] font-black uppercase bg-brand-primary text-white px-2 py-0.5 rounded-none tracking-widest">
-                {activePin.category === 'Hot Springs' ? 'Aguas Termales' : activePin.category === 'Town' ? 'Pueblo' : activePin.category === 'Waterfalls' ? 'Cascadas' : activePin.category}
-              </span>
-              <button 
-                onClick={() => setActivePin(null)}
-                className="text-brand-outline hover:text-brand-primary text-xs font-bold w-5 h-5 flex items-center justify-center rounded-none hover:bg-brand-background"
-              >
-                ✕
-              </button>
-            </div>
-            
-            <div className="flex gap-3">
-              <div className="w-20 h-20 rounded-none overflow-hidden shrink-0 border border-brand-primary/5">
-                <img className="w-full h-full object-cover" src={activePin.image} alt={activePin.title} />
-              </div>
-              <div>
-                <h4 className="font-serif font-black italic text-brand-primary text-base leading-tight">
-                  {activePin.title}
-                </h4>
-                <p className="text-xs text-brand-on-surface-variant/90 font-medium mt-1 leading-normal">
-                  {activePin.description}
-                </p>
-              </div>
-            </div>
+        {selectedPin && (
+          <div className="absolute top-5 left-5 z-20 max-w-xs bg-white border border-brand-primary/10 p-4 shadow-lg">
+            <button onClick={() => setSelectedPointId(null)} className="absolute right-3 top-3 text-brand-outline" aria-label="Cerrar detalle"><X className="w-4 h-4" /></button>
+            <p className="text-[9px] uppercase tracking-widest font-black text-brand-outline">{selectedPin.category}</p>
+            <h3 className="font-serif font-black italic text-brand-primary mt-1">{selectedPin.title}</h3>
+            {selectedPin.description && <p className="text-xs text-brand-on-surface-variant mt-2">{selectedPin.description}</p>}
           </div>
         )}
 
-        {/* Floating Route Summary Overlay at the bottom */}
-        {pins.length > 0 && <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-full max-w-2xl px-4 z-30">
-          <div className="bg-white rounded-none p-5 border border-brand-primary/10 flex flex-col md:flex-row items-center justify-between gap-4 shadow-lg">
-            
-            <div className="flex items-center gap-6 w-full md:w-auto justify-between md:justify-start">
-              <div className="flex flex-col">
-                <span className="text-[8px] font-black text-brand-outline uppercase tracking-widest">Distancia Total</span>
-                <span className="font-serif text-lg md:text-xl text-brand-primary font-black italic">Por calcular</span>
-              </div>
-              
-              <div className="h-8 w-px bg-brand-primary/10 hidden md:block" />
-              
-              <div className="flex flex-col">
-                <span className="text-[8px] font-black text-brand-outline uppercase tracking-widest">Paradas Planeadas</span>
-                <div className="flex items-center gap-2">
-                  <span className="font-serif text-lg md:text-xl text-brand-primary font-black italic">{pins.length}</span>
-                </div>
-              </div>
+        <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 w-full max-w-xl px-4">
+          <div className="bg-white border border-brand-primary/10 p-4 flex items-center justify-between gap-4 shadow-lg">
+            <div>
+              <p className="text-[8px] font-black uppercase tracking-widest text-brand-outline">Ruta real</p>
+              <p className="font-serif font-black italic text-brand-primary">
+                {routeSummary ? `${(routeSummary.distanceMeters / 1000).toFixed(1)} km · ${formatDuration(routeSummary.durationMillis)}` : 'Agregá al menos dos puntos'}
+              </p>
             </div>
-
-            <div className="flex gap-2 w-full md:w-auto">
-              <button 
-                onClick={handleStartNavigation}
-                className="flex-1 md:flex-none px-5 py-3 bg-brand-primary text-white rounded-none font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-brand-primary/90 active:scale-95 transition-all cursor-pointer shadow-none"
-                id="map-start-nav-btn"
-              >
-                <Navigation className="w-4 h-4 fill-current" />
-                <span>{isNavigating ? "Iniciando..." : "Iniciar Navegación"}</span>
-              </button>
-              
-              <button
-                onClick={() => showToast('Archivo GPX de la ruta descargado.')}
-                className="p-3 border border-brand-primary/10 bg-white hover:bg-brand-background text-brand-primary rounded-none transition-all cursor-pointer active:scale-95"
-                title="Compartir coordenadas de ruta"
-              >
-                <Share className="w-4 h-4" />
-              </button>
-            </div>
-
+            <button
+              onClick={openRoute}
+              disabled={mapPoints.length < 2}
+              className="px-4 py-2.5 bg-brand-primary disabled:opacity-40 text-white text-[9px] font-black uppercase tracking-widest flex items-center gap-2"
+            >
+              <Navigation className="w-4 h-4" /> Abrir ruta
+            </button>
           </div>
-        </div>}
-
+        </div>
       </main>
 
+      {draftPosition && canEdit && (
+        <div className="fixed inset-0 z-[60] bg-brand-primary/40 flex items-center justify-center p-4">
+          <form onSubmit={handleSavePin} className="bg-white border border-brand-primary/10 p-6 w-full max-w-sm space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-serif font-black italic text-brand-primary">Guardar lugar</h3>
+              <button type="button" onClick={() => setDraftPosition(null)} aria-label="Cancelar"><X className="w-4 h-4" /></button>
+            </div>
+            <label className="block text-[10px] font-black uppercase tracking-wider text-brand-outline">Nombre
+              <input value={title} onChange={event => setTitle(event.target.value)} required className="mt-1 w-full border border-brand-primary/15 p-2.5 text-xs normal-case" />
+            </label>
+            <label className="block text-[10px] font-black uppercase tracking-wider text-brand-outline">Categoría
+              <input value={category} onChange={event => setCategory(event.target.value)} className="mt-1 w-full border border-brand-primary/15 p-2.5 text-xs normal-case" />
+            </label>
+            <label className="block text-[10px] font-black uppercase tracking-wider text-brand-outline">Descripción
+              <textarea value={description} onChange={event => setDescription(event.target.value)} className="mt-1 w-full border border-brand-primary/15 p-2.5 text-xs normal-case" rows={3} />
+            </label>
+            <button type="submit" className="w-full py-2.5 bg-brand-primary text-white text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2">
+              <Plus className="w-4 h-4" /> Guardar en el mapa
+            </button>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

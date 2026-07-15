@@ -73,6 +73,14 @@ export class InMemoryTripRepository implements TripRepository {
     return () => this.pinsListeners.delete(cb);
   }
 
+  async upsertPin(_tripId: string, pin: PinnedPoint): Promise<void> {
+    const exists = this.pins.some(current => current.id === pin.id);
+    this.pins = exists
+      ? this.pins.map(current => (current.id === pin.id ? pin : current))
+      : [...this.pins, pin];
+    this.notifyPins();
+  }
+
   subscribePendingPlaces(_tripId: string, cb: Listener<PendingPlace[]>): Unsubscribe {
     this.pendingPlacesListeners.add(cb);
     cb(this.pendingPlaces);

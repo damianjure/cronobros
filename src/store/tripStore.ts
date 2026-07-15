@@ -33,6 +33,7 @@ export interface TripStoreState {
   updateLogistics: (logistics: TripLogistics) => Promise<void>;
   upsertCriticalEvent: (event: CriticalEvent) => Promise<void>;
   deleteCriticalEvent: (eventId: string) => Promise<void>;
+  upsertPin: (pin: PinnedPoint) => Promise<void>;
 }
 
 export interface TripStoreHandle {
@@ -75,6 +76,7 @@ export function createTripStore(repository: TripRepository, tripId: string): Tri
     updateLogistics: logistics => repository.updateLogistics(tripId, logistics),
     upsertCriticalEvent: event => repository.upsertCriticalEvent(tripId, event),
     deleteCriticalEvent: eventId => repository.deleteCriticalEvent(tripId, eventId),
+    upsertPin: pin => repository.upsertPin(tripId, pin),
   }));
 
   // Subscribed AFTER `create()` returns: the repository fires each callback
