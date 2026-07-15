@@ -139,19 +139,16 @@ export default function MapView() {
       <main className="flex-1 relative h-1/2 lg:h-full overflow-hidden">
         
         {/* Satellite Map snapshot background */}
-        <div className="absolute inset-0 w-full h-full shadow-inner select-none bg-zinc-800">
-          <img 
-            className={`w-full h-full object-cover transition-all duration-500 ${
-              isTerrainActive ? 'contrast-125 saturate-150 brightness-95' : 'grayscale-[15%] contrast-105 saturate-105 brightness-100'
-            }`} 
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuBmfWb4mxRyjrhSa1irqYQvx2v4iGmKKwiZi1H-FVVI68kOAY92HzqvX8IRdDATfwPuzqvx7nIiGpz5V-4Ylj76XNT5fEtMCVfgJP2IcAprypgLW2u1BXzPIe60PJepYE6aGULw5c6lvqlRZGkKp359xNq0Z4bzXcVuSzl8DasHRC2W1TXCrei23wkD2d1SyV9U3CXLQPur7aoCJUA9sob-bIgG3KuaPR7Ac_8kSaffL75F3Srzu9WfRBGmVaSTh65VmGJfgjsI-oQC" 
-            alt="Iceland Satellite Map" 
-            style={{ transform: `scale(${1 + (zoomLevel - 1) * 0.2})` }}
-          />
+        <div
+          className={`absolute inset-0 w-full h-full shadow-inner select-none bg-brand-surface-low ${
+            isTerrainActive ? 'bg-[radial-gradient(circle_at_center,_rgba(0,51,102,0.12),_transparent_65%)]' : ''
+          }`}
+          style={{ transform: `scale(${1 + (zoomLevel - 1) * 0.02})` }}
+        >
           <div className="absolute inset-0 bg-brand-primary/10 pointer-events-none" />
 
           {/* SVG Route overlay */}
-          <svg className="absolute inset-0 w-full h-full pointer-events-none z-10" viewBox="0 0 1000 600" preserveAspectRatio="none">
+          {pins.length > 1 && <svg className="absolute inset-0 w-full h-full pointer-events-none z-10" viewBox="0 0 1000 600" preserveAspectRatio="none">
             {/* Draw curve path representing the ring road */}
             <path 
               className="route-path" 
@@ -173,7 +170,17 @@ export default function MapView() {
               strokeLinecap="round"
               opacity="0.35"
             />
-          </svg>
+          </svg>}
+
+          {pins.length === 0 && (
+            <div className="absolute inset-0 flex items-center justify-center p-8 text-center">
+              <div className="max-w-sm bg-white border border-brand-primary/10 p-8">
+                <MapPin className="w-7 h-7 text-brand-primary/50 mx-auto mb-3" />
+                <p className="font-serif font-black italic text-brand-primary">Todavía no hay lugares en el mapa</p>
+                <p className="text-xs text-brand-outline mt-2">Agregá o aprobá lugares para empezar a construir la ruta.</p>
+              </div>
+            </div>
+          )}
 
           {/* Map pin markers positioned dynamically */}
           <div className="absolute inset-0 z-20 pointer-events-auto">
@@ -282,13 +289,13 @@ export default function MapView() {
         )}
 
         {/* Floating Route Summary Overlay at the bottom */}
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-full max-w-2xl px-4 z-30">
+        {pins.length > 0 && <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-full max-w-2xl px-4 z-30">
           <div className="bg-white rounded-none p-5 border border-brand-primary/10 flex flex-col md:flex-row items-center justify-between gap-4 shadow-lg">
             
             <div className="flex items-center gap-6 w-full md:w-auto justify-between md:justify-start">
               <div className="flex flex-col">
                 <span className="text-[8px] font-black text-brand-outline uppercase tracking-widest">Distancia Total</span>
-                <span className="font-serif text-lg md:text-xl text-brand-primary font-black italic">324 km</span>
+                <span className="font-serif text-lg md:text-xl text-brand-primary font-black italic">Por calcular</span>
               </div>
               
               <div className="h-8 w-px bg-brand-primary/10 hidden md:block" />
@@ -296,13 +303,7 @@ export default function MapView() {
               <div className="flex flex-col">
                 <span className="text-[8px] font-black text-brand-outline uppercase tracking-widest">Paradas Planeadas</span>
                 <div className="flex items-center gap-2">
-                  <span className="font-serif text-lg md:text-xl text-brand-primary font-black italic">4</span>
-                  <div className="flex -space-x-1 ml-1">
-                    <div className="w-6 h-6 rounded-none border border-brand-primary/10 bg-brand-background text-[8px] font-black flex items-center justify-center shadow-none">BL</div>
-                    <div className="w-6 h-6 rounded-none border border-brand-primary/10 bg-brand-background text-[8px] font-black flex items-center justify-center shadow-none">SF</div>
-                    <div className="w-6 h-6 rounded-none border border-brand-primary/10 bg-brand-background text-[8px] font-black flex items-center justify-center shadow-none">BS</div>
-                    <div className="w-6 h-6 rounded-none border border-brand-primary/10 bg-brand-background text-[8px] font-black flex items-center justify-center shadow-none">GL</div>
-                  </div>
+                  <span className="font-serif text-lg md:text-xl text-brand-primary font-black italic">{pins.length}</span>
                 </div>
               </div>
             </div>
@@ -327,7 +328,7 @@ export default function MapView() {
             </div>
 
           </div>
-        </div>
+        </div>}
 
       </main>
 

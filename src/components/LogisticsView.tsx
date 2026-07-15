@@ -127,6 +127,27 @@ export default function LogisticsView() {
     { name: 'Neumáticos', value: 'Todo Terreno 32"', note: 'Monitorear presión diariamente en grava.' }
   ];
 
+  if (!activeVehicle && drivers.length === 0) {
+    return (
+      <div className="space-y-10">
+        <header className="border-b border-brand-primary/10 pb-6">
+          <h1 className="font-serif text-3xl md:text-4xl font-black italic text-brand-primary tracking-tight">
+            Logística de Transporte
+          </h1>
+          <p className="text-xs uppercase tracking-widest font-bold text-brand-on-surface-variant/75 mt-1.5">
+            Datos reales del viaje
+          </p>
+        </header>
+        <section className="bg-white rounded-none p-10 border border-brand-primary/10 text-center">
+          <p className="font-serif font-bold italic text-brand-primary text-base mb-2">Todavía no hay logística cargada</p>
+          <p className="text-xs text-brand-outline max-w-md mx-auto">
+            Cuando se asignen un vehículo o conductores, sus datos aparecerán en esta sección.
+          </p>
+        </section>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-10">
       

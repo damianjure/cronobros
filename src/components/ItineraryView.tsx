@@ -4,10 +4,6 @@ import {
   Plus,
   ChevronRight,
   CheckCircle2,
-  Bookmark,
-  Bed,
-  Star,
-  TrendingDown,
   CalendarDays,
 } from 'lucide-react';
 import { ActiveTab, ItineraryDay, ItineraryActivity } from '../types';
@@ -16,6 +12,7 @@ import { useTripStore } from '../store/tripStore';
 import ActivityCard from './ActivityCard';
 import NewEntryForm from './NewEntryForm';
 import { useDefaultParticipants } from './FriendChips';
+import { useCurrentTrip } from '../store/currentTripContext';
 
 interface ItineraryViewProps {
   setActiveTab: (tab: ActiveTab) => void;
@@ -24,7 +21,6 @@ interface ItineraryViewProps {
 }
 
 export default function ItineraryView({
-  setActiveTab,
   showNewEntryModal,
   setShowNewEntryModal,
 }: ItineraryViewProps) {
@@ -34,6 +30,7 @@ export default function ItineraryView({
   const addDay = useTripStore(state => state.addDay);
   const updateActivityPeople = useTripStore(state => state.updateActivityPeople);
   const defaultParticipants = useDefaultParticipants();
+  const currentTrip = useCurrentTrip();
 
   const [showShareToast, setShowShareToast] = useState(false);
 
@@ -93,7 +90,7 @@ export default function ItineraryView({
           date: newDayDate,
           dayOfWeek: getDayOfWeekInSpanish(newDayDate),
           title: `Exploración (${formatDateToDisplay(newDayDate)})`,
-          location: 'Islandia',
+          location: newLocation.trim() || 'Sin ubicación',
           activities: [newActivity]
         };
         addDay(newDay);
@@ -125,20 +122,22 @@ export default function ItineraryView({
                 {/* Breadcrumbs & Header */}
         <div className="border-b border-brand-primary/10 pb-6">
           <nav className="flex items-center gap-1.5 text-[9px] font-black text-brand-on-surface-variant/80 mb-3 uppercase tracking-[0.2em]">
-            <span>Islandia</span>
-            <ChevronRight className="w-3 h-3 text-brand-outline" />
-            <span>Península del Sur</span>
-            <ChevronRight className="w-3 h-3 text-brand-outline" />
-            <span className="text-brand-primary font-bold">Grindavík</span>
+            <span>{currentTrip?.name ?? 'Tu viaje'}</span>
+            {itinerary[0]?.location && (
+              <>
+                <ChevronRight className="w-3 h-3 text-brand-outline" />
+                <span className="text-brand-primary font-bold">{itinerary[0].location}</span>
+              </>
+            )}
           </nav>
 
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
             <div>
               <h1 className="font-serif text-3xl md:text-4xl font-black italic text-brand-primary tracking-tight">
-                Tu Viaje Comienza
+                Itinerario de {currentTrip?.name ?? 'tu viaje'}
               </h1>
               <p className="text-xs md:text-sm text-brand-on-surface-variant/90 leading-relaxed font-sans max-w-2xl mt-2">
-                Una exploración curada a través del corazón volcánico de la Península del Sur. La relajación se encuentra con la geología escarpada.
+                Organizá días, actividades y participantes en un único lugar compartido.
               </p>
             </div>
 
@@ -251,87 +250,6 @@ export default function ItineraryView({
             setNewLocation={setNewLocation}
             onSubmit={handleAddActivity}
           />
-        </div>
-
-        {/* Accommodation Sync Card */}
-        <div className="bg-white rounded-none border border-brand-primary/10 overflow-hidden shadow-none">
-          <div className="h-32 overflow-hidden relative">
-            <img
-              className="w-full h-full object-cover"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuCbMnz_GWC2KnnlhGFWLNaFIw8MTtLMBeRX6N9I7wE52LhwiCzBLHVK3Rfqw5G3M7vY05GOIRyE6c400_Qbz1xfvVP9k9KHXpGmP4vPuQvOt7JY6YuGAlC5vsJpj4Uhen_phIeQnlSE9Y7UBVmsPtIUsGdQXxE-80ul8qKHh8ytltJRZn_-CoUo6QnOOxlSiPAoPej-KVL-PM-DPtVJQS0JDRLXRmFym4QAy8Zr0ikwjXs1midbBvxO8EXdhQlrOR7GIlWjcPQwy3rl"
-              alt="The Retreat Suite"
-            />
-            <div className="absolute top-3 left-3">
-              <span className="px-2.5 py-1 bg-brand-primary text-white text-[8px] font-black rounded-none uppercase tracking-widest flex items-center gap-1 shadow-none">
-                <Bookmark className="w-3.5 h-3.5 fill-current" />
-                <span>Sincronizado de Email</span>
-              </span>
-            </div>
-          </div>
-
-          <div className="p-5">
-            <h3 className="font-serif font-black italic text-brand-primary text-base">
-              The Retreat en Blue Lagoon
-            </h3>
-
-            <div className="flex items-center gap-4 text-brand-outline font-black text-[10px] uppercase tracking-wider mt-2 mb-4">
-              <span className="flex items-center gap-1">
-                <Bed className="w-4 h-4 text-brand-primary" />
-                <span>3 Noches</span>
-              </span>
-              <span className="flex items-center gap-0.5">
-                <Star className="w-4 h-4 fill-brand-sunset text-brand-sunset" />
-                <span className="text-brand-primary">5.0</span>
-              </span>
-            </div>
-
-            <div className="flex gap-2">
-              <div
-                className="w-16 h-16 rounded-none bg-cover bg-center border border-brand-primary/10 shadow-none shrink-0"
-                style={{ backgroundImage: `url('https://lh3.googleusercontent.com/aida-public/AB6AXuBjtM-E91N7RHjJFt39abAwIGn9hrYoCG_-9NJsBqdHvppVoNzwty-0xF2NoD4ydzP3uBKMZ80DyUA_u8lFA41wbjqC2Wxgtru3eVBz2kQ3yMQ3cV6c-6wcEcUn-iSDzshP2fQnHIGpV4F6sHE_SbZq6xwxFKDTP-gbOlJfyILC3bymFvzisN-ph2a8J831sMHYAfuMkOYbWTizK1JnzLBK1C6B9wiLaMSU-HNvqHTPsKqiAZ4zPfNXQ85HwksTRR6KvD8GGYsmAHF6')` }}
-              />
-              <div className="flex-1">
-                <p className="text-brand-on-surface-variant/95 text-xs italic leading-relaxed font-sans">
-                  "La estancia más transformadora que he tenido. No te pierdas el ritual de la laguna privada."
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Day 2 Stats Outlook */}
-        <div className="bg-brand-background border border-brand-primary/10 p-5 rounded-none shadow-none">
-          <h4 className="text-brand-primary font-bold text-[10px] uppercase tracking-widest mb-4 flex items-center gap-1.5">
-            <TrendingDown className="w-4 h-4 text-brand-primary/75" />
-            <span>Perspectiva del Día 2</span>
-          </h4>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-white p-4 rounded-none border border-brand-primary/10 shadow-none">
-              <p className="text-brand-outline text-[8px] uppercase font-black tracking-widest">Tiempo de Viaje</p>
-              <p className="text-lg font-serif font-black italic text-brand-primary mt-1">1h 45m</p>
-            </div>
-            <div className="bg-white p-4 rounded-none border border-brand-primary/10 shadow-none">
-              <p className="text-brand-outline text-[8px] uppercase font-black tracking-widest">Distancia Total</p>
-              <p className="text-lg font-serif font-black italic text-brand-primary mt-1">82 km</p>
-            </div>
-          </div>
-          <p className="text-[10px] text-brand-primary font-black uppercase tracking-widest mt-4 flex items-center gap-1.5 leading-none">
-            <TrendingDown className="w-4 h-4" />
-            <span>Día de baja actividad • Enfoque en el paisaje</span>
-          </p>
-        </div>
-
-        {/* Map Inset */}
-        <div className="rounded-none overflow-hidden h-44 border border-brand-primary/10 relative shadow-none group">
-          <div
-            className="absolute inset-0 bg-cover bg-center group-hover:scale-[1.02] transition-transform duration-700 cursor-pointer"
-            style={{ backgroundImage: `url('https://lh3.googleusercontent.com/aida-public/AB6AXuD_SmYPAS1eFaIi90HFQFD4cLKjHAlRdONw-Q3L5STRuPqPUEzXe043rpUx9LD4h8flOSFZB8lXiOvdgDdW-tixCtZY3x7GmA2WnKZMfnOCrUFINUwf4BrncvfnF6ErjFxFUycSMt_xt_t-AngZO4AwsfLesxQ3dh64EeQD_-s0SV4VjXCacbmC7t8uzYawR2R3AdMdTtySwauWgXoL3PJ-dY13wjj87tXWIy28h-0UDHjDoXvJODudrCEq4o55boK6hI6wsftH-5Eq')` }}
-            onClick={() => setActiveTab('map')}
-          />
-          <div className="absolute bottom-3 left-3 bg-white border border-brand-primary/15 px-3 py-1.5 rounded-none flex items-center gap-1.5 shadow-lg">
-            <span className="w-1.5 h-1.5 rounded-full bg-brand-primary animate-pulse" />
-            <span className="text-[10px] font-bold text-brand-primary uppercase tracking-widest">Ruta en Vivo</span>
-          </div>
         </div>
 
       </div>

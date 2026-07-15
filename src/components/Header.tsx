@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Search, Bell, Settings } from 'lucide-react';
 import { ActiveTab } from '../types';
+import { useAuthStore } from '../store/authStore';
 
 interface HeaderProps {
   activeTab: ActiveTab;
@@ -20,6 +21,8 @@ export default function Header({
   onSettingsClick,
 }: HeaderProps) {
   const [showNotificationsDropdown, setShowNotificationsDropdown] = useState(false);
+  const user = useAuthStore(state => state.user);
+  const displayName = user?.displayName ?? user?.email ?? 'Viajero';
 
   const navItems: { label: string; tab: ActiveTab }[] = [
     { label: 'Panel', tab: 'dashboard' },
@@ -89,31 +92,16 @@ export default function Header({
             id="header-notifications-btn"
           >
             <Bell className="w-4.5 h-4.5" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-brand-sunset rounded-full border border-brand-background" />
           </button>
 
           {showNotificationsDropdown && (
             <div className="absolute right-0 mt-2 w-80 bg-white border border-brand-primary/10 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200 shadow-xl rounded-none">
               <div className="px-4 py-2 border-b border-brand-primary/10 flex justify-between items-center">
                 <span className="font-bold text-[10px] text-brand-primary uppercase tracking-widest">Alertas y Actualizaciones</span>
-                <span className="text-[9px] text-white font-bold uppercase bg-brand-primary px-2 py-0.5 rounded-none">Nuevo</span>
               </div>
-              <div className="max-h-60 overflow-y-auto">
-                <div className="px-4 py-3 hover:bg-brand-surface-low transition-colors cursor-pointer border-b border-brand-primary/5">
-                  <p className="text-xs font-bold text-brand-primary font-serif italic">Actualización del Ferry</p>
-                  <p className="text-xs text-brand-on-surface-variant/95 mt-0.5 font-sans">Maya: El ferry a la isla Hrísey sale mañana a las 2 PM en punto.</p>
-                  <span className="text-[9px] text-brand-outline mt-1 block">Ahora mismo</span>
-                </div>
-                <div className="px-4 py-3 hover:bg-brand-surface-low transition-colors cursor-pointer border-b border-brand-primary/5">
-                  <p className="text-xs font-bold text-brand-primary font-serif italic">Importación Inteligente Exitosa</p>
-                  <p className="text-xs text-brand-on-surface-variant/95 mt-0.5 font-sans">Tus vuelos a Islandia y boletos de la laguna se han procesado correctamente.</p>
-                  <span className="text-[9px] text-brand-outline mt-1 block">Hace 15 minutos</span>
-                </div>
-                <div className="px-4 py-3 hover:bg-brand-surface-low transition-colors cursor-pointer">
-                  <p className="text-xs font-bold text-brand-primary font-serif italic">Fotos Nuevas</p>
-                  <p className="text-xs text-brand-on-surface-variant/95 mt-0.5 font-sans">Sarah subió 12 fotos nuevas de la caminata por el glaciar.</p>
-                  <span className="text-[9px] text-brand-outline mt-1 block">Hace 1 hora</span>
-                </div>
+              <div className="px-4 py-6 text-center">
+                <p className="text-xs font-bold text-brand-primary font-serif italic">Sin novedades</p>
+                <p className="text-[10px] text-brand-outline mt-1">Las actualizaciones reales del viaje aparecerán aquí.</p>
               </div>
             </div>
           )}
@@ -129,12 +117,12 @@ export default function Header({
         </button>
 
         {/* User Profile avatar */}
-        <div className="w-8 h-8 rounded-full bg-brand-primary-fixed overflow-hidden border border-brand-outline-variant select-none cursor-pointer hover:opacity-90 active:scale-95 transition-all">
-          <img
-            className="w-full h-full object-cover"
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuCr387soWTtXUJbgL9pO9o3NzLfBnAz_ZIMfNeyMLMiAHdRtuMfAAH4HyXQhEYk4wFeVHGEfK6N8-gIpXWe7xTGjQ5EUkhAXoSJjxxzafBR-uXp2qHHQ6y9785VK8pAxb4i06PNpLaRpZMzVALvNf-yiPaNzYsqChtVCZHnECrlWotYDWCAdCQycJ7o2_wcNMlZr1GLpzOTBYapoeottpDKTzQ1-42paVA_Gv_anczV-PKFK13XKZcKrd5hj3B7F6vETC_DYWrx8qPz"
-            alt="Alex"
-          />
+        <div className="w-8 h-8 rounded-full bg-brand-primary-fixed overflow-hidden border border-brand-outline-variant select-none cursor-pointer hover:opacity-90 active:scale-95 transition-all flex items-center justify-center text-[10px] font-black text-brand-primary" title={displayName}>
+          {user?.photoURL ? (
+            <img className="w-full h-full object-cover" src={user.photoURL} alt={displayName} />
+          ) : (
+            displayName.charAt(0).toUpperCase()
+          )}
         </div>
       </div>
     </nav>

@@ -48,8 +48,8 @@ export default function DashboardView({ setActiveTab }: DashboardViewProps) {
     const userMessage: ChatMessage = {
       id: `msg-${Date.now()}`,
       sender: {
-        name: 'Alex (Tú)',
-        avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCr387soWTtXUJbgL9pO9o3NzLfBnAz_ZIMfNeyMLMiAHdRtuMfAAH4HyXQhEYk4wFeVHGEfK6N8-gIpXWe7xTGjQ5EUkhAXoSJjxxzafBR-uXp2qHHQ6y9785VK8pAxb4i06PNpLaRpZMzVALvNf-yiPaNzYsqChtVCZHnECrlWotYDWCAdCQycJ7o2_wcNMlZr1GLpzOTBYapoeottpDKTzQ1-42paVA_Gv_anczV-PKFK13XKZcKrd5hj3B7F6vETC_DYWrx8qPz',
+        name: `${displayName} (Tú)`,
+        avatar: user?.photoURL ?? '',
         isCurrentUser: true,
         role: 'Líder de Expedición'
       },
@@ -418,7 +418,7 @@ export default function DashboardView({ setActiveTab }: DashboardViewProps) {
               <p className="text-xs italic text-brand-primary font-serif font-medium leading-relaxed">
                 "{activeNote}"
               </p>
-              <p className="text-[9px] text-brand-primary/70 font-bold uppercase tracking-wider mt-1 text-right">— Añadido por Alex</p>
+              <p className="text-[9px] text-brand-primary/70 font-bold uppercase tracking-wider mt-1 text-right">— Añadido por {displayName}</p>
             </div>
             <p className="text-[9px] text-brand-outline mt-1.5 font-bold uppercase tracking-wider text-center">
               Escribe "nota: &lt;msg&gt;" para actualizar
