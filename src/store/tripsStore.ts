@@ -10,7 +10,9 @@ export interface TripsStoreState {
   subscribeToUser: (uid: string) => Unsubscribe;
   createTrip: (name: string, ownerUid: string) => Promise<void>;
   deleteTrip: (tripId: string) => Promise<void>;
+  setArchived: (tripId: string, archived: boolean) => Promise<void>;
   inviteMember: (tripId: string, email: string, role: Role) => Promise<void>;
+  cancelInvite: (tripId: string, email: string) => Promise<void>;
   activatePendingInvites: (uid: string, email: string) => Promise<void>;
 }
 
@@ -32,7 +34,9 @@ export function createTripsStore(
     subscribeToUser: uid => repository.subscribeTrips(uid, trips => store.setState({ trips })),
     createTrip: (name, ownerUid) => repository.createTrip(name, ownerUid),
     deleteTrip: tripId => repository.deleteTrip(tripId),
+    setArchived: (tripId, archived) => repository.setArchived(tripId, archived),
     inviteMember: (tripId, email, role) => repository.inviteMember(tripId, email, role),
+    cancelInvite: (tripId, email) => repository.cancelInvite(tripId, email),
     activatePendingInvites: (uid, email) => repository.activatePendingInvites(uid, email),
   }));
 

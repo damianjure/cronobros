@@ -25,7 +25,9 @@ function setTripsState(overrides: Partial<TripsStoreState> = {}) {
     subscribeToUser: vi.fn(),
     createTrip: vi.fn(),
     deleteTrip: vi.fn(),
+    setArchived: vi.fn(),
     inviteMember: vi.fn(),
+    cancelInvite: vi.fn(),
     activatePendingInvites: vi.fn(),
     ...overrides,
   };
@@ -103,6 +105,21 @@ describe('TripsListView', () => {
     await user.click(screen.getByRole('button', { name: /eliminar/i }));
 
     expect(state.deleteTrip).toHaveBeenCalledWith('trip-1');
+  });
+
+  it('archives an active trip and can restore it from the archive', async () => {
+    setAuthState();
+    const state = setTripsState({ trips: [makeTrip()] });
+    const user = userEvent.setup();
+    const { rerender } = render(<TripsListView onSelectTrip={vi.fn()} />);
+    await user.click(screen.getByRole('button', { name: /archivar islandia/i }));
+    expect(state.setArchived).toHaveBeenCalledWith('trip-1', true);
+
+    setTripsState({ trips: [makeTrip({ archivedAt: '2026-07-15T00:00:00.000Z' })], setArchived: state.setArchived });
+    rerender(<TripsListView onSelectTrip={vi.fn()} />);
+    await user.click(screen.getByRole('button', { name: /ver archivo/i }));
+    await user.click(screen.getByRole('button', { name: /restaurar islandia/i }));
+    expect(state.setArchived).toHaveBeenCalledWith('trip-1', false);
   });
 
   it('activates pending invites for the signed-in uid/email on mount (spec: activation on sign-in)', () => {

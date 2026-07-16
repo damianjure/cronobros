@@ -1,24 +1,57 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# Cronobros
 
-# Run and deploy your AI Studio app
+Planificador colaborativo de viajes con itinerarios, roles, invitaciones, logística, Google Maps y Smart Import mediante Gemini en Vertex AI.
 
-This contains everything you need to run your app locally.
+## Estado
 
-View your app in AI Studio: https://ai.studio/apps/7532f770-b4c4-4d35-adf8-727cd0fb9059
+- Producción: <https://crono-viajes-1779401310.web.app>
+- Firebase Auth y Firestore con roles `owner`, `editor` y `viewer`.
+- Google Maps con puntos persistidos y cálculo de rutas.
+- Smart Import autenticado desde texto, PDF, JPEG, PNG y WebP.
+- Functions de segunda generación sobre Node.js 22.
 
-## Run Locally
+## Desarrollo local
 
-**Prerequisites:**  Node.js
+Requisitos: Node.js 22+, npm y Firebase CLI.
 
+```bash
+npm install
+npm --prefix functions install
+cp .env.example .env.local
+npm run dev
+```
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+La aplicación web necesita únicamente configuración pública de Firebase y una clave de Maps restringida por HTTP referrer. **Gemini no usa una API key en el navegador**: las Functions invocan Vertex AI con su cuenta de servicio.
 
-## Dependency notes
+## Validación
 
-- `@google/genai` is currently unused by `src/` but is kept intentionally: it is reserved for the Phase 3 server-side Gemini integration (Smart Import PDF parsing) planned in the roadmap.
+```bash
+npm run typecheck
+npm run lint
+npm test
+npm --prefix functions test
+```
+
+Los tests frontend que inicializan Firebase requieren valores `VITE_FIREBASE_*` de prueba; no uses credenciales productivas.
+
+## Deploy
+
+```bash
+firebase deploy --project crono-viajes-1779401310 --only hosting,functions,firestore:rules
+```
+
+Antes de desplegar Hosting, construí con la configuración pública correcta de Firebase y Maps. No reutilices variables placeholder de tests.
+
+## Seguridad
+
+- Nunca guardar claves, tokens o archivos `.env` en Git.
+- Las callables requieren Firebase Auth.
+- Los documentos importados se validan en cliente y servidor y se limitan a 7 MiB.
+- El cliente ya soporta App Check con `VITE_FIREBASE_APP_CHECK_SITE_KEY`. El enforcement todavía no se fuerza: primero debe registrarse el proveedor reCAPTCHA Enterprise y desplegar su site key para evitar bloquear usuarios legítimos.
+
+## Pendientes externos
+
+- QA autenticado con cuentas reales.
+- Configuración y activación coordinada de App Check.
+- Integración de la rama final en `main` desde GitHub.
+- Seguimiento del advisory transitivo de `uuid` dentro de dependencias de Firebase Admin/Google Cloud.

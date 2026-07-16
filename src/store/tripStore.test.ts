@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createTripStore } from './tripStore';
 import { InMemoryTripRepository } from '../services/inMemoryTripRepository';
-import type { ItineraryDay, PendingPlace } from '../types';
+import type { CriticalEvent, ItineraryDay, PendingPlace } from '../types';
 
 function makeDay(overrides: Partial<ItineraryDay> = {}): ItineraryDay {
   return {
@@ -27,6 +27,49 @@ describe('tripStore', () => {
     expect(store.getState().pendingPlaces).toEqual([]);
     expect(store.getState().pins).toEqual([]);
     expect(store.getState().chatMessages).toEqual([]);
+  });
+
+  it('hydrates critical events from the selected trip repository', () => {
+    const event: CriticalEvent = {
+      id: 'event-1',
+      type: 'car',
+      title: 'Devolución del auto',
+      subType: 'Alquiler',
+      locationName: 'Agencia',
+      coords: { lat: -34.6, lon: -58.4 },
+      targetDate: '2026-09-20',
+      targetTimeStr: '16:00',
+      description: 'Entregar con tanque lleno.',
+      warningMessage: 'Hay cargo por demora.',
+    };
+    const repo = new InMemoryTripRepository({ criticalEvents: [event] });
+
+    const { store } = createTripStore(repo, 'trip-1');
+
+    expect(store.getState().criticalEvents).toEqual([event]);
+  });
+
+  it('delegates critical-event create/update/delete to the selected trip repository', async () => {
+    const repo = new InMemoryTripRepository({ criticalEvents: [] });
+    const { store } = createTripStore(repo, 'trip-1');
+    const event: CriticalEvent = {
+      id: 'event-1',
+      type: 'flight',
+      title: 'Vuelo',
+      subType: 'Salida',
+      locationName: 'Aeropuerto',
+      coords: { lat: 1, lon: 2 },
+      targetDate: '2026-09-20',
+      targetTimeStr: '09:30',
+      description: 'Llegar temprano.',
+      warningMessage: 'Cierra el embarque.',
+    };
+
+    await store.getState().upsertCriticalEvent(event);
+    expect(store.getState().criticalEvents).toEqual([event]);
+
+    await store.getState().deleteCriticalEvent(event.id);
+    expect(store.getState().criticalEvents).toEqual([]);
   });
 
   it('addActivity delegates to the repository (scoped to the given tripId) and updates store state reactively', async () => {
@@ -109,12 +152,14 @@ describe('tripStore', () => {
       const subscribePendingPlacesSpy = vi.spyOn(repo, 'subscribePendingPlaces');
       const subscribeChatSpy = vi.spyOn(repo, 'subscribeChat');
       const subscribeLogisticsSpy = vi.spyOn(repo, 'subscribeLogistics');
+      const subscribeCriticalEventsSpy = vi.spyOn(repo, 'subscribeCriticalEvents');
 
       expect(subscribeItinerarySpy).not.toHaveBeenCalled();
       expect(subscribePinsSpy).not.toHaveBeenCalled();
       expect(subscribePendingPlacesSpy).not.toHaveBeenCalled();
       expect(subscribeChatSpy).not.toHaveBeenCalled();
       expect(subscribeLogisticsSpy).not.toHaveBeenCalled();
+      expect(subscribeCriticalEventsSpy).not.toHaveBeenCalled();
 
       createTripStore(repo, 'trip-1');
 
@@ -123,20 +168,23 @@ describe('tripStore', () => {
       expect(subscribePendingPlacesSpy).toHaveBeenCalledTimes(1);
       expect(subscribeChatSpy).toHaveBeenCalledTimes(1);
       expect(subscribeLogisticsSpy).toHaveBeenCalledTimes(1);
+      expect(subscribeCriticalEventsSpy).toHaveBeenCalledTimes(1);
     });
 
-    it('teardown() unsubscribes all five subscriptions', () => {
+    it('teardown() unsubscribes all six subscriptions', () => {
       const repo = new InMemoryTripRepository({ itinerary: [makeDay()] });
       const unsubscribeItinerary = vi.fn();
       const unsubscribePins = vi.fn();
       const unsubscribePendingPlaces = vi.fn();
       const unsubscribeChat = vi.fn();
       const unsubscribeLogistics = vi.fn();
+      const unsubscribeCriticalEvents = vi.fn();
       vi.spyOn(repo, 'subscribeItinerary').mockReturnValue(unsubscribeItinerary);
       vi.spyOn(repo, 'subscribePins').mockReturnValue(unsubscribePins);
       vi.spyOn(repo, 'subscribePendingPlaces').mockReturnValue(unsubscribePendingPlaces);
       vi.spyOn(repo, 'subscribeChat').mockReturnValue(unsubscribeChat);
       vi.spyOn(repo, 'subscribeLogistics').mockReturnValue(unsubscribeLogistics);
+      vi.spyOn(repo, 'subscribeCriticalEvents').mockReturnValue(unsubscribeCriticalEvents);
 
       const { teardown } = createTripStore(repo, 'trip-1');
       teardown();
@@ -146,6 +194,7 @@ describe('tripStore', () => {
       expect(unsubscribePendingPlaces).toHaveBeenCalledTimes(1);
       expect(unsubscribeChat).toHaveBeenCalledTimes(1);
       expect(unsubscribeLogistics).toHaveBeenCalledTimes(1);
+      expect(unsubscribeCriticalEvents).toHaveBeenCalledTimes(1);
     });
 
     it('switching tripId tears down the old subscriptions before the new store starts its own', () => {

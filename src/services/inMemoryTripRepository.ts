@@ -5,8 +5,8 @@ import type {
   PendingPlace,
   ChatMessage,
   TripLogistics,
+  CriticalEvent,
 } from '../types';
-import { initialItinerary, initialChatMessages, pinnedPoints, initialPendingPlaces } from '../data';
 import { mapCategoryToActivityType } from '../utils/category';
 import type { TripRepository, Unsubscribe } from './ports';
 
@@ -20,10 +20,10 @@ interface InMemoryTripRepositorySeed {
   pendingPlaces?: PendingPlace[];
   chat?: ChatMessage[];
   logistics?: TripLogistics;
+  criticalEvents?: CriticalEvent[];
 }
 
-const APPROVED_PLACE_PIN_IMAGE =
-  'https://lh3.googleusercontent.com/aida-public/AB6AXuC8kbbAVSGnOTZjuDOJbgKxvomdkFv5dlPjxQlL8K4RSkPMJynCQ4XkYX-8nN_ieyYhjFAimCZlGiwUXYJfrIfR8xfU4_5aR9W6jAP36Qtk_Tvi0IZaTtS6mGiabINpPHyHmdVY6G6smwzHqNZGww_PiqileoStp0VHXbxZzzHkQbhDpOLVxIelUlB_IhB4m6m-nTXBkqaE79Wyy9pcbbcQrfpTJ_iOzrVMtd_4wN1Wrnk1_kd2hXCvD1to7uznxceO9gusiK382DnK';
+const APPROVED_PLACE_PIN_IMAGE = '';
 
 /**
  * In-memory adapter over `data.ts`, implementing the `TripRepository` port.
@@ -41,19 +41,22 @@ export class InMemoryTripRepository implements TripRepository {
   private pendingPlaces: PendingPlace[];
   private chat: ChatMessage[];
   private logistics: TripLogistics;
+  private criticalEvents: CriticalEvent[];
 
   private itineraryListeners = new Set<Listener<ItineraryDay[]>>();
   private pinsListeners = new Set<Listener<PinnedPoint[]>>();
   private pendingPlacesListeners = new Set<Listener<PendingPlace[]>>();
   private chatListeners = new Set<Listener<ChatMessage[]>>();
   private logisticsListeners = new Set<Listener<TripLogistics>>();
+  private criticalEventsListeners = new Set<Listener<CriticalEvent[]>>();
 
   constructor(seed: InMemoryTripRepositorySeed = {}) {
-    this.itinerary = seed.itinerary ?? initialItinerary;
-    this.pins = seed.pins ?? pinnedPoints;
-    this.pendingPlaces = seed.pendingPlaces ?? initialPendingPlaces;
-    this.chat = seed.chat ?? initialChatMessages;
+    this.itinerary = seed.itinerary ?? [];
+    this.pins = seed.pins ?? [];
+    this.pendingPlaces = seed.pendingPlaces ?? [];
+    this.chat = seed.chat ?? [];
     this.logistics = seed.logistics ?? EMPTY_LOGISTICS;
+    this.criticalEvents = seed.criticalEvents ?? [];
   }
 
   subscribeItinerary(_tripId: string, cb: Listener<ItineraryDay[]>): Unsubscribe {
@@ -66,6 +69,14 @@ export class InMemoryTripRepository implements TripRepository {
     this.pinsListeners.add(cb);
     cb(this.pins);
     return () => this.pinsListeners.delete(cb);
+  }
+
+  async upsertPin(_tripId: string, pin: PinnedPoint): Promise<void> {
+    const exists = this.pins.some(current => current.id === pin.id);
+    this.pins = exists
+      ? this.pins.map(current => (current.id === pin.id ? pin : current))
+      : [...this.pins, pin];
+    this.notifyPins();
   }
 
   subscribePendingPlaces(_tripId: string, cb: Listener<PendingPlace[]>): Unsubscribe {
@@ -84,6 +95,25 @@ export class InMemoryTripRepository implements TripRepository {
     this.logisticsListeners.add(cb);
     cb(this.logistics);
     return () => this.logisticsListeners.delete(cb);
+  }
+
+  subscribeCriticalEvents(_tripId: string, cb: Listener<CriticalEvent[]>): Unsubscribe {
+    this.criticalEventsListeners.add(cb);
+    cb(this.criticalEvents);
+    return () => this.criticalEventsListeners.delete(cb);
+  }
+
+  async upsertCriticalEvent(_tripId: string, event: CriticalEvent): Promise<void> {
+    const exists = this.criticalEvents.some(current => current.id === event.id);
+    this.criticalEvents = exists
+      ? this.criticalEvents.map(current => (current.id === event.id ? event : current))
+      : [...this.criticalEvents, event];
+    this.criticalEventsListeners.forEach(cb => cb(this.criticalEvents));
+  }
+
+  async deleteCriticalEvent(_tripId: string, eventId: string): Promise<void> {
+    this.criticalEvents = this.criticalEvents.filter(event => event.id !== eventId);
+    this.criticalEventsListeners.forEach(cb => cb(this.criticalEvents));
   }
 
   async updateLogistics(_tripId: string, logistics: TripLogistics): Promise<void> {

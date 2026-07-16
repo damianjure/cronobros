@@ -19,6 +19,7 @@ import type {
   PendingPlace,
   ChatMessage,
   TripLogistics,
+  CriticalEvent,
 } from '../types';
 import { mapCategoryToActivityType } from '../utils/category';
 import { db as defaultDb } from '../lib/firebase';
@@ -26,12 +27,11 @@ import type { TripRepository, Unsubscribe } from './ports';
 
 const EMPTY_LOGISTICS: TripLogistics = { drivers: [], vehicle: null };
 
-const APPROVED_PLACE_PIN_IMAGE =
-  'https://lh3.googleusercontent.com/aida-public/AB6AXuC8kbbAVSGnOTZjuDOJbgKxvomdkFv5dlPjxQlL8K4RSkPMJynCQ4XkYX-8nN_ieyYhjFAimCZlGiwUXYJfrIfR8xfU4_5aR9W6jAP36Qtk_Tvi0IZaTtS6mGiabINpPHyHmdVY6G6smwzHqNZGww_PiqileoStp0VHXbxZzzHkQbhDpOLVxIelUlB_IhB4m6m-nTXBkqaE79Wyy9pcbbcQrfpTJ_iOzrVMtd_4wN1Wrnk1_kd2hXCvD1to7uznxceO9gusiK382DnK';
+const APPROVED_PLACE_PIN_IMAGE = '';
 
 /**
  * Firestore adapter for `TripRepository` (spec "firestore-trip-data" domain:
- * zero behavior drift from `InMemoryTripRepository`, same 12-method
+ * zero behavior drift from `InMemoryTripRepository`, same port-method
  * signatures, verified by the shared `tripRepository.contract.ts` suite
  * against the local emulator). Firestore layout per design: one document per
  * `ItineraryDay` (nested `activities[]`), one document per pin/pending
@@ -66,6 +66,10 @@ export class FirestoreTripRepository implements TripRepository {
     return collection(this.db, 'trips', tripId, 'chat');
   }
 
+  private criticalEventsRef(tripId: string): CollectionReference<DocumentData> {
+    return collection(this.db, 'trips', tripId, 'criticalEvents');
+  }
+
   private logisticsDocRef(tripId: string) {
     // Single doc under its own subcollection (same one-level-deep shape the
     // security rules' nested `match /{subcollection}/{docId}` already
@@ -88,6 +92,10 @@ export class FirestoreTripRepository implements TripRepository {
     });
   }
 
+  async upsertPin(tripId: string, pin: PinnedPoint): Promise<void> {
+    await setDoc(doc(this.pinsRef(tripId), pin.id), pin);
+  }
+
   subscribePendingPlaces(tripId: string, cb: (places: PendingPlace[]) => void): Unsubscribe {
     return onSnapshot(this.pendingPlacesRef(tripId), snapshot => {
       cb(snapshot.docs.map(d => d.data() as PendingPlace));
@@ -104,6 +112,27 @@ export class FirestoreTripRepository implements TripRepository {
     return onSnapshot(this.logisticsDocRef(tripId), snapshot => {
       cb(snapshot.exists() ? (snapshot.data() as TripLogistics) : EMPTY_LOGISTICS);
     });
+  }
+
+  subscribeCriticalEvents(tripId: string, cb: (events: CriticalEvent[]) => void): Unsubscribe {
+    return onSnapshot(this.criticalEventsRef(tripId), snapshot => {
+      const events = snapshot.docs
+        .map(d => d.data() as CriticalEvent)
+        .sort((a, b) =>
+          `${a.targetDate ?? ''}-${a.targetTimeStr}-${a.id}`.localeCompare(
+            `${b.targetDate ?? ''}-${b.targetTimeStr}-${b.id}`,
+          ),
+        );
+      cb(events);
+    });
+  }
+
+  async upsertCriticalEvent(tripId: string, event: CriticalEvent): Promise<void> {
+    await setDoc(doc(this.criticalEventsRef(tripId), event.id), event);
+  }
+
+  async deleteCriticalEvent(tripId: string, eventId: string): Promise<void> {
+    await deleteDoc(doc(this.criticalEventsRef(tripId), eventId));
   }
 
   async updateLogistics(tripId: string, logistics: TripLogistics): Promise<void> {

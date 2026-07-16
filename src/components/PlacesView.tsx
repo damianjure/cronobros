@@ -50,7 +50,7 @@ export default function PlacesView() {
       title,
       category,
       description: description || 'Sin descripción adicional.',
-      location: location || 'Islandia',
+      location: location.trim() || 'Sin ubicación',
       people: selectedPeople.length > 0 ? selectedPeople : participants,
     };
 
@@ -90,7 +90,7 @@ export default function PlacesView() {
               <input
                 type="text"
                 required
-                placeholder="Ej. Cascadas de Seljalandsfoss"
+                placeholder="Ej. Museo de arte moderno"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 className="w-full bg-brand-background border border-brand-primary/10 rounded-none py-2.5 px-3 text-xs focus:outline-none focus:border-brand-primary/30 font-sans"
@@ -121,7 +121,7 @@ export default function PlacesView() {
                 </label>
                 <input
                   type="text"
-                  placeholder="Ej. Costa Sur"
+                  placeholder="Ej. Centro histórico"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   className="w-full bg-brand-background border border-brand-primary/10 rounded-none py-2.5 px-3 text-xs focus:outline-none focus:border-brand-primary/30 font-sans"

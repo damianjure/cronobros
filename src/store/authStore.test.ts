@@ -2,12 +2,12 @@ import { describe, it, expect, vi } from 'vitest';
 import type { User } from 'firebase/auth';
 
 const onAuthStateChangedMock = vi.fn();
-const signInWithPopupMock = vi.fn();
+const signInWithRedirectMock = vi.fn();
 const signOutMock = vi.fn();
 
 vi.mock('firebase/auth', () => ({
   onAuthStateChanged: (...args: unknown[]) => onAuthStateChangedMock(...args),
-  signInWithPopup: (...args: unknown[]) => signInWithPopupMock(...args),
+  signInWithRedirect: (...args: unknown[]) => signInWithRedirectMock(...args),
   signOut: (...args: unknown[]) => signOutMock(...args),
   GoogleAuthProvider: vi.fn(),
 }));
@@ -43,13 +43,13 @@ describe('authStore', () => {
     expect(useAuthStore.getState().user).toBeNull();
   });
 
-  it('signIn calls signInWithPopup with the shared auth instance and a GoogleAuthProvider', async () => {
-    signInWithPopupMock.mockClear();
+  it('signIn redirects with the shared auth instance and a GoogleAuthProvider', async () => {
+    signInWithRedirectMock.mockClear();
 
     await useAuthStore.getState().signIn();
 
-    expect(signInWithPopupMock).toHaveBeenCalledTimes(1);
-    expect(signInWithPopupMock.mock.calls[0][1]).toBeInstanceOf(Object);
+    expect(signInWithRedirectMock).toHaveBeenCalledTimes(1);
+    expect(signInWithRedirectMock.mock.calls[0][1]).toBeInstanceOf(Object);
   });
 
   it('signOut calls firebase signOut with the shared auth instance', async () => {
@@ -61,8 +61,8 @@ describe('authStore', () => {
   });
 
   it('signIn sets an error message instead of throwing when the popup rejects', async () => {
-    signInWithPopupMock.mockClear();
-    signInWithPopupMock.mockRejectedValueOnce(new Error('auth/popup-blocked'));
+    signInWithRedirectMock.mockClear();
+    signInWithRedirectMock.mockRejectedValueOnce(new Error('auth/operation-not-allowed'));
 
     await expect(useAuthStore.getState().signIn()).resolves.toBeUndefined();
 
@@ -71,8 +71,8 @@ describe('authStore', () => {
 
   it('signIn clears any previous error on a new attempt', async () => {
     useAuthStore.setState({ error: 'No pudimos iniciar sesión. Intentá de nuevo.' });
-    signInWithPopupMock.mockClear();
-    signInWithPopupMock.mockResolvedValueOnce(undefined);
+    signInWithRedirectMock.mockClear();
+    signInWithRedirectMock.mockResolvedValueOnce(undefined);
 
     await useAuthStore.getState().signIn();
 

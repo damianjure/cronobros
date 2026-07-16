@@ -1,6 +1,6 @@
 {
-  "name": "Itinerario de Viaje a Islandia",
-  "description": "Un planificador editorial elegante para gestionar el itinerario, la navegación GPX en el mapa y el presupuesto de combustible del grupo en Islandia.",
+  "name": "Cronobros",
+  "description": "Planificador colaborativo para organizar itinerarios, rutas y logística de viajes en grupo.",
   "requestFramePermissions": ["geolocation"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

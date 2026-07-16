@@ -38,7 +38,7 @@ export default function DashboardView({ setActiveTab }: DashboardViewProps) {
   const displayName = user?.displayName ?? user?.email ?? 'viajero';
 
   const [inputValue, setInputValue] = useState('');
-  const [activeNote, setActiveNote] = useState('Sin notas todavía.');
+  const activeNote = 'Sin notas todavía.';
   const [selectedHighlight, setSelectedHighlight] = useState<UpcomingHighlight | null>(null);
 
   const handleSendMessage = (e: React.FormEvent) => {
@@ -48,8 +48,8 @@ export default function DashboardView({ setActiveTab }: DashboardViewProps) {
     const userMessage: ChatMessage = {
       id: `msg-${Date.now()}`,
       sender: {
-        name: 'Alex (Tú)',
-        avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCr387soWTtXUJbgL9pO9o3NzLfBnAz_ZIMfNeyMLMiAHdRtuMfAAH4HyXQhEYk4wFeVHGEfK6N8-gIpXWe7xTGjQ5EUkhAXoSJjxxzafBR-uXp2qHHQ6y9785VK8pAxb4i06PNpLaRpZMzVALvNf-yiPaNzYsqChtVCZHnECrlWotYDWCAdCQycJ7o2_wcNMlZr1GLpzOTBYapoeottpDKTzQ1-42paVA_Gv_anczV-PKFK13XKZcKrd5hj3B7F6vETC_DYWrx8qPz',
+        name: `${displayName} (Tú)`,
+        avatar: user?.photoURL ?? '',
         isCurrentUser: true,
         role: 'Líder de Expedición'
       },
@@ -58,30 +58,7 @@ export default function DashboardView({ setActiveTab }: DashboardViewProps) {
     };
 
     addChatMessage(userMessage);
-    const currentInput = inputValue;
     setInputValue('');
-
-    // If message mentions "note" or "remember", update the itinerary note
-    if (currentInput.toLowerCase().includes('nota:') || currentInput.toLowerCase().includes('recuerda')) {
-      const cleanNote = currentInput.replace(/nota:/i, '').replace(/recuerda/i, '').trim();
-      setActiveNote(cleanNote);
-    } else {
-      // Simulate a reply from another trip member (no real messaging backend
-      // yet — this is a placeholder interaction, not tied to any specific
-      // destination content).
-      setTimeout(() => {
-        const replyContent = "¡Eso suena como un plan increíble! No puedo esperar.";
-        const senderName = participants.find(p => p !== displayName) ?? 'Compañero de viaje';
-
-        const friendReply: ChatMessage = {
-          id: `msg-${Date.now() + 1}`,
-          sender: { name: senderName, avatar: '', role: 'Viajero' },
-          content: replyContent,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        };
-        addChatMessage(friendReply);
-      }, 1500);
-    }
   };
 
   return (
@@ -134,10 +111,7 @@ export default function DashboardView({ setActiveTab }: DashboardViewProps) {
           <div className="md:col-span-2 bg-white rounded-none overflow-hidden relative border border-brand-primary/10 shadow-none group min-h-[380px] flex flex-col justify-end" id="dashboard-active-route">
             
             {/* Map background */}
-            <div 
-              className="absolute inset-0 bg-cover bg-center group-hover:scale-[1.01] transition-transform duration-700" 
-              style={{ backgroundImage: `url('https://lh3.googleusercontent.com/aida-public/AB6AXuCb-OSyf8uyb2MmTYNX6yjP1SDyJI_YGecYb1wqOC1G2NnUClxeu3c1CrY1CRwb0jsH8ZhQJm4QMrkzBPq0U2HkDT6qMEOkatQoBzQAGG0GeIFKSfJQgb3778-dvJbEcivujEUgtQ9O3ZGGj9691kCTebP0zv_vH_FVjH3qUch_HALUnNvVT2i4BD7e-05b07HPRhcHyJt7lEA7oocRfdL9C7vsnadtlTjWQNEwXnAWuf5DLnESZKjlEIV4a-8GnvuLh5jYtTzXDHLV')` }}
-            />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_30%,rgba(216,150,95,0.38),transparent_28%),radial-gradient(circle_at_75%_65%,rgba(49,82,76,0.42),transparent_32%),linear-gradient(135deg,#e9eee8,#c9d5d1)]" />
             <div className="absolute inset-0 bg-gradient-to-t from-brand-primary/40 via-transparent to-transparent pointer-events-none" />
 
             {/* Navigation Floating Button */}
@@ -418,7 +392,7 @@ export default function DashboardView({ setActiveTab }: DashboardViewProps) {
               <p className="text-xs italic text-brand-primary font-serif font-medium leading-relaxed">
                 "{activeNote}"
               </p>
-              <p className="text-[9px] text-brand-primary/70 font-bold uppercase tracking-wider mt-1 text-right">— Añadido por Alex</p>
+              <p className="text-[9px] text-brand-primary/70 font-bold uppercase tracking-wider mt-1 text-right">— Añadido por {displayName}</p>
             </div>
             <p className="text-[9px] text-brand-outline mt-1.5 font-bold uppercase tracking-wider text-center">
               Escribe "nota: &lt;msg&gt;" para actualizar

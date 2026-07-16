@@ -30,6 +30,24 @@ describe('calculateCountdown', () => {
     expect(result.minutes).toBe(0);
     expect(result.seconds).toBe(0);
   });
+
+  it('counts down to an explicit event date instead of rolling daily', () => {
+    const now = new Date(2026, 6, 13, 10, 0, 0);
+    const result = calculateCountdown('15:30', now, '2026-07-15');
+
+    expect(result.targetDate).toEqual(new Date(2026, 6, 15, 15, 30, 0));
+    expect(result.hours).toBe(53);
+    expect(result.minutes).toBe(30);
+  });
+
+  it('clamps an expired dated event to zero instead of repeating it tomorrow', () => {
+    const now = new Date(2026, 6, 15, 16, 0, 0);
+    const result = calculateCountdown('15:30', now, '2026-07-15');
+
+    expect(result.hours).toBe(0);
+    expect(result.minutes).toBe(0);
+    expect(result.seconds).toBe(0);
+  });
 });
 
 describe('formatDateToDisplay', () => {

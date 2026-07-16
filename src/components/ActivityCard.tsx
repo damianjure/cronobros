@@ -65,6 +65,8 @@ export default function ActivityCard({
                   ? 'Aventura'
                   : activity.type === 'Accommodation'
                   ? 'Alojamiento'
+                  : activity.type === 'Transportation'
+                  ? 'Traslado'
                   : activity.type}
               </span>
 

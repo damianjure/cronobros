@@ -43,14 +43,20 @@ export class InMemoryTripsRepository implements TripsRepository {
     this.notify();
   }
 
+  async setArchived(tripId: string, archived: boolean): Promise<void> {
+    this.trips = this.trips.map(trip => trip.id === tripId ? { ...trip, archivedAt: archived ? new Date().toISOString() : null } : trip);
+    this.notify();
+  }
+
   async inviteMember(tripId: string, email: string, role: Role): Promise<void> {
+    const normalizedEmail = email.trim().toLowerCase();
     this.trips = this.trips.map(trip =>
       trip.id === tripId
         ? {
             ...trip,
             pendingMemberships: {
               ...trip.pendingMemberships,
-              [email]: { email, role, pending: true },
+              [normalizedEmail]: { email: normalizedEmail, role, pending: true },
             },
           }
         : trip,
@@ -58,12 +64,24 @@ export class InMemoryTripsRepository implements TripsRepository {
     this.notify();
   }
 
-  async activatePendingInvites(uid: string, email: string): Promise<void> {
+  async cancelInvite(tripId: string, email: string): Promise<void> {
+    const normalizedEmail = email.trim().toLowerCase();
     this.trips = this.trips.map(trip => {
-      const pending = trip.pendingMemberships?.[email];
+      if (trip.id !== tripId) return trip;
+      const { [normalizedEmail]: _removed, ...pendingMemberships } = trip.pendingMemberships ?? {};
+      void _removed;
+      return { ...trip, pendingMemberships };
+    });
+    this.notify();
+  }
+
+  async activatePendingInvites(uid: string, email: string): Promise<void> {
+    const normalizedEmail = email.trim().toLowerCase();
+    this.trips = this.trips.map(trip => {
+      const pending = trip.pendingMemberships?.[normalizedEmail];
       if (!pending || !pending.pending) return trip;
 
-      const { [email]: _activated, ...remainingPending } = trip.pendingMemberships ?? {};
+      const { [normalizedEmail]: _activated, ...remainingPending } = trip.pendingMemberships ?? {};
       void _activated;
       return {
         ...trip,

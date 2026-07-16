@@ -8,6 +8,7 @@ import type {
   PendingPlace,
   ChatMessage,
   TripLogistics,
+  CriticalEvent,
 } from '../types';
 import type { TripRepository } from '../services/ports';
 
@@ -19,6 +20,7 @@ export interface TripStoreState {
   pendingPlaces: PendingPlace[];
   chatMessages: ChatMessage[];
   logistics: TripLogistics;
+  criticalEvents: CriticalEvent[];
 
   addActivity: (dayId: string, activity: ItineraryActivity) => Promise<void>;
   deleteActivity: (dayId: string, activityId: string) => Promise<void>;
@@ -29,6 +31,9 @@ export interface TripStoreState {
   deletePendingPlace: (placeId: string) => Promise<void>;
   addChatMessage: (message: ChatMessage) => Promise<void>;
   updateLogistics: (logistics: TripLogistics) => Promise<void>;
+  upsertCriticalEvent: (event: CriticalEvent) => Promise<void>;
+  deleteCriticalEvent: (eventId: string) => Promise<void>;
+  upsertPin: (pin: PinnedPoint) => Promise<void>;
 }
 
 export interface TripStoreHandle {
@@ -57,6 +62,7 @@ export function createTripStore(repository: TripRepository, tripId: string): Tri
     pendingPlaces: [],
     chatMessages: [],
     logistics: EMPTY_LOGISTICS,
+    criticalEvents: [],
 
     addActivity: (dayId, activity) => repository.addActivity(tripId, dayId, activity),
     deleteActivity: (dayId, activityId) => repository.deleteActivity(tripId, dayId, activityId),
@@ -68,6 +74,9 @@ export function createTripStore(repository: TripRepository, tripId: string): Tri
     deletePendingPlace: placeId => repository.deletePendingPlace(tripId, placeId),
     addChatMessage: message => repository.addChatMessage(tripId, message),
     updateLogistics: logistics => repository.updateLogistics(tripId, logistics),
+    upsertCriticalEvent: event => repository.upsertCriticalEvent(tripId, event),
+    deleteCriticalEvent: eventId => repository.deleteCriticalEvent(tripId, eventId),
+    upsertPin: pin => repository.upsertPin(tripId, pin),
   }));
 
   // Subscribed AFTER `create()` returns: the repository fires each callback
@@ -87,6 +96,9 @@ export function createTripStore(repository: TripRepository, tripId: string): Tri
   const unsubscribeLogistics = repository.subscribeLogistics(tripId, logistics =>
     store.setState({ logistics }),
   );
+  const unsubscribeCriticalEvents = repository.subscribeCriticalEvents(tripId, criticalEvents =>
+    store.setState({ criticalEvents }),
+  );
 
   return {
     store,
@@ -96,6 +108,7 @@ export function createTripStore(repository: TripRepository, tripId: string): Tri
       unsubscribePendingPlaces();
       unsubscribeChat();
       unsubscribeLogistics();
+      unsubscribeCriticalEvents();
     },
   };
 }

@@ -1,4 +1,3 @@
-import React, { useRef } from 'react';
 import {
   LayoutDashboard,
   Calendar,
@@ -6,10 +5,9 @@ import {
   Map as MapIcon,
   UserPlus,
   HelpCircle,
-  Archive,
   Compass,
   MapPin,
-  Upload
+  Sparkles
 } from 'lucide-react';
 import { ActiveTab } from '../types';
 import { useCurrentTrip } from '../store/currentTripContext';
@@ -18,7 +16,8 @@ interface SidebarProps {
   activeTab: ActiveTab;
   setActiveTab: (tab: ActiveTab) => void;
   onInviteClick: () => void;
-  onSmartImport: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onSmartImport: () => void;
+  onHelpClick: () => void;
   isUploading: boolean;
   uploadProgress: number;
 }
@@ -28,10 +27,10 @@ export default function Sidebar({
   setActiveTab,
   onInviteClick,
   onSmartImport,
+  onHelpClick,
   isUploading,
   uploadProgress
 }: SidebarProps) {
-  const sidebarFileInputRef = useRef<HTMLInputElement>(null);
   // PR5: the real selected trip's name/member count instead of the
   // hardcoded "Verano en Islandia" fixture.
   const trip = useCurrentTrip();
@@ -101,7 +100,7 @@ export default function Sidebar({
           <span>Sincronizar con IA</span>
         </h4>
         <p className="text-[10px] text-white/80 font-medium leading-relaxed mb-3">
-          Sube tus PDFs, pasajes o boletos de viaje para sincronizar automáticamente el itinerario.
+          Pegá texto o subí un PDF o imagen y revisá las actividades antes de guardarlas.
         </p>
 
         {isUploading ? (
@@ -118,42 +117,21 @@ export default function Sidebar({
             </div>
           </div>
         ) : (
-          <div 
-            onClick={() => sidebarFileInputRef.current?.click()}
+          <button
+            type="button"
+            onClick={onSmartImport}
             className="border border-dashed border-white/25 hover:border-white/50 bg-white/5 hover:bg-white/10 p-2.5 text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-1"
           >
-            <Upload className="w-4 h-4 text-white/80" />
-            <span className="text-[9px] font-bold text-white/95">Haz clic para subir boleto</span>
-            <input 
-              type="file" 
-              ref={sidebarFileInputRef} 
-              onChange={onSmartImport} 
-              className="hidden" 
-              accept=".pdf,.png,.jpg,.jpeg" 
-            />
-          </div>
+            <Sparkles className="w-4 h-4 text-white/80" />
+            <span className="text-[9px] font-bold text-white/95">Importar con IA</span>
+          </button>
         )}
       </div>
 
-      {/* Bottom utility links */}
-      <div className="pt-4 border-t border-brand-primary/10 space-y-1">
-        <a
-          href="#help"
-          className="flex items-center gap-3 p-3 text-brand-on-surface-variant/85 hover:bg-brand-primary/5 hover:text-brand-primary rounded-none transition-all text-xs font-bold uppercase tracking-wider"
-          id="sidebar-help-link"
-        >
-          <HelpCircle className="w-3.5 h-3.5 text-brand-primary/50" />
-          <span>Centro de Ayuda</span>
-        </a>
-        <a
-          href="#archive"
-          className="flex items-center gap-3 p-3 text-brand-on-surface-variant/85 hover:bg-brand-primary/5 hover:text-brand-primary rounded-none transition-all text-xs font-bold uppercase tracking-wider"
-          id="sidebar-archive-link"
-        >
-          <Archive className="w-3.5 h-3.5 text-brand-primary/50" />
-          <span>Archivo</span>
-        </a>
-      </div>
+      <button type="button" onClick={onHelpClick} className="flex items-center gap-3 border-t border-brand-primary/10 p-3 text-xs font-bold uppercase tracking-wider text-brand-on-surface-variant hover:text-brand-primary">
+        <HelpCircle className="h-3.5 w-3.5" /> Ayuda
+      </button>
+
     </aside>
   );
 }

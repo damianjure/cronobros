@@ -33,7 +33,7 @@ export default function AuthGate({ children }: AuthGateProps) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-brand-background p-6">
         <div className="max-w-sm w-full text-center space-y-6">
-          <h1 className="font-serif text-2xl font-black italic text-brand-primary">Horizon</h1>
+          <h1 className="font-serif text-2xl font-black italic text-brand-primary">Cronobros</h1>
           <p className="text-sm text-brand-on-surface-variant">
             Iniciá sesión para ver y editar tus viajes.
           </p>

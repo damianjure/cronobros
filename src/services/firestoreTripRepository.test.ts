@@ -25,7 +25,7 @@ import { runTripRepositoryContractTests, type TripRepositorySeed } from './tripR
 // running locally (`firebase emulators:start --only firestore,auth
 // --project demo-cronobros-test`). Rules are the REAL owner/editor/viewer
 // rules (advanced ahead of PR4), so every write needs an authenticated,
-// trip-member uid — hence the anonymous sign-in below.
+// trip-member uid — hence the stable test sign-in below.
 const testApp = initializeApp(
   { projectId: 'demo-cronobros-test', apiKey: 'demo-key' },
   'firestore-trip-repo-test',
@@ -55,7 +55,13 @@ beforeAll(async () => {
   testUid = credential.user.uid;
 });
 
-const TRIP_SUBCOLLECTIONS = ['itineraryDays', 'pins', 'pendingPlaces', 'chat'] as const;
+const TRIP_SUBCOLLECTIONS = [
+  'itineraryDays',
+  'pins',
+  'pendingPlaces',
+  'chat',
+  'criticalEvents',
+] as const;
 
 // The emulator is a shared, long-lived process across test runs (not reset
 // between `vitest run` invocations), and tripIds are deterministic per test
@@ -98,6 +104,11 @@ async function seedTrip(tripId: string, seed: TripRepositorySeed = {}): Promise<
   }
   for (const message of seed.chat ?? []) {
     writes.push(setDoc(doc(collection(testDb, 'trips', tripId, 'chat'), message.id), message));
+  }
+  for (const event of seed.criticalEvents ?? []) {
+    writes.push(
+      setDoc(doc(collection(testDb, 'trips', tripId, 'criticalEvents'), event.id), event),
+    );
   }
   await Promise.all(writes);
 }

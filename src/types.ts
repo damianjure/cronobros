@@ -3,7 +3,7 @@ export type ActiveTab = 'dashboard' | 'itinerary' | 'logistics' | 'map' | 'place
 export interface ItineraryActivity {
   id: string;
   time: string;
-  type: 'Relaxation' | 'Dining' | 'Sightseeing' | 'Adventure' | 'Accommodation';
+  type: 'Relaxation' | 'Dining' | 'Sightseeing' | 'Adventure' | 'Accommodation' | 'Transportation';
   title: string;
   description: string;
   image?: string;
@@ -70,7 +70,9 @@ export interface PinnedPoint {
   category: string;
   image: string;
   isTopPick?: boolean;
-  coords: { x: number; y: number };
+  // Phase 2 persists geographic coordinates. The x/y variant remains
+  // readable for legacy prototype documents and is ignored by the real map.
+  coords: { lat: number; lon: number } | { x: number; y: number };
 }
 
 export interface PendingPlace {
@@ -115,6 +117,7 @@ export interface Trip {
   members: Record<string, Role>;
   memberUids: string[];
   pendingMemberships?: Record<string, Membership>;
+  archivedAt?: string | null;
 }
 
 // PR5: per-trip logistics doc (design's LogisticsView migration decision —
@@ -125,4 +128,17 @@ export interface Trip {
 export interface TripLogistics {
   drivers: Driver[];
   vehicle: Vehicle | null;
+}
+
+export interface CriticalEvent {
+  id: string;
+  type: 'hotel' | 'flight' | 'car';
+  title: string;
+  subType: string;
+  locationName: string;
+  coords: { lat: number; lon: number };
+  targetDate?: string;
+  targetTimeStr: string;
+  description: string;
+  warningMessage: string;
 }

@@ -32,7 +32,8 @@ connectAuthEmulator(testAuth, 'http://127.0.0.1:9099', { disableWarnings: true }
 const testDb = initializeFirestore(testApp, { ignoreUndefinedProperties: true });
 connectFirestoreEmulator(testDb, '127.0.0.1', 8080);
 
-const repo = new FirestoreTripsRepository(testDb);
+const activatePendingInvitesCallable = vi.fn().mockResolvedValue(undefined);
+const repo = new FirestoreTripsRepository(testDb, activatePendingInvitesCallable);
 
 let testUid = '';
 
@@ -134,6 +135,20 @@ describe('FirestoreTripsRepository', () => {
     unsubscribe();
   });
 
+  it('archives and restores a trip without changing membership', async () => {
+    const cb = vi.fn();
+    const unsubscribe = repo.subscribeTrips(testUid, cb);
+    await repo.createTrip('Viaje archivable', testUid);
+    const created = await waitForLatestCall<{ id: string }[]>(cb, trips => trips.length === 1);
+    await repo.setArchived(created[0].id, true);
+    const archived = await waitForLatestCall<{ archivedAt?: string; memberUids: string[] }[]>(cb, trips => Boolean(trips[0]?.archivedAt));
+    expect(archived[0].memberUids).toEqual([testUid]);
+    await repo.setArchived(created[0].id, false);
+    const restored = await waitForLatestCall<{ archivedAt?: string | null }[]>(cb, trips => trips[0]?.archivedAt === null);
+    expect(restored[0].archivedAt).toBeNull();
+    unsubscribe();
+  });
+
   it('updateRole updates a single member role without touching other members', async () => {
     const cb = vi.fn();
     const unsubscribe = repo.subscribeTrips(testUid, cb);
@@ -203,48 +218,28 @@ describe('FirestoreTripsRepository', () => {
     unsubscribe();
   });
 
-  // KNOWN GAP (documented in FirestoreTripsRepository.activatePendingInvites
-  // and apply-progress): `firestore.rules`' `isMemberOf()` read rule only
-  // lets a trip's own members read/list it. A genuine invitee — not yet a
-  // member — cannot see the trip they were invited to, so this query
-  // legitimately returns zero results for them today. This test documents
-  // that CURRENT, EXPECTED no-op behavior; it should start passing the
-  // "real" activation path automatically once rules/a Cloud Function grant
-  // invitees that visibility, with no client-code change.
-  it('activatePendingInvites is a no-op for a genuine invitee, who cannot yet read the trip they were invited to', async () => {
-    const inviteeApp = initializeApp(
-      { projectId: 'demo-cronobros-test', apiKey: 'demo-key' },
-      'firestore-trips-repo-test-invitee',
-    );
-    const inviteeAuth = getAuth(inviteeApp);
-    connectAuthEmulator(inviteeAuth, 'http://127.0.0.1:9099', { disableWarnings: true });
-    const inviteeDb = initializeFirestore(inviteeApp, { ignoreUndefinedProperties: true });
-    connectFirestoreEmulator(inviteeDb, '127.0.0.1', 8080);
-    const inviteeCredential = await signInAnonymously(inviteeAuth);
-    const inviteeRepo = new FirestoreTripsRepository(inviteeDb);
-    const inviteeEmail = 'pending-invitee@example.com';
-
+  it('cancels a pending invitation and its query mirror', async () => {
     const cb = vi.fn();
     const unsubscribe = repo.subscribeTrips(testUid, cb);
-    await repo.createTrip('Viaje con invitado pendiente', testUid);
+    await repo.createTrip('Viaje con cancelación', testUid);
     const created = await waitForLatestCall<{ id: string }[]>(cb, trips => trips.length === 1);
-    await repo.inviteMember(created[0].id, inviteeEmail, 'editor');
-
-    // Acting AS the invitee's own auth context (own db/app instance) — not
-    // the owner's — is the whole point of this test: it proves the
-    // documented gap using the invitee's real permissions, not the owner's.
-    await expect(
-      inviteeRepo.activatePendingInvites(inviteeCredential.user.uid, inviteeEmail),
-    ).resolves.toBeUndefined();
-
-    const inviteeTripsCb = vi.fn();
-    const unsubscribeInvitee = inviteeRepo.subscribeTrips(inviteeCredential.user.uid, inviteeTripsCb);
-    await new Promise(resolve => setTimeout(resolve, 500));
-    expect(inviteeTripsCb.mock.calls.at(-1)?.[0]).toEqual([]);
-
+    await repo.inviteMember(created[0].id, 'cancel@example.com', 'editor');
+    await waitForLatestCall<{ pendingMemberships?: Record<string, unknown> }[]>(cb, trips => Boolean(trips[0]?.pendingMemberships?.['cancel@example.com']));
+    await repo.cancelInvite(created[0].id, 'cancel@example.com');
+    const latest = await waitForLatestCall<{ pendingMemberships?: Record<string, unknown>; pendingEmails?: string[] }[]>(cb, trips => !trips[0]?.pendingMemberships?.['cancel@example.com']);
+    expect(latest[0].pendingEmails ?? []).not.toContain('cancel@example.com');
     unsubscribe();
-    unsubscribeInvitee();
-    await deleteApp(inviteeApp);
+  });
+
+  it('delegates pending-invite activation to the authenticated callable', async () => {
+    activatePendingInvitesCallable.mockClear();
+
+    await repo.activatePendingInvites('invitee-uid', 'Friend.Smith@Example.com');
+
+    expect(activatePendingInvitesCallable).toHaveBeenCalledWith(
+      'invitee-uid',
+      'friend.smith@example.com',
+    );
   });
 });
 

@@ -13,7 +13,9 @@ export interface TripsRepository {
   subscribeTrips(uid: string, cb: (trips: Trip[]) => void): Unsubscribe;
   createTrip(name: string, ownerUid: string): Promise<void>;
   deleteTrip(tripId: string): Promise<void>;
+  setArchived(tripId: string, archived: boolean): Promise<void>;
   inviteMember(tripId: string, email: string, role: Role): Promise<void>;
+  cancelInvite(tripId: string, email: string): Promise<void>;
   updateRole(tripId: string, uid: string, role: Role): Promise<void>;
   removeMember(tripId: string, uid: string): Promise<void>;
 
