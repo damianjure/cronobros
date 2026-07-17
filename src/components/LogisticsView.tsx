@@ -107,7 +107,7 @@ export default function LogisticsView() {
                     type="button"
                     onClick={() => setShowDocModal('insurance')}
                     id="logistics-doc-insurance"
-                    style={{ flexGrow: 1, flexShrink: 0, flexBasis: 'auto' }}
+                    style={{ flexGrow: 1, flexShrink: 0, flexBasis: 'auto', minWidth: '18ch' }}
                   >
                     <ShieldCheck slot="icon" className="w-4 h-4" />
                     Póliza de Seguro
@@ -117,7 +117,7 @@ export default function LogisticsView() {
                     type="button"
                     onClick={() => setShowDocModal('agreement')}
                     id="logistics-doc-agreement"
-                    style={{ flexGrow: 1, flexShrink: 0, flexBasis: 'auto' }}
+                    style={{ flexGrow: 1, flexShrink: 0, flexBasis: 'auto', minWidth: '10ch' }}
                   >
                     <FileText slot="icon" className="w-4 h-4" />
                     Contrato
