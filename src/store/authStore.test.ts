@@ -4,11 +4,13 @@ import type { User } from 'firebase/auth';
 const onAuthStateChangedMock = vi.fn();
 const signInWithRedirectMock = vi.fn();
 const signOutMock = vi.fn();
+const getRedirectResultMock = vi.fn().mockRejectedValue(new Error('auth/web-storage-unsupported'));
 
 vi.mock('firebase/auth', () => ({
   onAuthStateChanged: (...args: unknown[]) => onAuthStateChangedMock(...args),
   signInWithRedirect: (...args: unknown[]) => signInWithRedirectMock(...args),
   signOut: (...args: unknown[]) => signOutMock(...args),
+  getRedirectResult: (...args: unknown[]) => getRedirectResultMock(...args),
   GoogleAuthProvider: vi.fn(),
 }));
 
@@ -25,6 +27,16 @@ describe('authStore', () => {
   it('starts in loading status with no user', () => {
     expect(useAuthStore.getState().status).toBe('loading');
     expect(useAuthStore.getState().user).toBeNull();
+  });
+
+  it('calls getRedirectResult with the shared auth instance at boot', () => {
+    expect(getRedirectResultMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('surfaces an error when the redirect sign-in fails at boot', async () => {
+    await vi.waitFor(() => {
+      expect(useAuthStore.getState().error).toBe('No pudimos completar el inicio de sesión. Intentá de nuevo.');
+    });
   });
 
   it('transitions to status "in" with the user when onAuthStateChanged fires with a signed-in user', () => {
