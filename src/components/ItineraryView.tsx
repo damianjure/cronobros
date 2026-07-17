@@ -111,7 +111,7 @@ export default function ItineraryView({
 
       {/* Share Notification Toast */}
       {showShareToast && (
-        <div className="fixed bottom-20 right-6 bg-brand-primary text-white px-5 py-3 rounded-xl shadow-2xl z-50 flex items-center gap-2 animate-bounce">
+        <div className="fixed bottom-20 right-6 bg-brand-primary text-brand-on-primary px-5 py-3 rounded-xl shadow-2xl z-50 flex items-center gap-2 animate-bounce">
           <CheckCircle2 className="w-5 h-5 text-brand-secondary" />
           <span className="font-semibold text-xs uppercase tracking-wider">¡Enlace del itinerario copiado al portapapeles!</span>
         </div>
@@ -152,7 +152,7 @@ export default function ItineraryView({
               </button>
               <button
                 onClick={() => setShowNewEntryModal(true)}
-                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-none bg-brand-primary hover:bg-brand-primary/90 text-white font-bold text-[10px] uppercase tracking-widest shadow-none transition-all active:scale-95 cursor-pointer"
+                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-none bg-brand-primary hover:bg-brand-primary/90 text-brand-on-primary font-bold text-[10px] uppercase tracking-widest shadow-none transition-all active:scale-95 cursor-pointer"
                 id="itinerary-new-entry-btn"
               >
                 <Plus className="w-3.5 h-3.5" />
@@ -169,7 +169,7 @@ export default function ItineraryView({
 
               {/* Day Header */}
               <div className="flex items-center gap-4 mb-6">
-                <div className="w-14 h-14 rounded-none bg-brand-primary flex flex-col items-center justify-center text-white border border-brand-primary/10 shadow-none shrink-0">
+                <div className="w-14 h-14 rounded-none bg-brand-primary flex flex-col items-center justify-center text-brand-on-primary border border-brand-primary/10 shadow-none shrink-0">
                   <span className="text-[8px] uppercase font-black tracking-widest text-brand-primary-fixed-dim/95 leading-none mb-0.5">
                     {formatDateToDisplay(day.date).split(' ')[1] || 'Ago'}
                   </span>

@@ -68,7 +68,7 @@ export default function LogisticsView() {
                   />
                 )}
                 <div className="absolute top-4 left-4">
-                  <span className="px-2.5 py-1 bg-brand-primary text-white text-[8px] font-black rounded-none uppercase tracking-widest shadow-none">
+                  <span className="px-2.5 py-1 bg-brand-primary text-brand-on-primary text-[8px] font-black rounded-none uppercase tracking-widest shadow-none">
                     Flota Activa
                   </span>
                 </div>
@@ -191,7 +191,7 @@ export default function LogisticsView() {
               <p className="mt-1 text-xs text-brand-on-surface-variant">Alquiler {activeVehicle.rentalId} · {activeVehicle.dates}</p>
               <a
                 href={`tel:${activeVehicle.phone.replace(/[^+\d]/g, '')}`}
-                className="mt-4 w-full py-2.5 bg-brand-primary hover:bg-brand-primary/90 text-white font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-2"
+                className="mt-4 w-full py-2.5 bg-brand-primary hover:bg-brand-primary/90 text-brand-on-primary font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-2"
               >
                 <Phone className="w-4 h-4" /> Llamar al proveedor
               </a>
@@ -229,7 +229,7 @@ export default function LogisticsView() {
               </button>
               <button 
                 onClick={() => setShowDocModal(null)}
-                className="py-2 px-5 bg-brand-primary text-white rounded-none font-bold text-[10px] uppercase tracking-widest hover:bg-brand-primary/90 transition-all cursor-pointer"
+                className="py-2 px-5 bg-brand-primary text-brand-on-primary rounded-none font-bold text-[10px] uppercase tracking-widest hover:bg-brand-primary/90 transition-all cursor-pointer"
               >
                 Cerrar Contrato
               </button>

@@ -48,8 +48,8 @@ export default function Sidebar({
       {/* Trip Quick card */}
       <div className="px-4 py-4 mb-4 bg-white border border-brand-primary/10 rounded-sm shadow-none">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-brand-primary flex items-center justify-center text-white shrink-0">
-            <Compass className="w-4.5 h-4.5 text-white" />
+          <div className="w-9 h-9 bg-brand-primary flex items-center justify-center text-brand-on-primary shrink-0">
+            <Compass className="w-4.5 h-4.5 text-brand-on-primary" />
           </div>
           <div className="overflow-hidden">
             <h3 className="font-serif font-black text-sm text-brand-primary truncate leading-tight italic">
@@ -62,7 +62,7 @@ export default function Sidebar({
         </div>
         <button
           onClick={onInviteClick}
-          className="w-full mt-3.5 py-2 px-3 rounded-none bg-brand-primary hover:bg-brand-primary/90 text-white font-bold text-[11px] uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+          className="w-full mt-3.5 py-2 px-3 rounded-none bg-brand-primary hover:bg-brand-primary/90 text-brand-on-primary font-bold text-[11px] uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer"
           id="sidebar-invite-btn"
         >
           <UserPlus className="w-3.5 h-3.5" />
@@ -81,12 +81,12 @@ export default function Sidebar({
               onClick={() => setActiveTab(item.tab)}
               className={`w-full flex items-center gap-3 p-3 rounded-none font-sans font-bold text-xs uppercase tracking-[0.12em] transition-all cursor-pointer active:scale-98 ${
                 isActive
-                  ? 'bg-brand-primary text-white font-bold'
+                  ? 'bg-brand-primary text-brand-on-primary font-bold'
                   : 'text-brand-on-surface-variant/85 hover:bg-brand-primary/5 hover:text-brand-primary'
               }`}
               id={`sidebar-nav-${item.tab}`}
             >
-              <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-brand-primary/60'}`} />
+              <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-brand-on-primary' : 'text-brand-primary/60'}`} />
               <span>{item.label}</span>
             </button>
           );
@@ -94,12 +94,12 @@ export default function Sidebar({
       </nav>
 
       {/* Smart Import Widget */}
-      <div className="bg-brand-primary text-white p-3.5 rounded-none relative shadow-none border border-brand-primary/10 mt-auto">
+      <div className="bg-brand-primary text-brand-on-primary p-3.5 rounded-none relative shadow-none border border-brand-primary/10 mt-auto">
         <h4 className="font-serif font-black italic text-[11px] mb-1.5 flex items-center gap-1.5 uppercase tracking-wider">
-          <Compass className="w-4 h-4 text-white/80" />
+          <Compass className="w-4 h-4 text-brand-on-primary/80" />
           <span>Sincronizar con IA</span>
         </h4>
-        <p className="text-[10px] text-white/80 font-medium leading-relaxed mb-3">
+        <p className="text-[10px] text-brand-on-primary/80 font-medium leading-relaxed mb-3">
           Pegá texto o subí un PDF o imagen y revisá las actividades antes de guardarlas.
         </p>
 
@@ -110,7 +110,7 @@ export default function Sidebar({
                 <span className="w-1.5 h-1.5 rounded-full bg-brand-sunset animate-ping" />
                 <span>Analizando...</span>
               </span>
-              <span className="text-[8px] text-white/80 font-bold">{uploadProgress}%</span>
+              <span className="text-[8px] text-brand-on-primary/80 font-bold">{uploadProgress}%</span>
             </div>
             <div className="w-full h-1 bg-white/20 overflow-hidden">
               <div className="h-full bg-brand-sunset transition-all duration-150" style={{ width: `${uploadProgress}%` }} />
@@ -122,8 +122,8 @@ export default function Sidebar({
             onClick={onSmartImport}
             className="border border-dashed border-white/25 hover:border-white/50 bg-white/5 hover:bg-white/10 p-2.5 text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-1"
           >
-            <Sparkles className="w-4 h-4 text-white/80" />
-            <span className="text-[9px] font-bold text-white/95">Importar con IA</span>
+            <Sparkles className="w-4 h-4 text-brand-on-primary/80" />
+            <span className="text-[9px] font-bold text-brand-on-primary/95">Importar con IA</span>
           </button>
         )}
       </div>

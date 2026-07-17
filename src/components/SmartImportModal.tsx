@@ -145,7 +145,7 @@ export default function SmartImportModal({
                   }}
                 />
               </label>
-              <button type="button" onClick={analyze} disabled={isAnalyzing} className="flex items-center gap-2 bg-brand-primary px-5 py-3 text-xs font-bold uppercase tracking-widest text-white disabled:opacity-60">
+              <button type="button" onClick={analyze} disabled={isAnalyzing} className="flex items-center gap-2 bg-brand-primary px-5 py-3 text-xs font-bold uppercase tracking-widest text-brand-on-primary disabled:opacity-60">
                 {isAnalyzing && <LoaderCircle className="h-4 w-4 animate-spin" />}
                 Analizar con IA
               </button>
@@ -171,7 +171,7 @@ export default function SmartImportModal({
               </div>
             ))}
             <div className="flex justify-end">
-              <button type="button" onClick={confirm} disabled={isSaving || activities.length === 0} className="flex items-center gap-2 bg-brand-primary px-5 py-3 text-xs font-bold uppercase tracking-widest text-white disabled:opacity-60">
+              <button type="button" onClick={confirm} disabled={isSaving || activities.length === 0} className="flex items-center gap-2 bg-brand-primary px-5 py-3 text-xs font-bold uppercase tracking-widest text-brand-on-primary disabled:opacity-60">
                 {isSaving && <LoaderCircle className="h-4 w-4 animate-spin" />}
                 Agregar {activities.length} {activities.length === 1 ? 'actividad' : 'actividades'}
               </button>

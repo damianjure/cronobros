@@ -90,7 +90,7 @@ export default function DashboardView({ setActiveTab }: DashboardViewProps) {
                 </div>
               ))}
               {participants.length > 3 && (
-                <div className="w-9 h-9 rounded-full border-2 border-brand-background bg-brand-primary text-white flex items-center justify-center font-bold text-[10px] shadow-none">
+                <div className="w-9 h-9 rounded-full border-2 border-brand-background bg-brand-primary text-brand-on-primary flex items-center justify-center font-bold text-[10px] shadow-none">
                   +{participants.length - 3}
                 </div>
               )}
@@ -117,7 +117,7 @@ export default function DashboardView({ setActiveTab }: DashboardViewProps) {
             {/* Navigation Floating Button */}
             <button 
               onClick={() => setActiveTab('map')}
-              className="absolute top-4 right-4 bg-brand-primary text-white p-3 rounded-none shadow-none z-20 hover:bg-brand-primary/90 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+              className="absolute top-4 right-4 bg-brand-primary text-brand-on-primary p-3 rounded-none shadow-none z-20 hover:bg-brand-primary/90 transition-all hover:scale-105 active:scale-95 cursor-pointer"
               id="dashboard-nav-map-floating"
               title="Ver en Mapa Interactivo"
             >
@@ -159,7 +159,7 @@ export default function DashboardView({ setActiveTab }: DashboardViewProps) {
             </div>
 
             {/* Next Stop highlight */}
-            <div className="bg-brand-primary rounded-none p-6 text-white shadow-none flex flex-col justify-between flex-1 relative overflow-hidden group">
+            <div className="bg-brand-primary rounded-none p-6 text-brand-on-primary shadow-none flex flex-col justify-between flex-1 relative overflow-hidden group">
               <div className="absolute -right-10 -top-10 w-32 h-32 bg-white/5 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500 pointer-events-none" />
 
               <div>
@@ -179,7 +179,7 @@ export default function DashboardView({ setActiveTab }: DashboardViewProps) {
                 {nextStop && (
                   <button
                     onClick={() => setSelectedHighlight(nextStop)}
-                    className="text-[10px] font-bold uppercase tracking-widest py-2 px-4 rounded-none bg-white/10 hover:bg-white/20 border border-white/10 transition-all text-white cursor-pointer active:scale-95 flex items-center gap-1"
+                    className="text-[10px] font-bold uppercase tracking-widest py-2 px-4 rounded-none bg-white/10 hover:bg-white/20 border border-white/10 transition-all text-brand-on-primary cursor-pointer active:scale-95 flex items-center gap-1"
                   >
                     <Info className="w-3 h-3" />
                     <span>Detalles</span>
@@ -187,7 +187,7 @@ export default function DashboardView({ setActiveTab }: DashboardViewProps) {
                 )}
                 <button
                   onClick={() => setActiveTab('itinerary')}
-                  className="text-[10px] font-bold uppercase tracking-widest py-2 px-4 rounded-none bg-white text-brand-primary hover:bg-brand-primary-fixed transition-all cursor-pointer active:scale-95"
+                  className="text-[10px] font-bold uppercase tracking-widest py-2 px-4 rounded-none bg-brand-on-primary text-brand-primary hover:bg-brand-primary-fixed transition-all cursor-pointer active:scale-95"
                 >
                   Ir al Itinerario
                 </button>
@@ -241,10 +241,10 @@ export default function DashboardView({ setActiveTab }: DashboardViewProps) {
 
                   <div className={`absolute top-3 right-3 px-2 py-0.5 rounded-none text-[8px] font-black tracking-widest flex items-center gap-1 shadow-none ${
                     highlight.status === 'CONFIRMED'
-                      ? 'bg-brand-primary text-white'
+                      ? 'bg-brand-primary text-brand-on-primary'
                       : highlight.status === 'RESERVED'
                       ? 'bg-brand-sunset text-white'
-                      : 'bg-brand-secondary text-white'
+                      : 'bg-brand-secondary text-brand-on-secondary'
                   }`}>
                     {highlight.status === 'CONFIRMED' && <CheckCircle2 className="w-2.5 h-2.5" />}
                     {highlight.status === 'PENDING' && <Clock className="w-2.5 h-2.5" />}
@@ -296,7 +296,7 @@ export default function DashboardView({ setActiveTab }: DashboardViewProps) {
                   ✕
                 </button>
                 <div className="absolute bottom-4 left-4">
-                  <span className="text-[9px] font-black uppercase bg-brand-primary text-white px-2.5 py-0.5 rounded-none tracking-widest">Día {selectedHighlight.day} • {selectedHighlight.type}</span>
+                  <span className="text-[9px] font-black uppercase bg-brand-primary text-brand-on-primary px-2.5 py-0.5 rounded-none tracking-widest">Día {selectedHighlight.day} • {selectedHighlight.type}</span>
                   <h4 className="font-serif font-black italic text-lg text-white mt-1.5">{selectedHighlight.title}</h4>
                 </div>
               </div>
@@ -318,7 +318,7 @@ export default function DashboardView({ setActiveTab }: DashboardViewProps) {
                 </div>
                 <button 
                   onClick={() => setSelectedHighlight(null)}
-                  className="w-full mt-5 py-2.5 bg-brand-primary hover:bg-brand-primary-container text-white rounded-none font-bold text-[10px] uppercase tracking-widest transition-all active:scale-98 cursor-pointer"
+                  className="w-full mt-5 py-2.5 bg-brand-primary hover:bg-brand-primary-container text-brand-on-primary hover:text-brand-on-primary-container rounded-none font-bold text-[10px] uppercase tracking-widest transition-all active:scale-98 cursor-pointer"
                 >
                   Entendido
                 </button>
@@ -363,15 +363,15 @@ export default function DashboardView({ setActiveTab }: DashboardViewProps) {
                     </span>
                     
                     <div className={`p-3 rounded-none ${
-                      isCurrentUser 
-                        ? 'bg-brand-primary text-white' 
+                      isCurrentUser
+                        ? 'bg-brand-primary text-brand-on-primary'
                         : msg.isImportant
                         ? 'bg-brand-sunset text-white'
                         : 'bg-brand-surface-low border border-brand-primary/5 text-brand-primary'
                     }`}>
                       <p className="text-xs leading-relaxed font-sans">{msg.content}</p>
                       <span className={`text-[8px] tracking-widest uppercase mt-1.5 block leading-none font-bold ${
-                        isCurrentUser || msg.isImportant ? 'text-white/70' : 'text-brand-outline'
+                        isCurrentUser ? 'text-brand-on-primary/70' : msg.isImportant ? 'text-white/70' : 'text-brand-outline'
                       }`}>
                         {msg.timestamp}
                       </span>

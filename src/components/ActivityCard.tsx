@@ -53,7 +53,7 @@ export default function ActivityCard({
                   ? 'bg-[#F2EDE4] text-brand-primary'
                   : activity.type === 'Sightseeing'
                   ? 'bg-[#E4ECEB] text-brand-primary'
-                  : 'bg-brand-primary text-white'
+                  : 'bg-brand-primary text-brand-on-primary'
               }`}>
                 {activity.type === 'Relaxation'
                   ? 'Relajación'
@@ -112,7 +112,7 @@ export default function ActivityCard({
 
           <div className="flex gap-2">
             {activity.status ? (
-              <span className="flex items-center gap-1 text-white font-black text-[8px] uppercase tracking-widest bg-brand-primary px-2.5 py-1 rounded-none">
+              <span className="flex items-center gap-1 text-brand-on-primary font-black text-[8px] uppercase tracking-widest bg-brand-primary px-2.5 py-1 rounded-none">
                 <CheckCircle2 className="w-3 h-3 fill-current" />
                 <span>
                   {activity.status === 'Smart Imported'

@@ -87,7 +87,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-brand-background dark:bg-zinc-950 text-brand-on-surface antialiased">
+    <div className="min-h-screen bg-brand-background text-brand-on-surface antialiased">
       {/* Top Header Navigation */}
       <Header
         activeTab={activeTab}
@@ -116,7 +116,7 @@ export default function App() {
         </div>
 
         {/* Main Content Area */}
-        <main className="flex-1 md:ml-64 p-6 md:p-12 bg-brand-background dark:bg-zinc-950 overflow-x-hidden pb-24 md:pb-12">
+        <main className="flex-1 md:ml-64 p-6 md:p-12 bg-brand-background overflow-x-hidden pb-24 md:pb-12">
           <div className="max-w-6xl mx-auto">
             <Suspense fallback={<div className="py-20 text-center text-xs font-bold uppercase tracking-widest text-brand-outline">Cargando vista…</div>}>
             {activeTab === 'dashboard' && (
@@ -181,7 +181,7 @@ export default function App() {
                 />
                 <button
                   type="submit"
-                  className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-brand-primary hover:bg-brand-primary-container text-white p-2 rounded-lg text-xs transition-all cursor-pointer"
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-brand-primary hover:bg-brand-primary-container text-brand-on-primary hover:text-brand-on-primary-container p-2 rounded-lg text-xs transition-all cursor-pointer"
                 >
                   Invitar
                 </button>
@@ -213,7 +213,7 @@ export default function App() {
 
             <button
               onClick={() => setShowInviteModal(false)}
-              className="w-full mt-6 py-2.5 bg-brand-primary hover:bg-brand-primary-container text-white rounded-xl font-bold text-xs transition-all cursor-pointer"
+              className="w-full mt-6 py-2.5 bg-brand-primary hover:bg-brand-primary-container text-brand-on-primary hover:text-brand-on-primary-container rounded-xl font-bold text-xs transition-all cursor-pointer"
             >
               Listo
             </button>

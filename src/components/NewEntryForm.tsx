@@ -64,7 +64,7 @@ export default function NewEntryForm({
               onClick={() => setDaySelectionType('existing')}
               className={`flex-1 py-1 text-[8px] font-black uppercase tracking-widest border transition-all cursor-pointer ${
                 daySelectionType === 'existing'
-                  ? 'bg-brand-primary text-white border-brand-primary'
+                  ? 'bg-brand-primary text-brand-on-primary border-brand-primary'
                   : 'bg-white text-brand-primary border-brand-primary/10 hover:bg-brand-primary/5'
               }`}
             >
@@ -75,7 +75,7 @@ export default function NewEntryForm({
               onClick={() => setDaySelectionType('calendar')}
               className={`flex-1 py-1 text-[8px] font-black uppercase tracking-widest border transition-all cursor-pointer ${
                 daySelectionType === 'calendar'
-                  ? 'bg-brand-primary text-white border-brand-primary'
+                  ? 'bg-brand-primary text-brand-on-primary border-brand-primary'
                   : 'bg-white text-brand-primary border-brand-primary/10 hover:bg-brand-primary/5'
               }`}
             >
@@ -160,7 +160,7 @@ export default function NewEntryForm({
 
         <button
           type="submit"
-          className="w-full py-2.5 bg-brand-primary hover:bg-brand-primary/90 text-white rounded-none font-bold text-[10px] uppercase tracking-widest transition-all cursor-pointer active:scale-95"
+          className="w-full py-2.5 bg-brand-primary hover:bg-brand-primary/90 text-brand-on-primary rounded-none font-bold text-[10px] uppercase tracking-widest transition-all cursor-pointer active:scale-95"
         >
           Guardar Entrada
         </button>
@@ -178,7 +178,7 @@ export default function NewEntryForm({
             onClick={() => setDaySelectionType('existing')}
             className={`flex-1 py-1.5 text-[9px] font-black uppercase tracking-widest border transition-all cursor-pointer ${
               daySelectionType === 'existing'
-                ? 'bg-brand-primary text-white border-brand-primary'
+                ? 'bg-brand-primary text-brand-on-primary border-brand-primary'
                 : 'bg-white text-brand-primary border-brand-primary/10 hover:bg-brand-primary/5'
             }`}
           >
@@ -189,7 +189,7 @@ export default function NewEntryForm({
             onClick={() => setDaySelectionType('calendar')}
             className={`flex-1 py-1.5 text-[9px] font-black uppercase tracking-widest border transition-all cursor-pointer ${
               daySelectionType === 'calendar'
-                ? 'bg-brand-primary text-white border-brand-primary'
+                ? 'bg-brand-primary text-brand-on-primary border-brand-primary'
                 : 'bg-white text-brand-primary border-brand-primary/10 hover:bg-brand-primary/5'
             }`}
           >
@@ -296,7 +296,7 @@ export default function NewEntryForm({
         </button>
         <button
           type="submit"
-          className="flex-1 py-3 bg-brand-primary hover:bg-brand-primary/90 text-white rounded-none font-bold text-[10px] uppercase tracking-widest transition-all cursor-pointer"
+          className="flex-1 py-3 bg-brand-primary hover:bg-brand-primary/90 text-brand-on-primary rounded-none font-bold text-[10px] uppercase tracking-widest transition-all cursor-pointer"
         >
           Guardar Entrada
         </button>

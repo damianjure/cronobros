@@ -86,10 +86,10 @@ export default function CriticalEventsManager({
         aria-labelledby="critical-events-manager-title"
         className="bg-white border border-brand-primary/15 w-full max-w-3xl max-h-[92vh] overflow-y-auto shadow-2xl"
       >
-        <header className="sticky top-0 z-10 bg-brand-primary text-white px-5 py-4 flex items-center gap-3">
+        <header className="sticky top-0 z-10 bg-brand-primary text-brand-on-primary px-5 py-4 flex items-center gap-3">
           <CalendarClock className="w-5 h-5 text-brand-sunset" />
           <div>
-            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/60">
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-brand-on-primary/60">
               Agenda del viaje
             </p>
             <h2 id="critical-events-manager-title" className="font-serif font-black italic text-xl">
@@ -100,7 +100,7 @@ export default function CriticalEventsManager({
             type="button"
             onClick={onClose}
             aria-label="Cerrar gestión de eventos"
-            className="ml-auto p-2 border border-white/20 hover:bg-white/10"
+            className="ml-auto p-2 border border-brand-on-primary/20 hover:bg-brand-on-primary/10"
           >
             <X className="w-4 h-4" />
           </button>
@@ -186,7 +186,7 @@ export default function CriticalEventsManager({
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="bg-brand-primary text-white px-5 py-2 text-xs font-black uppercase tracking-wider disabled:opacity-50"
+                  className="bg-brand-primary text-brand-on-primary px-5 py-2 text-xs font-black uppercase tracking-wider disabled:opacity-50"
                 >
                   {isSaving ? 'Guardando…' : 'Guardar evento'}
                 </button>

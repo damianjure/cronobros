@@ -81,7 +81,7 @@ export default function TripsListView({ onSelectTrip }: TripsListViewProps) {
           </div>
           <button
             type="submit"
-            className="bg-brand-primary hover:bg-brand-primary-container text-white px-4 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+            className="bg-brand-primary hover:bg-brand-primary-container text-brand-on-primary hover:text-brand-on-primary-container px-4 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Crear Viaje</span>

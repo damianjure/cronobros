@@ -170,7 +170,7 @@ export default function PlacesView() {
 
             <button
               type="submit"
-              className="w-full bg-brand-primary hover:bg-brand-primary/95 text-white py-3 rounded-none font-bold text-[10px] uppercase tracking-widest transition-all cursor-pointer active:scale-98"
+              className="w-full bg-brand-primary hover:bg-brand-primary/95 text-brand-on-primary py-3 rounded-none font-bold text-[10px] uppercase tracking-widest transition-all cursor-pointer active:scale-98"
             >
               Proponer Lugar
             </button>

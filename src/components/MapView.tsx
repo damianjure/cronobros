@@ -171,7 +171,7 @@ export default function MapView() {
             <button
               onClick={openRoute}
               disabled={mapPoints.length < 2}
-              className="px-4 py-2.5 bg-brand-primary disabled:opacity-40 text-white text-[9px] font-black uppercase tracking-widest flex items-center gap-2"
+              className="px-4 py-2.5 bg-brand-primary disabled:opacity-40 text-brand-on-primary text-[9px] font-black uppercase tracking-widest flex items-center gap-2"
             >
               <Navigation className="w-4 h-4" /> Abrir ruta
             </button>
@@ -195,7 +195,7 @@ export default function MapView() {
             <label className="block text-[10px] font-black uppercase tracking-wider text-brand-outline">Descripción
               <textarea value={description} onChange={event => setDescription(event.target.value)} className="mt-1 w-full border border-brand-primary/15 p-2.5 text-xs normal-case" rows={3} />
             </label>
-            <button type="submit" className="w-full py-2.5 bg-brand-primary text-white text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2">
+            <button type="submit" className="w-full py-2.5 bg-brand-primary text-brand-on-primary text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2">
               <Plus className="w-4 h-4" /> Guardar en el mapa
             </button>
           </form>

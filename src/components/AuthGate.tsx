@@ -39,7 +39,7 @@ export default function AuthGate({ children }: AuthGateProps) {
           </p>
           <button
             onClick={() => signIn()}
-            className="w-full py-3 bg-brand-primary hover:bg-brand-primary-container text-white rounded-xl font-bold text-sm transition-all cursor-pointer"
+            className="w-full py-3 bg-brand-primary hover:bg-brand-primary-container text-brand-on-primary hover:text-brand-on-primary-container rounded-xl font-bold text-sm transition-all cursor-pointer"
           >
             Iniciar sesión con Google
           </button>

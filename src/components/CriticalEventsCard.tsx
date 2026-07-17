@@ -180,7 +180,7 @@ export default function CriticalEventsCard() {
               <button
                 type="button"
                 onClick={() => setShowManager(true)}
-                className="ml-auto border border-brand-primary px-3 py-2 text-[9px] font-black uppercase tracking-wider text-brand-primary hover:bg-brand-primary hover:text-white"
+                className="ml-auto border border-brand-primary px-3 py-2 text-[9px] font-black uppercase tracking-wider text-brand-primary hover:bg-brand-primary hover:text-brand-on-primary"
               >
                 Agregar evento crítico
               </button>
@@ -211,7 +211,7 @@ export default function CriticalEventsCard() {
         
         {/* Top Badges */}
         <div className="flex flex-wrap items-center gap-2">
-          <span className="bg-brand-primary text-white text-[9px] font-black uppercase tracking-[0.2em] px-2.5 py-1 rounded-none flex items-center gap-1.5 animate-pulse">
+          <span className="bg-brand-primary text-brand-on-primary text-[9px] font-black uppercase tracking-[0.2em] px-2.5 py-1 rounded-none flex items-center gap-1.5 animate-pulse">
             <Activity className="w-3 h-3 text-brand-sunset fill-current" />
             <span>Prioridad Crítica / Impostergable</span>
           </span>
@@ -308,7 +308,7 @@ export default function CriticalEventsCard() {
               <span className={`w-1.5 h-1.5 rounded-full ${coordsSource === 'gps' ? 'bg-green-600 animate-pulse' : 'bg-brand-sunset animate-ping'}`} />
               <span>Geolocalización Adaptativa</span>
             </span>
-            <span className="text-[8px] font-extrabold px-1.5 py-0.5 bg-brand-primary text-white uppercase tracking-widest">
+            <span className="text-[8px] font-extrabold px-1.5 py-0.5 bg-brand-primary text-brand-on-primary uppercase tracking-widest">
               {coordsSource === 'gps' ? 'GPS REAL' : 'REFERENCIA'}
             </span>
           </div>
@@ -366,7 +366,7 @@ export default function CriticalEventsCard() {
           <button
             onClick={handleGetRealGps}
             disabled={isGpsLoading}
-            className="w-full border border-brand-primary text-brand-primary hover:bg-brand-primary hover:text-white disabled:opacity-50 py-1.5 px-2 text-[8px] font-black uppercase tracking-widest transition-all cursor-pointer flex items-center justify-center gap-1"
+            className="w-full border border-brand-primary text-brand-primary hover:bg-brand-primary hover:text-brand-on-primary disabled:opacity-50 py-1.5 px-2 text-[8px] font-black uppercase tracking-widest transition-all cursor-pointer flex items-center justify-center gap-1"
           >
             {isGpsLoading ? (
               <>

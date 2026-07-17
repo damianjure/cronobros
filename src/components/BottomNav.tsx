@@ -8,7 +8,7 @@ interface BottomNavProps {
 
 export default function BottomNav({ activeTab, setActiveTab }: BottomNavProps) {
   return (
-    <div className="md:hidden fixed bottom-0 left-0 w-full bg-white dark:bg-zinc-950 border-t border-brand-outline-variant/30 flex justify-around items-center h-16 shadow-[0_-4px_20px_rgba(0,30,64,0.05)] z-50">
+    <div className="md:hidden fixed bottom-0 left-0 w-full bg-brand-surface border-t border-brand-outline-variant/30 flex justify-around items-center h-16 shadow-[0_-4px_20px_rgba(0,30,64,0.05)] z-50">
       <button
         onClick={() => setActiveTab('dashboard')}
         className={`flex flex-col items-center justify-center gap-1 cursor-pointer w-12 h-full ${

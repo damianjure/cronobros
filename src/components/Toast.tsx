@@ -27,7 +27,7 @@ export default function Toast() {
           key={toast.id}
           role="status"
           aria-live="polite"
-          className="pointer-events-auto bg-brand-primary text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2 duration-200 max-w-sm"
+          className="pointer-events-auto bg-brand-primary text-brand-on-primary px-5 py-3 rounded-xl shadow-2xl flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2 duration-200 max-w-sm"
         >
           <CheckCircle2 className="w-4 h-4 text-brand-secondary shrink-0" />
           <span className="font-semibold text-xs">{toast.message}</span>
