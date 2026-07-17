@@ -105,6 +105,7 @@ export default function Header({
               setShowNotificationsDropdown(!showNotificationsDropdown);
               onNotificationClick();
             }}
+            aria-label="Notificaciones"
             className="p-2 text-brand-on-surface-variant hover:text-brand-primary hover:bg-brand-surface-container/50 rounded-none transition-colors relative cursor-pointer active:scale-95"
             id="header-notifications-btn"
           >
@@ -135,6 +136,7 @@ export default function Header({
         {/* Settings */}
         <button
           onClick={onSettingsClick}
+          aria-label="Configuración"
           className="p-2 text-brand-on-surface-variant hover:text-brand-primary hover:bg-brand-surface-container/50 rounded-full transition-colors cursor-pointer active:scale-95"
           id="header-settings-btn"
         >

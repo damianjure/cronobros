@@ -158,6 +158,7 @@ export default function App() {
             
             <button
               onClick={() => setShowInviteModal(false)}
+              aria-label="Cerrar"
               className="absolute top-4 right-4 text-brand-outline hover:text-brand-primary w-8 h-8 rounded-full hover:bg-brand-surface-low transition-all text-sm font-bold flex items-center justify-center cursor-pointer"
             >
               <X className="w-4 h-4" />

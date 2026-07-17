@@ -39,7 +39,10 @@ export default function DashboardView({ setActiveTab }: DashboardViewProps) {
   const displayName = user?.displayName ?? user?.email ?? 'viajero';
 
   const [inputValue, setInputValue] = useState('');
-  const activeNote = 'Sin notas todavía.';
+  // No sticky-note feature is wired up yet (no store field, nothing ever
+  // sets this) — `null` so the UI doesn't fabricate an attribution for a
+  // note nobody wrote.
+  const activeNote: string | null = null;
   const [selectedHighlight, setSelectedHighlight] = useState<UpcomingHighlight | null>(null);
 
   const handleSendMessage = (e: React.FormEvent) => {
@@ -292,8 +295,9 @@ export default function DashboardView({ setActiveTab }: DashboardViewProps) {
                   <img className="w-full h-full object-cover" src={selectedHighlight.image} alt={selectedHighlight.title} />
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/55 to-transparent" />
-                <button 
+                <button
                   onClick={() => setSelectedHighlight(null)}
+                  aria-label="Cerrar"
                   className="absolute top-4 right-4 bg-white/20 hover:bg-white/40 text-white w-7 h-7 rounded-none flex items-center justify-center text-xs font-bold transition-all"
                 >
                   ✕
@@ -393,9 +397,11 @@ export default function DashboardView({ setActiveTab }: DashboardViewProps) {
             </p>
             <div className="p-3 bg-brand-background border border-brand-primary/10 rounded-none shadow-none">
               <p className="text-xs italic text-brand-primary font-serif font-medium leading-relaxed">
-                "{activeNote}"
+                {activeNote ? `"${activeNote}"` : 'Sin notas todavía.'}
               </p>
-              <p className="text-[9px] text-brand-primary/70 font-bold uppercase tracking-wider mt-1 text-right">— Añadido por {displayName}</p>
+              {activeNote && (
+                <p className="text-[9px] text-brand-primary/70 font-bold uppercase tracking-wider mt-1 text-right">— Añadido por {displayName}</p>
+              )}
             </div>
             <p className="text-[9px] text-brand-outline mt-1.5 font-bold uppercase tracking-wider text-center">
               Escribe "nota: &lt;msg&gt;" para actualizar
