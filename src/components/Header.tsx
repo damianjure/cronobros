@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Search, Bell, Settings } from 'lucide-react';
+import { Search, Bell, Settings, LogOut, MapPinned } from 'lucide-react';
 import { ActiveTab } from '../types';
 import { useAuthStore } from '../store/authStore';
 import { useTripStore } from '../store/tripStore';
 import { useCurrentTrip } from '../store/currentTripContext';
+import { useTripNavigation } from '../store/tripNavigation';
 
 interface HeaderProps {
   activeTab: ActiveTab;
@@ -23,9 +24,12 @@ export default function Header({
   onSettingsClick,
 }: HeaderProps) {
   const [showNotificationsDropdown, setShowNotificationsDropdown] = useState(false);
+  const [showAccountMenu, setShowAccountMenu] = useState(false);
   const user = useAuthStore(state => state.user);
+  const signOut = useAuthStore(state => state.signOut);
   const criticalEvents = useTripStore(state => state.criticalEvents);
   const currentTrip = useCurrentTrip();
+  const { leaveTrip } = useTripNavigation();
   const displayName = user?.displayName ?? user?.email ?? 'Viajero';
   const pendingInvites = Object.values(currentTrip?.pendingMemberships ?? {}).filter(invite => invite.pending);
   const notifications = [
@@ -137,12 +141,52 @@ export default function Header({
           <Settings className="w-5 h-5" />
         </button>
 
-        {/* User Profile avatar */}
-        <div className="w-8 h-8 rounded-full bg-brand-primary-fixed overflow-hidden border border-brand-outline-variant select-none cursor-pointer hover:opacity-90 active:scale-95 transition-all flex items-center justify-center text-[10px] font-black text-brand-primary" title={displayName}>
-          {user?.photoURL ? (
-            <img className="w-full h-full object-cover" src={user.photoURL} alt={displayName} />
-          ) : (
-            displayName.charAt(0).toUpperCase()
+        {/* User Profile avatar + account menu */}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setShowAccountMenu(!showAccountMenu)}
+            className="w-8 h-8 rounded-full bg-brand-primary-fixed overflow-hidden border border-brand-outline-variant select-none cursor-pointer hover:opacity-90 active:scale-95 transition-all flex items-center justify-center text-[10px] font-black text-brand-primary"
+            aria-label={displayName}
+            title={displayName}
+            id="header-account-menu-btn"
+          >
+            {user?.photoURL ? (
+              <img className="w-full h-full object-cover" src={user.photoURL} alt={displayName} />
+            ) : (
+              displayName.charAt(0).toUpperCase()
+            )}
+          </button>
+
+          {showAccountMenu && (
+            <div className="absolute right-0 mt-2 w-56 bg-white border border-brand-primary/10 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200 shadow-xl rounded-none">
+              <div className="px-4 py-2 border-b border-brand-primary/10">
+                <span className="block font-bold text-xs text-brand-primary truncate">{displayName}</span>
+                {user?.email && <span className="block text-[10px] text-brand-outline truncate">{user.email}</span>}
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAccountMenu(false);
+                  leaveTrip();
+                }}
+                className="w-full flex items-center gap-2 px-4 py-2.5 text-left text-xs font-semibold text-brand-on-surface hover:bg-brand-primary/5 cursor-pointer"
+              >
+                <MapPinned className="w-3.5 h-3.5 text-brand-on-surface-variant" />
+                Mis viajes
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAccountMenu(false);
+                  void signOut();
+                }}
+                className="w-full flex items-center gap-2 px-4 py-2.5 text-left text-xs font-semibold text-red-600 hover:bg-red-50 cursor-pointer"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                Cerrar sesión
+              </button>
+            </div>
           )}
         </div>
       </div>
