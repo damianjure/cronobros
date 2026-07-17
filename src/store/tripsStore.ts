@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { StoreApi, UseBoundStore } from 'zustand';
-import type { Trip, Role } from '../types';
+import type { Trip, Role, MemberProfile } from '../types';
 import type { TripsRepository } from '../services/tripsPort';
 import type { Unsubscribe } from '../services/ports';
 import { tripsRepository as defaultRepository } from '../services';
@@ -8,7 +8,7 @@ import { tripsRepository as defaultRepository } from '../services';
 export interface TripsStoreState {
   trips: Trip[];
   subscribeToUser: (uid: string) => Unsubscribe;
-  createTrip: (name: string, ownerUid: string) => Promise<void>;
+  createTrip: (name: string, ownerUid: string, ownerProfile?: MemberProfile) => Promise<void>;
   deleteTrip: (tripId: string) => Promise<void>;
   setArchived: (tripId: string, archived: boolean) => Promise<void>;
   inviteMember: (tripId: string, email: string, role: Role) => Promise<void>;
@@ -32,7 +32,7 @@ export function createTripsStore(
   const store = create<TripsStoreState>(() => ({
     trips: [],
     subscribeToUser: uid => repository.subscribeTrips(uid, trips => store.setState({ trips })),
-    createTrip: (name, ownerUid) => repository.createTrip(name, ownerUid),
+    createTrip: (name, ownerUid, ownerProfile) => repository.createTrip(name, ownerUid, ownerProfile),
     deleteTrip: tripId => repository.deleteTrip(tripId),
     setArchived: (tripId, archived) => repository.setArchived(tripId, archived),
     inviteMember: (tripId, email, role) => repository.inviteMember(tripId, email, role),

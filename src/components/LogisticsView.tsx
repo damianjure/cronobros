@@ -1,11 +1,10 @@
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import {
   FileText,
   Phone,
   Calendar,
   Building,
   Clock,
-  ArrowUpRight,
   ShieldCheck,
   CheckCircle2
 } from 'lucide-react';
@@ -28,19 +27,19 @@ export default function LogisticsView() {
             Datos reales del viaje
           </p>
         </header>
-        <section className="bg-white rounded-none p-10 border border-brand-primary/10 text-center">
+        <md-outlined-card style={{ display: 'block' } as CSSProperties} className="p-10 text-center">
           <p className="font-serif font-bold italic text-brand-primary text-base mb-2">Todavía no hay logística cargada</p>
           <p className="text-xs text-brand-outline max-w-md mx-auto">
             Cuando se asignen un vehículo o conductores, sus datos aparecerán en esta sección.
           </p>
-        </section>
+        </md-outlined-card>
       </div>
     );
   }
 
   return (
     <div className="space-y-10">
-      
+
       {/* Title Header */}
       <header className="border-b border-brand-primary/10 pb-6">
         <h1 className="font-serif text-3xl md:text-4xl font-black italic text-brand-primary tracking-tight">
@@ -52,13 +51,16 @@ export default function LogisticsView() {
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
+
         {/* Left Column (Vehicle & specifications) */}
         <div className="lg:col-span-8 space-y-6">
-          
+
           {/* Vehicle card */}
           {activeVehicle ? (
-            <section className="bg-white rounded-none overflow-hidden border border-brand-primary/10 shadow-none grid grid-cols-1 md:grid-cols-2 group">
+            <md-elevated-card
+              style={{ display: 'grid' } as CSSProperties}
+              className="overflow-hidden grid-cols-1 md:grid-cols-2 group"
+            >
               <div className="relative h-64 md:h-auto overflow-hidden bg-brand-background">
                 {activeVehicle.image && (
                   <img
@@ -68,7 +70,7 @@ export default function LogisticsView() {
                   />
                 )}
                 <div className="absolute top-4 left-4">
-                  <span className="px-2.5 py-1 bg-brand-primary text-white text-[8px] font-black rounded-none uppercase tracking-widest shadow-none">
+                  <span className="px-2.5 py-1 bg-brand-primary text-brand-on-primary text-[8px] font-black rounded-none uppercase tracking-widest shadow-none">
                     Flota Activa
                   </span>
                 </div>
@@ -101,37 +103,33 @@ export default function LogisticsView() {
 
                 {/* Document download buttons */}
                 <div className="flex gap-3 mt-8">
-                  <button
+                  <md-outlined-button
+                    type="button"
                     onClick={() => setShowDocModal('insurance')}
-                    className="flex-1 p-3.5 bg-brand-background hover:bg-brand-primary/5 border border-brand-primary/10 rounded-none flex items-center justify-between group cursor-pointer transition-colors active:scale-98"
                     id="logistics-doc-insurance"
+                    style={{ flex: 1 }}
                   >
-                    <div className="flex items-center gap-2">
-                      <ShieldCheck className="w-4 h-4 text-brand-primary/70" />
-                      <span className="font-bold text-[10px] uppercase tracking-widest text-brand-primary">Póliza de Seguro</span>
-                    </div>
-                    <ArrowUpRight className="w-4 h-4 text-brand-primary transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                  </button>
+                    <ShieldCheck slot="icon" className="w-4 h-4" />
+                    Póliza de Seguro
+                  </md-outlined-button>
 
-                  <button
+                  <md-outlined-button
+                    type="button"
                     onClick={() => setShowDocModal('agreement')}
-                    className="flex-1 p-3.5 bg-brand-background hover:bg-brand-primary/5 border border-brand-primary/10 rounded-none flex items-center justify-between group cursor-pointer transition-colors active:scale-98"
                     id="logistics-doc-agreement"
+                    style={{ flex: 1 }}
                   >
-                    <div className="flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-brand-primary/70" />
-                      <span className="font-bold text-[10px] uppercase tracking-widest text-brand-primary">Contrato</span>
-                    </div>
-                    <ArrowUpRight className="w-4 h-4 text-brand-primary transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                  </button>
+                    <FileText slot="icon" className="w-4 h-4" />
+                    Contrato
+                  </md-outlined-button>
                 </div>
               </div>
-            </section>
+            </md-elevated-card>
           ) : (
-            <section className="bg-white rounded-none p-8 border border-brand-primary/10 shadow-none text-center">
+            <md-outlined-card style={{ display: 'block' } as CSSProperties} className="p-8 text-center">
               <p className="font-serif font-bold italic text-brand-primary text-sm mb-1">Aún no hay vehículo asignado</p>
               <p className="text-xs text-brand-outline">Cuando se asigne un vehículo a este viaje, aparecerá aquí.</p>
-            </section>
+            </md-outlined-card>
           )}
 
 
@@ -139,30 +137,30 @@ export default function LogisticsView() {
 
         {/* Right Column (Sidebar metrics & maps) */}
         <div className="lg:col-span-4 space-y-6">
-          
+
           {/* Driver Shift Assignments */}
-          <section className="bg-white rounded-none p-6 border border-brand-primary/10 shadow-none">
+          <md-elevated-card style={{ display: 'block' } as CSSProperties} className="p-6">
             <h3 className="font-serif font-black italic text-brand-primary text-base mb-5">
               Conductores Asignados
             </h3>
-            
+
             {drivers.length === 0 ? (
               <p className="text-xs text-brand-outline">Todavía no hay conductores asignados a este viaje.</p>
             ) : (
             <div className="space-y-4">
               {drivers.map((drv) => (
-                <div 
+                <div
                   key={drv.id}
                   className="flex items-start gap-4 p-4 rounded-none border border-brand-primary/10 bg-brand-background"
                 >
                   <div className="w-12 h-12 rounded-none overflow-hidden border border-brand-primary/10 shrink-0">
                     <img className="w-full h-full object-cover" src={drv.avatar} alt={drv.name} />
                   </div>
-                  
+
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-center gap-1.5 mb-1">
                       <p className="font-serif font-black italic text-brand-primary text-sm truncate">{drv.name}</p>
-                      
+
                       <span className={`text-[8px] font-black px-2.5 py-1 rounded-none uppercase tracking-widest border border-brand-primary/10 bg-white ${
                         drv.status === 'On Shift'
                           ? 'text-brand-primary'
@@ -172,7 +170,7 @@ export default function LogisticsView() {
                       </span>
                     </div>
                     <p className="text-xs text-brand-on-surface-variant/90 font-medium mb-2">{drv.role === 'Lead Navigator' ? 'Navegador Principal' : drv.role === 'Relief Driver' ? 'Conductor de Relevo' : drv.role}</p>
-                    
+
                     <div className="flex items-center gap-1.5 text-brand-primary/60 font-black text-[9px] uppercase tracking-widest">
                       <Clock className="w-3.5 h-3.5 text-brand-primary/55 shrink-0" />
                       <span>{drv.shift === 'Morning (08:00 - 14:00)' ? 'Mañana (08:00 - 14:00)' : drv.shift === 'Afternoon (14:00 - 20:00)' ? 'Tarde (14:00 - 20:00)' : drv.shift}</span>
@@ -182,20 +180,18 @@ export default function LogisticsView() {
               ))}
             </div>
             )}
-          </section>
+          </md-elevated-card>
 
           {activeVehicle && (
-            <section className="bg-white rounded-none p-5 border border-brand-primary/10 shadow-none">
+            <md-elevated-card style={{ display: 'block' } as CSSProperties} className="p-5">
               <h3 className="font-serif font-black italic text-brand-primary text-base mb-3">Contacto del proveedor</h3>
               <p className="text-sm font-bold text-brand-primary">{activeVehicle.provider}</p>
               <p className="mt-1 text-xs text-brand-on-surface-variant">Alquiler {activeVehicle.rentalId} · {activeVehicle.dates}</p>
-              <a
-                href={`tel:${activeVehicle.phone.replace(/[^+\d]/g, '')}`}
-                className="mt-4 w-full py-2.5 bg-brand-primary hover:bg-brand-primary/90 text-white font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-2"
-              >
-                <Phone className="w-4 h-4" /> Llamar al proveedor
-              </a>
-            </section>
+              <md-filled-button href={`tel:${activeVehicle.phone.replace(/[^+\d]/g, '')}`} style={{ width: '100%', marginTop: '16px' }}>
+                <Phone slot="icon" className="w-4 h-4" />
+                Llamar al proveedor
+              </md-filled-button>
+            </md-elevated-card>
           )}
 
         </div>
@@ -205,7 +201,10 @@ export default function LogisticsView() {
       {/* Document View Modal */}
       {showDocModal && (
         <div className="fixed inset-0 bg-brand-primary/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-          <div className="print-document bg-white rounded-none p-6 max-w-lg w-full shadow-none border border-brand-primary/10 animate-in zoom-in-95 duration-200 relative">
+          <md-elevated-card
+            style={{ display: 'block' } as CSSProperties}
+            className="print-document p-6 max-w-lg w-full animate-in zoom-in-95 duration-200 relative"
+          >
             <div className="flex items-center gap-2 text-brand-primary mb-3">
               <CheckCircle2 className="w-5 h-5 fill-current text-brand-primary" />
               <h4 className="font-serif font-black italic text-lg text-brand-primary">
@@ -221,20 +220,14 @@ export default function LogisticsView() {
             </p>
 
             <div className="mt-5 flex justify-end gap-3">
-              <button
-                onClick={() => window.print()}
-                className="py-2 px-4 border border-brand-primary/10 text-brand-primary rounded-none font-bold text-[10px] uppercase tracking-widest hover:bg-brand-primary/5 transition-all cursor-pointer"
-              >
+              <md-outlined-button type="button" onClick={() => window.print()}>
                 Imprimir / guardar PDF
-              </button>
-              <button 
-                onClick={() => setShowDocModal(null)}
-                className="py-2 px-5 bg-brand-primary text-white rounded-none font-bold text-[10px] uppercase tracking-widest hover:bg-brand-primary/90 transition-all cursor-pointer"
-              >
+              </md-outlined-button>
+              <md-filled-button type="button" onClick={() => setShowDocModal(null)}>
                 Cerrar Contrato
-              </button>
+              </md-filled-button>
             </div>
-          </div>
+          </md-elevated-card>
         </div>
       )}
 

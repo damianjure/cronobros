@@ -1,6 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import ItineraryView from './ItineraryView';
 import { createTripStore } from '../store/tripStore';
 import type { TripStoreState } from '../store/tripStore';
@@ -56,11 +55,22 @@ function renderItineraryView(seed: { itinerary: ItineraryDay[]; pendingPlaces?: 
   const { store } = createTripStore(repo, 'test-trip');
   testStore = store;
 
-  render(
+  const result = render(
     <ItineraryView setActiveTab={vi.fn()} showNewEntryModal={false} setShowNewEntryModal={vi.fn()} />,
   );
 
-  return { repo, store: testStore };
+  return { repo, store: testStore, container: result.container };
+}
+
+// @material/web custom elements don't upgrade/render their Lit shadow DOM in
+// jsdom (no real <input>/<button> inside), so they expose no accessible role
+// and userEvent.type/click can't drive them the way they drive native
+// elements. Set the value and dispatch the real event React's onInput/onClick
+// listens for directly on the host — this is the same host-element contract
+// the real browser satisfies, just invoked without the shadow render.
+function typeIntoTextField(field: Element, value: string) {
+  (field as HTMLElement & { value: string }).value = value;
+  field.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
 }
 
 // Behavior-preservation gate for the ItineraryView decomposition (SDD Phase
@@ -70,18 +80,28 @@ function renderItineraryView(seed: { itinerary: ItineraryDay[]; pendingPlaces?: 
 // must not change across that refactor.
 describe('ItineraryView (behavior-preservation smoke tests)', () => {
   it('adding an activity via the sidebar form makes it appear in the visible itinerary list', async () => {
-    const user = userEvent.setup();
-    renderItineraryView({ itinerary: [makeDay()] });
+    const { container } = renderItineraryView({ itinerary: [makeDay()] });
 
-    await user.type(screen.getByPlaceholderText('ej. Visita guiada'), 'Caminata de prueba');
-    await user.click(screen.getByRole('button', { name: 'Guardar Entrada' }));
+    const titleField = container.querySelector('[placeholder="ej. Visita guiada"]');
+    expect(titleField).not.toBeNull();
+    act(() => {
+      typeIntoTextField(titleField!, 'Caminata de prueba');
+    });
+
+    // md-filled-button's type="submit" only participates in native form
+    // submission via its own (unregistered-in-jsdom) ElementInternals — click
+    // alone won't submit the form here, so dispatch the submit event that
+    // click would trigger in a real browser directly on the <form>.
+    const form = container.querySelector('form')!;
+    await act(async () => {
+      form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    });
 
     expect(await screen.findByText('Caminata de prueba')).toBeInTheDocument();
   });
 
   it('deleting an activity removes it from the visible itinerary list', async () => {
-    const user = userEvent.setup();
-    renderItineraryView({
+    const { container } = renderItineraryView({
       itinerary: [
         makeDay({
           activities: [
@@ -100,7 +120,11 @@ describe('ItineraryView (behavior-preservation smoke tests)', () => {
 
     expect(screen.getByText('Actividad a eliminar')).toBeInTheDocument();
 
-    await user.click(screen.getByTitle('Eliminar Actividad'));
+    const deleteButton = container.querySelector('md-icon-button[aria-label="Eliminar Actividad"]');
+    expect(deleteButton).not.toBeNull();
+    await act(async () => {
+      (deleteButton as HTMLElement).click();
+    });
 
     expect(screen.queryByText('Actividad a eliminar')).not.toBeInTheDocument();
   });

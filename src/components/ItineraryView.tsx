@@ -111,10 +111,19 @@ export default function ItineraryView({
 
       {/* Share Notification Toast */}
       {showShareToast && (
-        <div className="fixed bottom-20 right-6 bg-brand-primary text-white px-5 py-3 rounded-xl shadow-2xl z-50 flex items-center gap-2 animate-bounce">
-          <CheckCircle2 className="w-5 h-5 text-brand-secondary" />
+        <md-elevated-card
+          style={
+            {
+              display: 'flex',
+              '--md-elevated-card-container-color': 'var(--md-sys-color-primary)',
+              color: 'var(--md-sys-color-on-primary)',
+            } as React.CSSProperties
+          }
+          className="fixed bottom-20 right-6 px-5 py-3 z-50 items-center gap-2 animate-bounce"
+        >
+          <CheckCircle2 className="w-5 h-5" />
           <span className="font-semibold text-xs uppercase tracking-wider">¡Enlace del itinerario copiado al portapapeles!</span>
-        </div>
+        </md-elevated-card>
       )}
 
       {/* Main Left Column (Itinerary days & events) */}
@@ -142,22 +151,14 @@ export default function ItineraryView({
             </div>
 
             <div className="flex gap-3 w-full md:w-auto">
-              <button
-                onClick={handleShare}
-                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-none border border-brand-primary/20 text-brand-primary font-bold text-[10px] uppercase tracking-widest hover:bg-brand-primary/5 transition-all active:scale-95 cursor-pointer"
-                id="itinerary-share-btn"
-              >
-                <Share className="w-3.5 h-3.5" />
-                <span>Compartir</span>
-              </button>
-              <button
-                onClick={() => setShowNewEntryModal(true)}
-                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-none bg-brand-primary hover:bg-brand-primary/90 text-white font-bold text-[10px] uppercase tracking-widest shadow-none transition-all active:scale-95 cursor-pointer"
-                id="itinerary-new-entry-btn"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Nueva Entrada</span>
-              </button>
+              <md-outlined-button onClick={handleShare} id="itinerary-share-btn" className="flex-1 md:flex-none">
+                <Share slot="icon" className="w-3.5 h-3.5" />
+                Compartir
+              </md-outlined-button>
+              <md-filled-button onClick={() => setShowNewEntryModal(true)} id="itinerary-new-entry-btn" className="flex-1 md:flex-none">
+                <Plus slot="icon" className="w-3.5 h-3.5" />
+                Nueva Entrada
+              </md-filled-button>
             </div>
           </div>
         </div>
@@ -169,7 +170,7 @@ export default function ItineraryView({
 
               {/* Day Header */}
               <div className="flex items-center gap-4 mb-6">
-                <div className="w-14 h-14 rounded-none bg-brand-primary flex flex-col items-center justify-center text-white border border-brand-primary/10 shadow-none shrink-0">
+                <div className="w-14 h-14 rounded-none bg-brand-primary flex flex-col items-center justify-center text-brand-on-primary border border-brand-primary/10 shadow-none shrink-0">
                   <span className="text-[8px] uppercase font-black tracking-widest text-brand-primary-fixed-dim/95 leading-none mb-0.5">
                     {formatDateToDisplay(day.date).split(' ')[1] || 'Ago'}
                   </span>
@@ -190,9 +191,9 @@ export default function ItineraryView({
               {/* Day Activities List */}
               <div className="space-y-6 relative border-l border-brand-primary/10 ml-7 pl-6 md:pl-10">
                 {day.activities.length === 0 ? (
-                  <div className="p-6 bg-brand-surface-low border border-brand-primary/15 rounded-none text-center italic text-xs text-brand-outline font-medium">
+                  <md-outlined-card style={{ display: 'block' }} className="p-6 text-center italic text-xs text-brand-outline font-medium">
                     No hay actividades programadas. ¡Haz clic en "Nueva Entrada" para añadir una!
-                  </div>
+                  </md-outlined-card>
                 ) : (
                   day.activities.map((activity) => (
                     <ActivityCard
@@ -218,7 +219,7 @@ export default function ItineraryView({
       <div className="w-full lg:w-80 shrink-0 space-y-6">
 
         {/* Nueva Entrada Sidebar Card */}
-        <div className="bg-white p-6 rounded-none shadow-none border border-brand-primary/10 space-y-4">
+        <md-elevated-card style={{ display: 'block' } as React.CSSProperties} className="p-6 space-y-4">
           <div>
             <h3 className="font-serif font-black italic text-lg text-brand-primary flex items-center gap-2">
               <CalendarDays className="w-5 h-5 text-brand-sunset" />
@@ -250,22 +251,22 @@ export default function ItineraryView({
             setNewLocation={setNewLocation}
             onSubmit={handleAddActivity}
           />
-        </div>
+        </md-elevated-card>
 
       </div>
 
       {/* New Entry Modal */}
       {showNewEntryModal && (
         <div className="fixed inset-0 bg-brand-primary/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-          <div className="bg-white rounded-none p-6 max-w-lg w-full shadow-none border border-brand-primary/10 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto custom-scrollbar">
+          <md-elevated-card
+            style={{ display: 'block' } as React.CSSProperties}
+            className="p-6 max-w-lg w-full animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto custom-scrollbar"
+          >
             <div className="flex justify-between items-center mb-6 pb-2 border-b border-brand-primary/10">
               <h3 className="font-serif font-black italic text-xl text-brand-primary">Añadir Entrada al Itinerario</h3>
-              <button
-                onClick={() => setShowNewEntryModal(false)}
-                className="text-brand-outline hover:text-brand-primary w-8 h-8 rounded-none hover:bg-brand-primary/5 transition-all text-sm font-bold cursor-pointer"
-              >
-                ✕
-              </button>
+              <md-icon-button onClick={() => setShowNewEntryModal(false)} aria-label="Cerrar">
+                <md-icon>close</md-icon>
+              </md-icon-button>
             </div>
 
             <NewEntryForm
@@ -290,7 +291,7 @@ export default function ItineraryView({
               onSubmit={handleAddActivity}
               onCancel={() => setShowNewEntryModal(false)}
             />
-          </div>
+          </md-elevated-card>
         </div>
       )}
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type CSSProperties } from 'react';
 import {
   Plane,
   Key,
@@ -159,8 +159,9 @@ export default function CriticalEventsCard() {
   if (!activeEvent || !effectiveCoords) {
     return (
       <>
-        <div
-          className="bg-white border border-brand-primary/10 p-6 relative overflow-hidden"
+        <md-elevated-card
+          style={{ display: 'block' } as CSSProperties}
+          className="p-6 relative overflow-hidden"
           id="critical-events-card"
         >
           <div className="absolute top-0 left-0 right-0 h-1 bg-brand-sunset" />
@@ -177,16 +178,12 @@ export default function CriticalEventsCard() {
               </p>
             </div>
             {canManage && (
-              <button
-                type="button"
-                onClick={() => setShowManager(true)}
-                className="ml-auto border border-brand-primary px-3 py-2 text-[9px] font-black uppercase tracking-wider text-brand-primary hover:bg-brand-primary hover:text-white"
-              >
+              <md-outlined-button type="button" onClick={() => setShowManager(true)} className="ml-auto">
                 Agregar evento crítico
-              </button>
+              </md-outlined-button>
             )}
           </div>
-        </div>
+        </md-elevated-card>
         {showManager && (
           <CriticalEventsManager
             events={criticalEvents}
@@ -201,8 +198,12 @@ export default function CriticalEventsCard() {
 
   return (
     <>
-      <div className="bg-white border border-brand-primary/10 rounded-none p-5 md:p-6 shadow-none flex flex-col xl:flex-row gap-6 relative overflow-hidden" id="critical-events-card">
-      
+      <md-elevated-card
+        style={{ display: 'flex' } as CSSProperties}
+        className="p-5 md:p-6 flex-col xl:flex-row gap-6 relative overflow-hidden"
+        id="critical-events-card"
+      >
+
       {/* Absolute Decorative Line */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-brand-sunset" />
 
@@ -211,7 +212,7 @@ export default function CriticalEventsCard() {
         
         {/* Top Badges */}
         <div className="flex flex-wrap items-center gap-2">
-          <span className="bg-brand-primary text-white text-[9px] font-black uppercase tracking-[0.2em] px-2.5 py-1 rounded-none flex items-center gap-1.5 animate-pulse">
+          <span className="bg-brand-primary text-brand-on-primary text-[9px] font-black uppercase tracking-[0.2em] px-2.5 py-1 rounded-none flex items-center gap-1.5 animate-pulse">
             <Activity className="w-3 h-3 text-brand-sunset fill-current" />
             <span>Prioridad Crítica / Impostergable</span>
           </span>
@@ -219,14 +220,10 @@ export default function CriticalEventsCard() {
             {activeEvent.subType}
           </span>
           {canManage && (
-            <button
-              type="button"
-              onClick={() => setShowManager(true)}
-              className="ml-auto border border-brand-primary/15 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-brand-primary flex items-center gap-1.5 hover:bg-brand-background"
-            >
-              <Settings2 className="w-3 h-3" />
+            <md-outlined-button type="button" onClick={() => setShowManager(true)} className="ml-auto">
+              <Settings2 slot="icon" className="w-3 h-3" />
               Gestionar eventos
-            </button>
+            </md-outlined-button>
           )}
         </div>
 
@@ -308,7 +305,7 @@ export default function CriticalEventsCard() {
               <span className={`w-1.5 h-1.5 rounded-full ${coordsSource === 'gps' ? 'bg-green-600 animate-pulse' : 'bg-brand-sunset animate-ping'}`} />
               <span>Geolocalización Adaptativa</span>
             </span>
-            <span className="text-[8px] font-extrabold px-1.5 py-0.5 bg-brand-primary text-white uppercase tracking-widest">
+            <span className="text-[8px] font-extrabold px-1.5 py-0.5 bg-brand-primary text-brand-on-primary uppercase tracking-widest">
               {coordsSource === 'gps' ? 'GPS REAL' : 'REFERENCIA'}
             </span>
           </div>
@@ -340,46 +337,41 @@ export default function CriticalEventsCard() {
         <div className="space-y-2.5 mt-4">
           
           {/* Persisted event reference point */}
-          <div>
-            <label className="block text-[8px] font-black uppercase tracking-widest text-brand-outline mb-1">
-              Punto de referencia:
-            </label>
-            <select
-              value={`${effectiveCoords.lat},${effectiveCoords.lon}`}
-              onChange={(e) => {
-                const [lat, lon] = e.target.value.split(',').map(Number);
-                setCurrentCoords({ lat, lon });
-                setCoordsSource('manual');
-                setGpsError(null);
-              }}
-              className="w-full bg-white border border-brand-primary/10 py-1.5 px-2 text-[10px] font-bold focus:outline-none focus:border-brand-primary/30"
-            >
-              {presets.map(p => (
-                <option key={p.id} value={`${p.lat},${p.lon}`}>
-                  {p.name} ({p.label})
-                </option>
-              ))}
-            </select>
-          </div>
+          <md-outlined-select
+            label="Punto de referencia"
+            value={`${effectiveCoords.lat},${effectiveCoords.lon}`}
+            onChange={(e) => {
+              const [lat, lon] = e.currentTarget.value.split(',').map(Number);
+              setCurrentCoords({ lat, lon });
+              setCoordsSource('manual');
+              setGpsError(null);
+            }}
+            style={{ width: '100%', minWidth: 0 }}
+          >
+            {presets.map(p => {
+              const value = `${p.lat},${p.lon}`;
+              return (
+                <md-select-option key={p.id} value={value} selected={value === `${effectiveCoords.lat},${effectiveCoords.lon}`}>
+                  <div slot="headline">{p.name} ({p.label})</div>
+                </md-select-option>
+              );
+            })}
+          </md-outlined-select>
 
           {/* Real Geolocation trigger Button */}
-          <button
-            onClick={handleGetRealGps}
-            disabled={isGpsLoading}
-            className="w-full border border-brand-primary text-brand-primary hover:bg-brand-primary hover:text-white disabled:opacity-50 py-1.5 px-2 text-[8px] font-black uppercase tracking-widest transition-all cursor-pointer flex items-center justify-center gap-1"
-          >
+          <md-outlined-button onClick={handleGetRealGps} disabled={isGpsLoading} style={{ width: '100%' }}>
             {isGpsLoading ? (
               <>
-                <RefreshCw className="w-3 h-3 animate-spin" />
-                <span>Obteniendo GPS...</span>
+                <RefreshCw slot="icon" className="w-3 h-3 animate-spin" />
+                Obteniendo GPS...
               </>
             ) : (
               <>
-                <Locate className="w-3 h-3 text-brand-sunset" />
-                <span>Usar Mi GPS Real</span>
+                <Locate slot="icon" className="w-3 h-3" />
+                Usar Mi GPS Real
               </>
             )}
-          </button>
+          </md-outlined-button>
 
           {/* GPS Error fallback log */}
           {gpsError && (
@@ -394,7 +386,7 @@ export default function CriticalEventsCard() {
           </p>
         </div>
       </div>
-      </div>
+      </md-elevated-card>
       {showManager && (
         <CriticalEventsManager
           events={criticalEvents}

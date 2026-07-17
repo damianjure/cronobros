@@ -37,12 +37,9 @@ export default function AuthGate({ children }: AuthGateProps) {
           <p className="text-sm text-brand-on-surface-variant">
             Iniciá sesión para ver y editar tus viajes.
           </p>
-          <button
-            onClick={() => signIn()}
-            className="w-full py-3 bg-brand-primary hover:bg-brand-primary-container text-white rounded-xl font-bold text-sm transition-all cursor-pointer"
-          >
+          <md-filled-button onClick={() => signIn()} style={{ width: '100%' }}>
             Iniciar sesión con Google
-          </button>
+          </md-filled-button>
           {error && (
             <p role="alert" className="text-sm text-red-600">
               {error}

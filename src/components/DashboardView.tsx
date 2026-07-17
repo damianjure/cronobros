@@ -15,7 +15,7 @@ import { ChatMessage, UpcomingHighlight, ActiveTab } from '../types';
 import { useTripStore } from '../store/tripStore';
 import { useAuthStore } from '../store/authStore';
 import { useCurrentTrip } from '../store/currentTripContext';
-import { useTripParticipants } from '../store/participants';
+import { useTripParticipants, useTripPendingInvitesCount } from '../store/participants';
 import { deriveUpcomingHighlights } from '../utils/highlights';
 import CriticalEventsCard from './CriticalEventsCard';
 
@@ -31,6 +31,7 @@ export default function DashboardView({ setActiveTab }: DashboardViewProps) {
   const user = useAuthStore(state => state.user);
   const currentTrip = useCurrentTrip();
   const participants = useTripParticipants();
+  const pendingInvitesCount = useTripPendingInvitesCount();
   // PR5: derived from the trip's REAL itinerary instead of the discarded
   // `data.ts` fixture — a brand-new trip has no upcoming highlights yet.
   const initialHighlights = deriveUpcomingHighlights(itinerary);
@@ -38,7 +39,10 @@ export default function DashboardView({ setActiveTab }: DashboardViewProps) {
   const displayName = user?.displayName ?? user?.email ?? 'viajero';
 
   const [inputValue, setInputValue] = useState('');
-  const activeNote = 'Sin notas todavía.';
+  // No sticky-note feature is wired up yet (no store field, nothing ever
+  // sets this) — `null` so the UI doesn't fabricate an attribution for a
+  // note nobody wrote.
+  const activeNote: string | null = null;
   const [selectedHighlight, setSelectedHighlight] = useState<UpcomingHighlight | null>(null);
 
   const handleSendMessage = (e: React.FormEvent) => {
@@ -90,12 +94,14 @@ export default function DashboardView({ setActiveTab }: DashboardViewProps) {
                 </div>
               ))}
               {participants.length > 3 && (
-                <div className="w-9 h-9 rounded-full border-2 border-brand-background bg-brand-primary text-white flex items-center justify-center font-bold text-[10px] shadow-none">
+                <div className="w-9 h-9 rounded-full border-2 border-brand-background bg-brand-primary text-brand-on-primary flex items-center justify-center font-bold text-[10px] shadow-none">
                   +{participants.length - 3}
                 </div>
               )}
             </div>
-            <span className="text-[10px] font-extrabold uppercase tracking-widest text-brand-on-surface-variant/80 ml-1">En viaje</span>
+            <span className="text-[10px] font-extrabold uppercase tracking-widest text-brand-on-surface-variant/80 ml-1">
+              En viaje{pendingInvitesCount > 0 && ` · +${pendingInvitesCount} pendiente`}
+            </span>
           </div>
         </section>
 
@@ -108,24 +114,30 @@ export default function DashboardView({ setActiveTab }: DashboardViewProps) {
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
           
           {/* Active Map Card */}
-          <div className="md:col-span-2 bg-white rounded-none overflow-hidden relative border border-brand-primary/10 shadow-none group min-h-[380px] flex flex-col justify-end" id="dashboard-active-route">
-            
+          <md-elevated-card
+            className="md:col-span-2 overflow-hidden relative group min-h-[220px] md:min-h-[380px] flex flex-col justify-end"
+            style={{ display: 'flex', '--md-elevated-card-container-shape': '16px' } as React.CSSProperties}
+            id="dashboard-active-route"
+          >
             {/* Map background */}
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_30%,rgba(216,150,95,0.38),transparent_28%),radial-gradient(circle_at_75%_65%,rgba(49,82,76,0.42),transparent_32%),linear-gradient(135deg,#e9eee8,#c9d5d1)]" />
             <div className="absolute inset-0 bg-gradient-to-t from-brand-primary/40 via-transparent to-transparent pointer-events-none" />
 
             {/* Navigation Floating Button */}
-            <button 
+            <md-filled-icon-button
               onClick={() => setActiveTab('map')}
-              className="absolute top-4 right-4 bg-brand-primary text-white p-3 rounded-none shadow-none z-20 hover:bg-brand-primary/90 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+              className="absolute top-4 right-4 z-20"
               id="dashboard-nav-map-floating"
-              title="Ver en Mapa Interactivo"
+              aria-label="Ver en Mapa Interactivo"
             >
               <Navigation className="w-4.5 h-4.5 fill-current" />
-            </button>
+            </md-filled-icon-button>
 
             {/* Floating Info Overlay on Map */}
-            <div className="relative z-10 p-5 m-5 bg-white border border-brand-primary/15 rounded-none flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-xl">
+            <md-elevated-card
+              style={{ display: 'flex' } as React.CSSProperties}
+              className="relative z-10 p-5 m-5 flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
+            >
               <div>
                 <div className="flex items-center gap-2 mb-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-brand-primary" />
@@ -139,14 +151,14 @@ export default function DashboardView({ setActiveTab }: DashboardViewProps) {
                     : 'Agregá lugares desde Lugares o el Mapa'}
                 </h2>
               </div>
-            </div>
-          </div>
+            </md-elevated-card>
+          </md-elevated-card>
 
           {/* Sidebar Stats Column */}
           <div className="flex flex-col gap-6">
 
             {/* Places saved */}
-            <div className="bg-white rounded-none p-6 border border-brand-primary/10 shadow-none flex flex-col justify-center flex-1">
+            <md-elevated-card style={{ display: 'flex' } as React.CSSProperties} className="p-6 flex-col justify-center flex-1">
               <p className="text-[10px] font-black text-brand-on-surface-variant/75 uppercase tracking-widest mb-1.5">
                 Lugares Guardados
               </p>
@@ -156,43 +168,51 @@ export default function DashboardView({ setActiveTab }: DashboardViewProps) {
               <p className="text-[10px] text-brand-outline mt-2.5 font-bold uppercase tracking-wider">
                 {itinerary.length} {itinerary.length === 1 ? 'día planificado' : 'días planificados'}
               </p>
-            </div>
+            </md-elevated-card>
 
             {/* Next Stop highlight */}
-            <div className="bg-brand-primary rounded-none p-6 text-white shadow-none flex flex-col justify-between flex-1 relative overflow-hidden group">
-              <div className="absolute -right-10 -top-10 w-32 h-32 bg-white/5 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500 pointer-events-none" />
+            <md-filled-card
+              style={
+                {
+                  display: 'flex',
+                  '--md-filled-card-container-color': 'var(--md-sys-color-primary-container)',
+                  color: 'var(--md-sys-color-on-primary-container)',
+                } as React.CSSProperties
+              }
+              className="p-6 flex-col justify-between flex-1 relative group"
+            >
+              {/* Own overflow-hidden layer so the decorative blur clips at the
+                  corner without also clipping real content — the card's box
+                  is already tight for its text+buttons (pre-existing, not
+                  introduced by this migration), so the card itself must stay
+                  overflow-visible. */}
+              <div className="absolute inset-0 rounded-[inherit] overflow-hidden pointer-events-none">
+                <div className="absolute -right-10 -top-10 w-32 h-32 bg-white/5 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500" />
+              </div>
 
               <div>
-                <div className="flex items-center gap-1.5 text-brand-primary-fixed-dim/90 font-bold text-[10px] uppercase tracking-widest mb-2.5">
+                <div className="flex items-center gap-1.5 opacity-90 font-bold text-[10px] uppercase tracking-widest mb-2.5">
                   <Sparkles className="w-3.5 h-3.5" />
                   <span>Siguiente Parada</span>
                 </div>
                 <h3 className="text-2xl font-serif font-black italic tracking-tight">
                   {nextStop ? nextStop.title : 'Aún no hay planes'}
                 </h3>
-                <p className="text-xs text-brand-primary-fixed-dim/75 mt-2 leading-relaxed font-sans">
+                <p className="text-xs opacity-75 mt-2 leading-relaxed font-sans">
                   {nextStop ? nextStop.description : 'Agregá tu primera actividad en el Itinerario.'}
                 </p>
               </div>
 
               <div className="mt-5 flex gap-2">
                 {nextStop && (
-                  <button
-                    onClick={() => setSelectedHighlight(nextStop)}
-                    className="text-[10px] font-bold uppercase tracking-widest py-2 px-4 rounded-none bg-white/10 hover:bg-white/20 border border-white/10 transition-all text-white cursor-pointer active:scale-95 flex items-center gap-1"
-                  >
-                    <Info className="w-3 h-3" />
-                    <span>Detalles</span>
-                  </button>
+                  <md-text-button onClick={() => setSelectedHighlight(nextStop)}>
+                    <Info slot="icon" className="w-3 h-3" />
+                    Detalles
+                  </md-text-button>
                 )}
-                <button
-                  onClick={() => setActiveTab('itinerary')}
-                  className="text-[10px] font-bold uppercase tracking-widest py-2 px-4 rounded-none bg-white text-brand-primary hover:bg-brand-primary-fixed transition-all cursor-pointer active:scale-95"
-                >
-                  Ir al Itinerario
-                </button>
+                <md-filled-button onClick={() => setActiveTab('itinerary')}>Ir al Itinerario</md-filled-button>
               </div>
-            </div>
+            </md-filled-card>
           </div>
         </section>
 
@@ -202,27 +222,25 @@ export default function DashboardView({ setActiveTab }: DashboardViewProps) {
             <h2 className="font-serif text-2xl md:text-3xl font-black italic text-brand-primary tracking-tight">
               Próximos Momentos Destacados
             </h2>
-            <button 
-              onClick={() => setActiveTab('itinerary')}
-              className="text-brand-primary font-bold text-[10px] uppercase tracking-widest hover:underline cursor-pointer flex items-center gap-0.5"
-            >
-              <span>Itinerario Completo</span>
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
+            <md-text-button onClick={() => setActiveTab('itinerary')}>
+              Itinerario Completo
+              <ChevronRight slot="icon" className="w-3.5 h-3.5" />
+            </md-text-button>
           </div>
 
           {initialHighlights.length === 0 ? (
-            <div className="p-10 bg-white border border-brand-primary/10 rounded-none text-center">
+            <md-outlined-card style={{ display: 'block' }} className="p-10 text-center">
               <p className="font-serif font-bold italic text-brand-primary text-sm mb-1">Aún no hay momentos destacados</p>
               <p className="text-xs text-brand-outline">Agregá actividades en el Itinerario para verlas aquí.</p>
-            </div>
+            </md-outlined-card>
           ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {initialHighlights.map((highlight) => (
-              <div
+              <md-elevated-card
                 key={highlight.id}
                 onClick={() => setSelectedHighlight(highlight)}
-                className="bg-white rounded-none overflow-hidden border border-brand-primary/10 shadow-none group hover:border-brand-primary/30 transition-all duration-300 cursor-pointer flex flex-col h-full"
+                style={{ display: 'flex', cursor: 'pointer' } as React.CSSProperties}
+                className="overflow-hidden group flex-col h-full"
                 id={`highlight-card-${highlight.id}`}
               >
                 <div className="h-40 overflow-hidden relative shrink-0 bg-brand-background">
@@ -241,10 +259,10 @@ export default function DashboardView({ setActiveTab }: DashboardViewProps) {
 
                   <div className={`absolute top-3 right-3 px-2 py-0.5 rounded-none text-[8px] font-black tracking-widest flex items-center gap-1 shadow-none ${
                     highlight.status === 'CONFIRMED'
-                      ? 'bg-brand-primary text-white'
+                      ? 'bg-brand-primary text-brand-on-primary'
                       : highlight.status === 'RESERVED'
                       ? 'bg-brand-sunset text-white'
-                      : 'bg-brand-secondary text-white'
+                      : 'bg-brand-secondary text-brand-on-secondary'
                   }`}>
                     {highlight.status === 'CONFIRMED' && <CheckCircle2 className="w-2.5 h-2.5" />}
                     {highlight.status === 'PENDING' && <Clock className="w-2.5 h-2.5" />}
@@ -274,7 +292,7 @@ export default function DashboardView({ setActiveTab }: DashboardViewProps) {
                     </p>
                   </div>
                 </div>
-              </div>
+              </md-elevated-card>
             ))}
           </div>
           )}
@@ -283,20 +301,25 @@ export default function DashboardView({ setActiveTab }: DashboardViewProps) {
         {/* Selected Highlight Detail Modal */}
         {selectedHighlight && (
           <div className="fixed inset-0 bg-brand-primary/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-            <div className="bg-white rounded-none overflow-hidden max-w-md w-full shadow-2xl border border-brand-primary/10 animate-in zoom-in-95 duration-200 relative flex flex-col">
+            <md-elevated-card
+              style={{ display: 'flex' } as React.CSSProperties}
+              className="overflow-hidden max-w-md w-full animate-in zoom-in-95 duration-200 relative flex-col"
+            >
               <div className="h-48 relative bg-brand-background">
                 {selectedHighlight.image && (
                   <img className="w-full h-full object-cover" src={selectedHighlight.image} alt={selectedHighlight.title} />
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/55 to-transparent" />
-                <button 
+                <md-icon-button
                   onClick={() => setSelectedHighlight(null)}
-                  className="absolute top-4 right-4 bg-white/20 hover:bg-white/40 text-white w-7 h-7 rounded-none flex items-center justify-center text-xs font-bold transition-all"
+                  aria-label="Cerrar"
+                  className="absolute top-4 right-4"
+                  style={{ '--md-icon-button-icon-color': 'white', '--md-icon-button-hover-icon-color': 'white' } as React.CSSProperties}
                 >
-                  ✕
-                </button>
+                  <md-icon>close</md-icon>
+                </md-icon-button>
                 <div className="absolute bottom-4 left-4">
-                  <span className="text-[9px] font-black uppercase bg-brand-primary text-white px-2.5 py-0.5 rounded-none tracking-widest">Día {selectedHighlight.day} • {selectedHighlight.type}</span>
+                  <span className="text-[9px] font-black uppercase bg-brand-primary text-brand-on-primary px-2.5 py-0.5 rounded-none tracking-widest">Día {selectedHighlight.day} • {selectedHighlight.type}</span>
                   <h4 className="font-serif font-black italic text-lg text-white mt-1.5">{selectedHighlight.title}</h4>
                 </div>
               </div>
@@ -316,14 +339,11 @@ export default function DashboardView({ setActiveTab }: DashboardViewProps) {
                       : selectedHighlight.status}
                   </span>
                 </div>
-                <button 
-                  onClick={() => setSelectedHighlight(null)}
-                  className="w-full mt-5 py-2.5 bg-brand-primary hover:bg-brand-primary-container text-white rounded-none font-bold text-[10px] uppercase tracking-widest transition-all active:scale-98 cursor-pointer"
-                >
+                <md-filled-button onClick={() => setSelectedHighlight(null)} style={{ width: '100%', marginTop: '20px' }}>
                   Entendido
-                </button>
+                </md-filled-button>
               </div>
-            </div>
+            </md-elevated-card>
           </div>
         )}
 
@@ -331,8 +351,11 @@ export default function DashboardView({ setActiveTab }: DashboardViewProps) {
 
       {/* Sidebar (Group Chat & Activity) */}
       <aside className="w-full lg:w-80 shrink-0 space-y-6" id="dashboard-chat-sidebar">
-        <div className="bg-white rounded-none p-6 h-[550px] lg:h-[calc(100vh-140px)] flex flex-col border border-brand-primary/10 shadow-none">
-          
+        <md-elevated-card
+          style={{ display: 'flex', '--md-elevated-card-container-shape': '16px' } as React.CSSProperties}
+          className="p-6 h-[550px] lg:h-[calc(100vh-140px)] flex-col"
+        >
+
           <div className="flex items-center justify-between mb-4 pb-2 border-b border-brand-primary/10">
             <h2 className="text-base font-serif font-black italic text-brand-primary flex items-center gap-2">
               <MessageSquare className="w-4 h-4 text-brand-primary/60" />
@@ -363,15 +386,15 @@ export default function DashboardView({ setActiveTab }: DashboardViewProps) {
                     </span>
                     
                     <div className={`p-3 rounded-none ${
-                      isCurrentUser 
-                        ? 'bg-brand-primary text-white' 
+                      isCurrentUser
+                        ? 'bg-brand-primary text-brand-on-primary'
                         : msg.isImportant
                         ? 'bg-brand-sunset text-white'
                         : 'bg-brand-surface-low border border-brand-primary/5 text-brand-primary'
                     }`}>
                       <p className="text-xs leading-relaxed font-sans">{msg.content}</p>
                       <span className={`text-[8px] tracking-widest uppercase mt-1.5 block leading-none font-bold ${
-                        isCurrentUser || msg.isImportant ? 'text-white/70' : 'text-brand-outline'
+                        isCurrentUser ? 'text-brand-on-primary/70' : msg.isImportant ? 'text-white/70' : 'text-brand-outline'
                       }`}>
                         {msg.timestamp}
                       </span>
@@ -388,12 +411,14 @@ export default function DashboardView({ setActiveTab }: DashboardViewProps) {
               <Compass className="w-3 h-3 text-brand-primary/60" />
               <span>Nota Adhesiva Activa</span>
             </p>
-            <div className="p-3 bg-brand-background border border-brand-primary/10 rounded-none shadow-none">
+            <md-outlined-card style={{ display: 'block' }} className="p-3">
               <p className="text-xs italic text-brand-primary font-serif font-medium leading-relaxed">
-                "{activeNote}"
+                {activeNote ? `"${activeNote}"` : 'Sin notas todavía.'}
               </p>
-              <p className="text-[9px] text-brand-primary/70 font-bold uppercase tracking-wider mt-1 text-right">— Añadido por {displayName}</p>
-            </div>
+              {activeNote && (
+                <p className="text-[9px] text-brand-primary/70 font-bold uppercase tracking-wider mt-1 text-right">— Añadido por {displayName}</p>
+              )}
+            </md-outlined-card>
             <p className="text-[9px] text-brand-outline mt-1.5 font-bold uppercase tracking-wider text-center">
               Escribe "nota: &lt;msg&gt;" para actualizar
             </p>
@@ -401,26 +426,20 @@ export default function DashboardView({ setActiveTab }: DashboardViewProps) {
 
           {/* Message input field */}
           <form onSubmit={handleSendMessage} className="mt-3 pt-3 border-t border-brand-primary/10">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Enviar mensaje al grupo..."
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                className="w-full bg-white border border-brand-primary/10 rounded-none py-3 pl-4 pr-11 text-xs focus:outline-none focus:border-brand-primary/30 transition-all font-sans"
-                id="chat-input-box"
-              />
-              <button
-                type="submit"
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 text-brand-primary hover:bg-brand-primary/5 p-2 rounded-none transition-all cursor-pointer active:scale-90"
-                id="chat-send-btn"
-              >
+            <md-outlined-text-field
+              placeholder="Enviar mensaje al grupo..."
+              value={inputValue}
+              onInput={(e) => setInputValue(e.currentTarget.value)}
+              id="chat-input-box"
+              style={{ width: '100%' }}
+            >
+              <md-icon-button type="submit" slot="trailing-icon" aria-label="Enviar mensaje" id="chat-send-btn">
                 <Send className="w-4 h-4 fill-current" />
-              </button>
-            </div>
+              </md-icon-button>
+            </md-outlined-text-field>
           </form>
 
-        </div>
+        </md-elevated-card>
       </aside>
     </div>
   );

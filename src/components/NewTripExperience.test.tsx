@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { InMemoryTripRepository } from '../services/inMemoryTripRepository';
 import { CurrentTripContext } from '../store/currentTripContext';
 import { createTripStore, TripStoreContext } from '../store/tripStore';
+import { TripNavigationContext } from '../store/tripNavigation';
 import type { Trip } from '../types';
 import DashboardView from './DashboardView';
 import Header from './Header';
@@ -62,27 +63,29 @@ describe('new trip experience', () => {
     );
 
     const { container } = render(
-      <CurrentTripContext.Provider value={emptyTrip}>
-        <TripStoreContext.Provider value={store}>
-          <Header
-            activeTab="dashboard"
-            setActiveTab={vi.fn()}
-            searchQuery=""
-            setSearchQuery={vi.fn()}
-            onNotificationClick={vi.fn()}
-            onSettingsClick={vi.fn()}
-          />
-          <DashboardView setActiveTab={vi.fn()} />
-          <ItineraryView
-            setActiveTab={vi.fn()}
-            showNewEntryModal={false}
-            setShowNewEntryModal={vi.fn()}
-          />
-          <PlacesView />
-          <LogisticsView />
-          <MapView />
-        </TripStoreContext.Provider>
-      </CurrentTripContext.Provider>,
+      <TripNavigationContext.Provider value={{ leaveTrip: vi.fn() }}>
+        <CurrentTripContext.Provider value={emptyTrip}>
+          <TripStoreContext.Provider value={store}>
+            <Header
+              activeTab="dashboard"
+              setActiveTab={vi.fn()}
+              searchQuery=""
+              setSearchQuery={vi.fn()}
+              onNotificationClick={vi.fn()}
+              onSettingsClick={vi.fn()}
+            />
+            <DashboardView setActiveTab={vi.fn()} />
+            <ItineraryView
+              setActiveTab={vi.fn()}
+              showNewEntryModal={false}
+              setShowNewEntryModal={vi.fn()}
+            />
+            <PlacesView />
+            <LogisticsView />
+            <MapView />
+          </TripStoreContext.Provider>
+        </CurrentTripContext.Provider>
+      </TripNavigationContext.Provider>,
     );
 
     await user.click(container.querySelector('#header-notifications-btn')!);

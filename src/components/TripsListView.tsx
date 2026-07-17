@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, type CSSProperties } from 'react';
 import { Archive, MapPin, Plus, RotateCcw, Trash2 } from 'lucide-react';
 import { useTripsStore } from '../store/tripsStore';
 import { useAuthStore } from '../store/authStore';
@@ -51,7 +51,8 @@ export default function TripsListView({ onSelectTrip }: TripsListViewProps) {
     e.preventDefault();
     const trimmed = name.trim();
     if (!trimmed) return;
-    createTrip(trimmed, uid);
+    const ownerName = user?.displayName ?? user?.email;
+    createTrip(trimmed, uid, ownerName ? { name: ownerName, ...(user?.photoURL ? { photo: user.photoURL } : {}) } : undefined);
     setName('');
   };
 
@@ -60,56 +61,48 @@ export default function TripsListView({ onSelectTrip }: TripsListViewProps) {
       <div className="max-w-3xl mx-auto space-y-8">
         <div className="flex items-center justify-between gap-3">
           <h1 className="font-serif text-2xl font-black italic text-brand-primary">{showArchived ? 'Viajes archivados' : 'Tus Viajes'}</h1>
-          <button type="button" onClick={() => setShowArchived(value => !value)} className="flex items-center gap-2 border border-brand-primary/15 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-brand-primary">
-            {showArchived ? <RotateCcw className="h-3.5 w-3.5" /> : <Archive className="h-3.5 w-3.5" />}{showArchived ? 'Ver activos' : 'Ver archivo'}
-          </button>
+          <md-outlined-button type="button" onClick={() => setShowArchived(value => !value)}>
+            {showArchived ? <RotateCcw slot="icon" className="h-3.5 w-3.5" /> : <Archive slot="icon" className="h-3.5 w-3.5" />}
+            {showArchived ? 'Ver activos' : 'Ver archivo'}
+          </md-outlined-button>
         </div>
 
         <form onSubmit={handleCreate} className="flex gap-3">
-          <div className="flex-1">
-            <label htmlFor="trip-name" className="sr-only">
-              Nombre del Viaje
-            </label>
-            <input
-              id="trip-name"
-              type="text"
-              placeholder="Ej. Vacaciones 2026"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              className="w-full bg-white border border-brand-primary/10 rounded-none py-2.5 px-3 text-xs focus:outline-none focus:border-brand-primary/30 font-sans"
-            />
-          </div>
-          <button
-            type="submit"
-            className="bg-brand-primary hover:bg-brand-primary-container text-white px-4 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Crear Viaje</span>
-          </button>
+          <md-outlined-text-field
+            label="Nombre del Viaje"
+            placeholder="Ej. Vacaciones 2026"
+            value={name}
+            onInput={e => setName(e.currentTarget.value)}
+            style={{ flex: 1 }}
+          />
+          <md-filled-button type="submit">
+            <Plus slot="icon" className="w-4 h-4" />
+            Crear Viaje
+          </md-filled-button>
         </form>
 
         {visibleTrips.length === 0 ? (
-          <div className="p-12 bg-white border border-brand-primary/10 rounded-none text-center">
+          <md-outlined-card style={{ display: 'block' } as CSSProperties} className="p-12 text-center">
             <MapPin className="w-8 h-8 text-brand-outline/40 mx-auto mb-3" />
             <p className="font-serif font-bold italic text-brand-primary text-sm mb-1">{showArchived ? 'No hay viajes archivados' : 'No tenés viajes todavía'}</p>
             <p className="text-xs text-brand-outline">{showArchived ? 'Los viajes que archives aparecerán acá.' : 'Creá tu primer viaje con el formulario de arriba.'}</p>
-          </div>
+          </md-outlined-card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {visibleTrips.map(trip => (
-              <div
+              <md-elevated-card
                 key={trip.id}
-                className="bg-white border border-brand-primary/10 rounded-none p-5 flex items-center justify-between gap-3"
+                style={{ display: 'flex' } as CSSProperties}
+                className="p-5 items-center justify-between gap-3"
               >
-                {trip.members[uid] !== 'viewer' && <button
+                {trip.members[uid] !== 'viewer' && <md-icon-button
                   type="button"
                   onClick={() => setArchived(trip.id, !showArchived)}
                   aria-label={`${showArchived ? 'Restaurar' : 'Archivar'} ${trip.name}`}
-                  title={showArchived ? 'Restaurar viaje' : 'Archivar viaje'}
-                  className="text-brand-outline hover:text-brand-primary transition-colors cursor-pointer shrink-0"
+                  className="shrink-0"
                 >
                   {showArchived ? <RotateCcw className="w-4 h-4" /> : <Archive className="w-4 h-4" />}
-                </button>}
+                </md-icon-button>}
                 {trip.ownerUid === uid && <button
                   type="button"
                   onClick={() => onSelectTrip(trip.id)}
@@ -117,16 +110,16 @@ export default function TripsListView({ onSelectTrip }: TripsListViewProps) {
                 >
                   {trip.name}
                 </button>}
-                <button
+                <md-icon-button
                   type="button"
                   onClick={() => deleteTrip(trip.id)}
                   aria-label={`Eliminar ${trip.name}`}
-                  title="Eliminar viaje"
-                  className="text-brand-outline hover:text-red-600 transition-colors cursor-pointer shrink-0"
+                  className="shrink-0"
+                  style={{ '--md-icon-button-hover-icon-color': 'var(--md-sys-color-error)' } as CSSProperties}
                 >
                   <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
+                </md-icon-button>
+              </md-elevated-card>
             ))}
           </div>
         )}

@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Search, Bell, Settings } from 'lucide-react';
+import { Search, LogOut, MapPinned } from 'lucide-react';
 import { ActiveTab } from '../types';
 import { useAuthStore } from '../store/authStore';
 import { useTripStore } from '../store/tripStore';
 import { useCurrentTrip } from '../store/currentTripContext';
+import { useTripNavigation } from '../store/tripNavigation';
 
 interface HeaderProps {
   activeTab: ActiveTab;
@@ -23,9 +24,12 @@ export default function Header({
   onSettingsClick,
 }: HeaderProps) {
   const [showNotificationsDropdown, setShowNotificationsDropdown] = useState(false);
+  const [showAccountMenu, setShowAccountMenu] = useState(false);
   const user = useAuthStore(state => state.user);
+  const signOut = useAuthStore(state => state.signOut);
   const criticalEvents = useTripStore(state => state.criticalEvents);
   const currentTrip = useCurrentTrip();
+  const { leaveTrip } = useTripNavigation();
   const displayName = user?.displayName ?? user?.email ?? 'Viajero';
   const pendingInvites = Object.values(currentTrip?.pendingMemberships ?? {}).filter(invite => invite.pending);
   const notifications = [
@@ -82,34 +86,34 @@ export default function Header({
       {/* Right side icons */}
       <div className="flex items-center gap-4">
         {/* Search */}
-        <div className="relative hidden sm:block">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-primary/40 w-3.5 h-3.5" />
-          <input
-            type="text"
+        <div className="hidden sm:block w-52">
+          <md-outlined-text-field
             placeholder="Buscar detalles del viaje..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 pr-4 py-1.5 bg-white hover:bg-brand-surface-low border border-brand-primary/10 rounded-sm text-xs focus:outline-none focus:border-brand-primary/30 w-52 transition-colors font-sans tracking-wide"
+            onInput={(e) => setSearchQuery(e.currentTarget.value)}
             id="header-search-input"
-          />
+            style={{ width: '100%', '--md-outlined-text-field-container-shape': '4px' } as React.CSSProperties}
+          >
+            <Search slot="leading-icon" className="w-3.5 h-3.5" />
+          </md-outlined-text-field>
         </div>
 
         {/* Notifications */}
         <div className="relative">
-          <button
+          <md-icon-button
             onClick={() => {
               setShowNotificationsDropdown(!showNotificationsDropdown);
               onNotificationClick();
             }}
-            className="p-2 text-brand-on-surface-variant hover:text-brand-primary hover:bg-brand-surface-container/50 rounded-none transition-colors relative cursor-pointer active:scale-95"
+            aria-label="Notificaciones"
             id="header-notifications-btn"
           >
-            <Bell className="w-4.5 h-4.5" />
-            {notifications.length > 0 && <span className="absolute right-0.5 top-0.5 min-w-4 rounded-full bg-brand-sunset px-1 text-center text-[8px] font-black text-white">{notifications.length}</span>}
-          </button>
+            <md-icon>notifications</md-icon>
+          </md-icon-button>
+          {notifications.length > 0 && <span className="absolute right-0.5 top-0.5 min-w-4 rounded-full bg-brand-sunset px-1 text-center text-[8px] font-black text-white pointer-events-none">{notifications.length}</span>}
 
           {showNotificationsDropdown && (
-            <div className="absolute right-0 mt-2 w-80 bg-white border border-brand-primary/10 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200 shadow-xl rounded-none">
+            <md-elevated-card style={{ display: 'block' }} className="absolute right-0 mt-2 w-80 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
               <div className="px-4 py-2 border-b border-brand-primary/10 flex justify-between items-center">
                 <span className="font-bold text-[10px] text-brand-primary uppercase tracking-widest">Alertas y Actualizaciones</span>
               </div>
@@ -124,25 +128,65 @@ export default function Header({
                   </button>
                 ))}
               </div>}
-            </div>
+            </md-elevated-card>
           )}
         </div>
 
         {/* Settings */}
-        <button
-          onClick={onSettingsClick}
-          className="p-2 text-brand-on-surface-variant hover:text-brand-primary hover:bg-brand-surface-container/50 rounded-full transition-colors cursor-pointer active:scale-95"
-          id="header-settings-btn"
-        >
-          <Settings className="w-5 h-5" />
-        </button>
+        <md-icon-button onClick={onSettingsClick} aria-label="Configuración" id="header-settings-btn">
+          <md-icon>settings</md-icon>
+        </md-icon-button>
 
-        {/* User Profile avatar */}
-        <div className="w-8 h-8 rounded-full bg-brand-primary-fixed overflow-hidden border border-brand-outline-variant select-none cursor-pointer hover:opacity-90 active:scale-95 transition-all flex items-center justify-center text-[10px] font-black text-brand-primary" title={displayName}>
-          {user?.photoURL ? (
-            <img className="w-full h-full object-cover" src={user.photoURL} alt={displayName} />
-          ) : (
-            displayName.charAt(0).toUpperCase()
+        {/* User Profile avatar + account menu */}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setShowAccountMenu(!showAccountMenu)}
+            className="w-8 h-8 rounded-full bg-brand-primary-fixed overflow-hidden border border-brand-outline-variant select-none cursor-pointer hover:opacity-90 active:scale-95 transition-all flex items-center justify-center text-[10px] font-black text-brand-primary"
+            aria-label={displayName}
+            title={displayName}
+            id="header-account-menu-btn"
+          >
+            {user?.photoURL ? (
+              <img className="w-full h-full object-cover" src={user.photoURL} alt={displayName} />
+            ) : (
+              displayName.charAt(0).toUpperCase()
+            )}
+          </button>
+
+          {showAccountMenu && (
+            <md-elevated-card style={{ display: 'block' }} className="absolute right-0 mt-2 w-56 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="px-4 py-2 border-b border-brand-primary/10">
+                <span className="block font-bold text-xs text-brand-primary truncate">{displayName}</span>
+                {user?.email && <span className="block text-[10px] text-brand-outline truncate">{user.email}</span>}
+              </div>
+              <md-text-button
+                onClick={() => {
+                  setShowAccountMenu(false);
+                  leaveTrip();
+                }}
+                style={{ width: '100%', '--md-text-button-label-text-size': '0.75rem' } as React.CSSProperties}
+              >
+                <MapPinned slot="icon" className="w-3.5 h-3.5" />
+                Mis viajes
+              </md-text-button>
+              <md-text-button
+                onClick={() => {
+                  setShowAccountMenu(false);
+                  void signOut();
+                }}
+                style={
+                  {
+                    width: '100%',
+                    '--md-sys-color-primary': 'var(--md-sys-color-error)',
+                    '--md-text-button-label-text-size': '0.75rem',
+                  } as React.CSSProperties
+                }
+              >
+                <LogOut slot="icon" className="w-3.5 h-3.5" />
+                Cerrar sesión
+              </md-text-button>
+            </md-elevated-card>
           )}
         </div>
       </div>

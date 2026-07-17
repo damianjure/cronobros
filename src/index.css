@@ -1,5 +1,18 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=JetBrains+Mono:wght@400;500&family=Roboto:wght@400;500&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap');
 @import "tailwindcss";
+
+/* @material/web icons render Material Symbols ligatures inside md-icon. */
+md-icon {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+}
 
 /* Manual theme toggle (settingsStore) instead of OS prefers-color-scheme. */
 @variant dark (&:where(.dark, .dark *));
@@ -65,6 +78,51 @@
   --color-brand-on-tertiary-fixed-variant: #4E3B27;
   
   --color-brand-sunset: #C9753F; /* Beautiful terracotta/sunset accent */
+}
+
+/*
+ * Dark theme token overrides. `-fixed`/`-fixed-dim` roles are intentionally
+ * NOT redefined here — per Material Design 3, "fixed" color roles stay
+ * constant across light/dark themes by design.
+ */
+.dark {
+  --color-brand-background: #121212;
+  --color-brand-surface: #1C1C1C;
+  --color-brand-surface-dim: #101010;
+  --color-brand-surface-bright: #383838;
+  --color-brand-surface-lowest: #0A0A0A;
+  --color-brand-surface-low: #171717;
+  --color-brand-surface-container: #222222;
+  --color-brand-surface-high: #2C2C2C;
+  --color-brand-surface-highest: #363636;
+  --color-brand-on-surface: #ECECEC;
+  --color-brand-on-surface-variant: #B8B8B8;
+  --color-brand-inverse-surface: #ECECEC;
+  --color-brand-inverse-on-surface: #1A1A1A;
+  --color-brand-outline: #8F8F8F;
+  --color-brand-outline-variant: #3D3D3D;
+  --color-brand-surface-tint: #ECECEC;
+
+  --color-brand-primary: #E1E2DE;
+  --color-brand-on-primary: #1A1A1A;
+  --color-brand-primary-container: #333333;
+  --color-brand-on-primary-container: #E1E2DE;
+  --color-brand-inverse-primary: #1A1A1A;
+
+  --color-brand-secondary: #A9C2AA;
+  --color-brand-on-secondary: #14251A;
+  --color-brand-secondary-container: #2C3E2D;
+  --color-brand-on-secondary-container: #DFE5DF;
+
+  --color-brand-tertiary: #3A2C1D;
+  --color-brand-on-tertiary: #F2ECE5;
+  --color-brand-tertiary-container: #2E2216;
+  --color-brand-on-tertiary-container: #F2ECE5;
+
+  --color-brand-error: #5C2013;
+  --color-brand-on-error: #F8ECE9;
+  --color-brand-error-container: #46180E;
+  --color-brand-on-error-container: #F8ECE9;
 }
 
 body {

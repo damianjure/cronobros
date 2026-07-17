@@ -35,7 +35,10 @@ export const activatePendingInvites = onCall(async request => {
     throw new HttpsError('failed-precondition', 'The authenticated account has no email.');
   }
 
-  const result = await activatePendingInvitesForUser(getFirestore(), uid, email);
+  const result = await activatePendingInvitesForUser(getFirestore(), uid, email, {
+    name: request.auth?.token.name,
+    photo: request.auth?.token.picture,
+  });
   logger.info('pending_invites_activation_completed', { uid });
   return result;
 });

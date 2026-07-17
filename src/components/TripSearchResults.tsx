@@ -1,3 +1,4 @@
+import { type CSSProperties } from 'react';
 import { Search, X } from 'lucide-react';
 import type { ActiveTab } from '../types';
 import { useTripStore } from '../store/tripStore';
@@ -17,10 +18,13 @@ export default function TripSearchResults({ query, onClose, onNavigate }: TripSe
   const results = searchTripData(query, itinerary, pins, criticalEvents);
 
   return (
-    <div className="fixed right-6 top-16 z-50 w-[min(24rem,calc(100vw-3rem))] border border-brand-primary/10 bg-white shadow-xl">
+    <md-elevated-card
+      style={{ display: 'block' } as CSSProperties}
+      className="fixed right-6 top-16 z-50 w-[min(24rem,calc(100vw-3rem))]"
+    >
       <div className="flex items-center justify-between border-b border-brand-primary/10 px-4 py-3">
         <span className="text-[10px] font-black uppercase tracking-widest text-brand-primary">Resultados del viaje</span>
-        <button type="button" onClick={onClose} aria-label="Cerrar búsqueda"><X className="h-4 w-4" /></button>
+        <md-icon-button onClick={onClose} aria-label="Cerrar búsqueda"><X className="h-4 w-4" /></md-icon-button>
       </div>
       {results.length === 0 ? (
         <div className="p-6 text-center text-xs text-brand-outline">No encontramos coincidencias.</div>
@@ -30,6 +34,6 @@ export default function TripSearchResults({ query, onClose, onNavigate }: TripSe
           <span><strong className="block text-xs text-brand-primary">{result.title}</strong><span className="text-[10px] text-brand-outline">{result.detail}</span></span>
         </button>
       ))}
-    </div>
+    </md-elevated-card>
   );
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { FileUp, LoaderCircle, Sparkles, Trash2, X } from 'lucide-react';
 import {
   IMPORTED_ACTIVITY_TYPES,
@@ -101,7 +101,7 @@ export default function SmartImportModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-primary/40 p-4 backdrop-blur-sm">
-      <div className="max-h-[92vh] w-full max-w-3xl overflow-y-auto bg-white p-6 shadow-2xl">
+      <md-elevated-card style={{ display: 'block' } as CSSProperties} className="max-h-[92vh] w-full max-w-3xl overflow-y-auto p-6">
         <div className="mb-5 flex items-start justify-between border-b border-brand-primary/10 pb-4">
           <div>
             <h2 className="flex items-center gap-2 font-serif text-2xl font-black italic text-brand-primary">
@@ -111,24 +111,22 @@ export default function SmartImportModal({
               Pegá reservas, confirmaciones o un itinerario. Vas a revisar todo antes de guardarlo.
             </p>
           </div>
-          <button type="button" onClick={onClose} aria-label="Cerrar importación" className="p-2 text-brand-outline hover:text-brand-primary">
+          <md-icon-button onClick={onClose} aria-label="Cerrar importación">
             <X className="h-5 w-5" />
-          </button>
+          </md-icon-button>
         </div>
 
         {activities.length === 0 ? (
           <div className="space-y-4">
-            <label className="block text-xs font-black uppercase tracking-wider text-brand-primary" htmlFor="smart-import-text">
-              Texto del viaje
-            </label>
-            <textarea
-              id="smart-import-text"
-              value={text}
-              onChange={event => setText(event.target.value)}
+            <md-outlined-text-field
+              label="Texto del viaje"
+              type="textarea"
               rows={10}
+              value={text}
+              onInput={event => setText(event.currentTarget.value)}
               maxLength={20000}
               placeholder="Ej.: Vuelo AR1132, 14/08/2026 a las 08:15 desde Ezeiza..."
-              className="w-full border border-brand-primary/20 p-4 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
+              style={{ width: '100%' }}
             />
             <div className="flex flex-wrap items-center justify-between gap-3">
               <label className="flex cursor-pointer items-center gap-2 border border-brand-primary/20 px-4 py-3 text-xs font-bold uppercase tracking-wider text-brand-primary hover:bg-brand-primary/5">
@@ -145,42 +143,80 @@ export default function SmartImportModal({
                   }}
                 />
               </label>
-              <button type="button" onClick={analyze} disabled={isAnalyzing} className="flex items-center gap-2 bg-brand-primary px-5 py-3 text-xs font-bold uppercase tracking-widest text-white disabled:opacity-60">
-                {isAnalyzing && <LoaderCircle className="h-4 w-4 animate-spin" />}
+              <md-filled-button onClick={analyze} disabled={isAnalyzing}>
+                {isAnalyzing && <LoaderCircle slot="icon" className="h-4 w-4 animate-spin" />}
                 Analizar con IA
-              </button>
+              </md-filled-button>
             </div>
           </div>
         ) : (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-black uppercase tracking-wider text-brand-primary">Vista previa editable</h3>
-              <button type="button" onClick={() => setActivities([])} className="text-xs font-bold text-brand-outline hover:text-brand-primary">Volver al texto</button>
+              <md-text-button onClick={() => setActivities([])}>Volver al texto</md-text-button>
             </div>
             {activities.map((activity, index) => (
               <div key={`${activity.date}-${index}`} className="grid gap-3 border border-brand-primary/15 bg-brand-surface-low p-4 md:grid-cols-6">
-                <input aria-label={`Título ${index + 1}`} value={activity.title} onChange={event => updateActivity(index, { title: event.target.value })} className="border border-brand-primary/15 bg-white p-2 text-sm md:col-span-3" />
+                <md-outlined-text-field
+                  aria-label={`Título ${index + 1}`}
+                  value={activity.title}
+                  onInput={event => updateActivity(index, { title: event.currentTarget.value })}
+                  className="md:col-span-3"
+                  style={{ width: '100%' }}
+                />
                 <input aria-label={`Fecha ${index + 1}`} type="date" value={activity.date} onChange={event => updateActivity(index, { date: event.target.value })} className="border border-brand-primary/15 bg-white p-2 text-sm md:col-span-2" />
-                <button type="button" aria-label={`Eliminar actividad ${index + 1}`} onClick={() => setActivities(current => current.filter((_, i) => i !== index))} className="flex items-center justify-center text-red-600"><Trash2 className="h-4 w-4" /></button>
+                <md-icon-button
+                  aria-label={`Eliminar actividad ${index + 1}`}
+                  onClick={() => setActivities(current => current.filter((_, i) => i !== index))}
+                  style={{ '--md-icon-button-icon-color': 'var(--md-sys-color-error)' } as CSSProperties}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </md-icon-button>
                 <input aria-label={`Hora ${index + 1}`} type="time" value={activity.time} onChange={event => updateActivity(index, { time: event.target.value })} className="border border-brand-primary/15 bg-white p-2 text-sm md:col-span-2" />
-                <select aria-label={`Tipo ${index + 1}`} value={activity.type} onChange={event => updateActivity(index, { type: event.target.value as ImportedActivity['type'] })} className="border border-brand-primary/15 bg-white p-2 text-sm md:col-span-2">
-                  {IMPORTED_ACTIVITY_TYPES.map(type => <option key={type} value={type}>{TYPE_LABELS[type]}</option>)}
-                </select>
-                <input aria-label={`Ubicación ${index + 1}`} value={activity.location} onChange={event => updateActivity(index, { location: event.target.value })} placeholder="Ubicación" className="border border-brand-primary/15 bg-white p-2 text-sm md:col-span-2" />
-                <textarea aria-label={`Descripción ${index + 1}`} value={activity.description} onChange={event => updateActivity(index, { description: event.target.value })} placeholder="Descripción" rows={2} className="border border-brand-primary/15 bg-white p-2 text-sm md:col-span-6" />
+                <md-outlined-select
+                  aria-label={`Tipo ${index + 1}`}
+                  value={activity.type}
+                  onChange={event => updateActivity(index, { type: event.currentTarget.value as ImportedActivity['type'] })}
+                  className="md:col-span-2"
+                  style={{ width: '100%', minWidth: 0 }}
+                >
+                  {IMPORTED_ACTIVITY_TYPES.map(type => (
+                    <md-select-option key={type} value={type} selected={type === activity.type}>
+                      <div slot="headline">{TYPE_LABELS[type]}</div>
+                    </md-select-option>
+                  ))}
+                </md-outlined-select>
+                <md-outlined-text-field
+                  aria-label={`Ubicación ${index + 1}`}
+                  value={activity.location}
+                  onInput={event => updateActivity(index, { location: event.currentTarget.value })}
+                  placeholder="Ubicación"
+                  className="md:col-span-2"
+                  style={{ width: '100%' }}
+                />
+                <md-outlined-text-field
+                  aria-label={`Descripción ${index + 1}`}
+                  type="textarea"
+                  rows={2}
+                  value={activity.description}
+                  onInput={event => updateActivity(index, { description: event.currentTarget.value })}
+                  placeholder="Descripción"
+                  className="md:col-span-6"
+                  style={{ width: '100%' }}
+                />
               </div>
             ))}
             <div className="flex justify-end">
-              <button type="button" onClick={confirm} disabled={isSaving || activities.length === 0} className="flex items-center gap-2 bg-brand-primary px-5 py-3 text-xs font-bold uppercase tracking-widest text-white disabled:opacity-60">
-                {isSaving && <LoaderCircle className="h-4 w-4 animate-spin" />}
+              <md-filled-button onClick={confirm} disabled={isSaving || activities.length === 0}>
+                {isSaving && <LoaderCircle slot="icon" className="h-4 w-4 animate-spin" />}
                 Agregar {activities.length} {activities.length === 1 ? 'actividad' : 'actividades'}
-              </button>
+              </md-filled-button>
             </div>
           </div>
         )}
 
         {error && <p role="alert" className="mt-4 border border-red-200 bg-red-50 p-3 text-xs font-semibold text-red-700">{error}</p>}
-      </div>
+      </md-elevated-card>
     </div>
   );
 }

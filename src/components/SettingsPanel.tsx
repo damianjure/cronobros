@@ -1,3 +1,4 @@
+import { type CSSProperties } from 'react';
 import { X } from 'lucide-react';
 import { useSettingsStore } from '../store/settingsStore';
 import type { Currency } from '../utils/currency';
@@ -29,14 +30,10 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
 
   return (
     <div className="fixed inset-0 bg-brand-primary/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-brand-outline-variant/30 relative">
-        <button
-          onClick={onClose}
-          aria-label="Cerrar"
-          className="absolute top-4 right-4 text-brand-outline hover:text-brand-primary w-8 h-8 rounded-full hover:bg-brand-surface-low transition-all flex items-center justify-center cursor-pointer"
-        >
+      <md-elevated-card style={{ display: 'block' } as CSSProperties} className="p-6 max-w-sm w-full relative">
+        <md-icon-button onClick={onClose} aria-label="Cerrar" className="absolute top-4 right-4">
           <X className="w-4 h-4" />
-        </button>
+        </md-icon-button>
 
         <h3 className="font-display font-extrabold text-lg text-brand-primary mb-6">Configuración</h3>
 
@@ -50,8 +47,7 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
                 key={option.value}
                 className="flex items-center gap-2 text-sm text-brand-on-surface cursor-pointer"
               >
-                <input
-                  type="radio"
+                <md-radio
                   name="currency"
                   value={option.value}
                   checked={currency === option.value}
@@ -73,8 +69,7 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
                 key={option.value}
                 className="flex items-center gap-2 text-sm text-brand-on-surface cursor-pointer"
               >
-                <input
-                  type="radio"
+                <md-radio
                   name="theme"
                   value={option.value}
                   checked={theme === option.value}
@@ -85,7 +80,7 @@ export default function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
             ))}
           </div>
         </fieldset>
-      </div>
+      </md-elevated-card>
     </div>
   );
 }

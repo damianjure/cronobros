@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { InMemoryTripRepository } from '../services/inMemoryTripRepository';
@@ -51,24 +51,39 @@ function renderMap(pins: PinnedPoint[] = [], criticalEvents: CriticalEvent[] = [
     }),
     trip.id,
   );
-  render(
+  const { container } = render(
     <CurrentTripContext.Provider value={trip}>
       <TripStoreContext.Provider value={store}>
         <MapView />
       </TripStoreContext.Provider>
     </CurrentTripContext.Provider>,
   );
-  return store;
+  return { store, container };
 }
 
 describe('MapView', () => {
   it('lets an editor persist a real geographic pin by clicking the map', async () => {
     const user = userEvent.setup();
-    const store = renderMap();
+    const { store, container } = renderMap();
 
     await user.click(screen.getByRole('button', { name: 'Simular click mapa' }));
-    await user.type(screen.getByLabelText('Nombre'), 'Estación central');
-    await user.click(screen.getByRole('button', { name: 'Guardar en el mapa' }));
+
+    // md-outlined-text-field doesn't upgrade/render its Lit shadow DOM in
+    // jsdom, so its `label` never associates via an accessible name — query
+    // the host directly and set value + dispatch the real 'input' event.
+    const nameField = container.querySelector('md-outlined-text-field[label="Nombre"]') as HTMLElement & { value: string };
+    act(() => {
+      nameField.value = 'Estación central';
+      nameField.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+    });
+
+    // md-filled-button's type="submit" doesn't natively submit the form here
+    // either (its form association is implemented by the real Lit class,
+    // which never registers in jsdom) — submit the form directly instead.
+    const form = container.querySelector('form')!;
+    await act(async () => {
+      form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    });
 
     await waitFor(() => expect(store.getState().pins).toHaveLength(1));
     expect(store.getState().pins[0]).toMatchObject({

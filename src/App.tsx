@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useState } from 'react';
+import React, { Suspense, lazy, useState, type CSSProperties } from 'react';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import BottomNav from './components/BottomNav';
@@ -87,7 +87,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-brand-background dark:bg-zinc-950 text-brand-on-surface antialiased">
+    <div className="min-h-screen bg-brand-background text-brand-on-surface antialiased">
       {/* Top Header Navigation */}
       <Header
         activeTab={activeTab}
@@ -116,7 +116,7 @@ export default function App() {
         </div>
 
         {/* Main Content Area */}
-        <main className="flex-1 md:ml-64 p-6 md:p-12 bg-brand-background dark:bg-zinc-950 overflow-x-hidden pb-24 md:pb-12">
+        <main className="flex-1 md:ml-64 p-6 md:p-12 bg-brand-background overflow-x-hidden pb-24 md:pb-12">
           <div className="max-w-6xl mx-auto">
             <Suspense fallback={<div className="py-20 text-center text-xs font-bold uppercase tracking-widest text-brand-outline">Cargando vista…</div>}>
             {activeTab === 'dashboard' && (
@@ -146,19 +146,26 @@ export default function App() {
       <BottomNav
         activeTab={activeTab}
         setActiveTab={setActiveTab}
+        onInviteClick={() => setShowInviteModal(true)}
+        onSmartImport={() => setShowSmartImport(true)}
+        onHelpClick={() => setShowHelp(true)}
       />
 
       {/* Invite Friends Modal */}
       {showInviteModal && (
         <div className="fixed inset-0 bg-brand-primary/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-brand-outline-variant/30 animate-in zoom-in-95 duration-200 relative">
-            
-            <button
+          <md-elevated-card
+            style={{ display: 'block' } as CSSProperties}
+            className="p-6 max-w-md w-full animate-in zoom-in-95 duration-200 relative"
+          >
+
+            <md-icon-button
               onClick={() => setShowInviteModal(false)}
-              className="absolute top-4 right-4 text-brand-outline hover:text-brand-primary w-8 h-8 rounded-full hover:bg-brand-surface-low transition-all text-sm font-bold flex items-center justify-center cursor-pointer"
+              aria-label="Cerrar"
+              className="absolute top-4 right-4"
             >
               <X className="w-4 h-4" />
-            </button>
+            </md-icon-button>
 
             <div className="flex items-center gap-2 mb-4 text-brand-primary">
               <UserPlus className="w-5 h-5 text-brand-secondary" />
@@ -170,22 +177,18 @@ export default function App() {
             </p>
 
             <form onSubmit={handleSendInvite} className="space-y-3">
-              <div className="relative">
-                <input
-                  type="email"
-                  placeholder="amigo@viajes.com"
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                  className="w-full bg-brand-surface-low border border-brand-outline-variant/30 rounded-xl py-3 pl-4 pr-12 text-xs focus:outline-none focus:ring-2 focus:ring-brand-primary/10 font-semibold"
-                  required
-                />
-                <button
-                  type="submit"
-                  className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-brand-primary hover:bg-brand-primary-container text-white p-2 rounded-lg text-xs transition-all cursor-pointer"
-                >
-                  Invitar
-                </button>
-              </div>
+              <md-outlined-text-field
+                type="email"
+                placeholder="amigo@viajes.com"
+                value={inviteEmail}
+                onInput={(e) => setInviteEmail(e.currentTarget.value)}
+                required
+                style={{ width: '100%' }}
+              >
+                <md-icon-button type="submit" slot="trailing-icon" aria-label="Invitar">
+                  <UserPlus className="w-4 h-4" />
+                </md-icon-button>
+              </md-outlined-text-field>
 
               {inviteSuccess && (
                 <div className="p-2.5 bg-brand-secondary-container/50 border border-brand-secondary/15 rounded-xl flex items-center gap-2 text-brand-on-secondary-container animate-bounce">
@@ -204,20 +207,24 @@ export default function App() {
                     <div key={membership.email} className="flex items-center gap-2 px-3 py-1.5 bg-brand-surface-low border border-brand-outline-variant/15 rounded-lg text-xs font-semibold text-brand-primary">
                       <Mail className="w-3.5 h-3.5 text-brand-outline" />
                       <span>{membership.email}</span>
-                      <button type="button" onClick={() => currentTrip && void cancelInvite(currentTrip.id, membership.email)} className="ml-auto text-[9px] font-bold uppercase tracking-wide text-red-600">Cancelar</button>
+                      <md-text-button
+                        type="button"
+                        onClick={() => currentTrip && void cancelInvite(currentTrip.id, membership.email)}
+                        className="ml-auto"
+                        style={{ '--md-sys-color-primary': 'var(--md-sys-color-error)' } as CSSProperties}
+                      >
+                        Cancelar
+                      </md-text-button>
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            <button
-              onClick={() => setShowInviteModal(false)}
-              className="w-full mt-6 py-2.5 bg-brand-primary hover:bg-brand-primary-container text-white rounded-xl font-bold text-xs transition-all cursor-pointer"
-            >
+            <md-filled-button onClick={() => setShowInviteModal(false)} style={{ width: '100%', marginTop: '24px' }}>
               Listo
-            </button>
-          </div>
+            </md-filled-button>
+          </md-elevated-card>
         </div>
       )}
 

@@ -25,6 +25,15 @@ interface NewEntryFormProps {
   onCancel?: () => void;
 }
 
+const ACTIVITY_TYPE_OPTIONS: { value: ItineraryActivity['type']; label: string }[] = [
+  { value: 'Relaxation', label: 'Relajación' },
+  { value: 'Dining', label: 'Gastronomía' },
+  { value: 'Sightseeing', label: 'Turismo' },
+  { value: 'Adventure', label: 'Aventura' },
+  { value: 'Accommodation', label: 'Alojamiento' },
+  { value: 'Transportation', label: 'Traslado' },
+];
+
 /**
  * Add-activity form. Rendered twice in ItineraryView (compact sidebar card +
  * full modal), sharing the same state and submit handler in the parent.
@@ -59,111 +68,82 @@ export default function NewEntryForm({
         <div>
           <label className="block text-[8px] font-black text-brand-outline uppercase tracking-widest mb-1.5">Día de la Actividad</label>
           <div className="flex gap-2 mb-2">
-            <button
-              type="button"
-              onClick={() => setDaySelectionType('existing')}
-              className={`flex-1 py-1 text-[8px] font-black uppercase tracking-widest border transition-all cursor-pointer ${
-                daySelectionType === 'existing'
-                  ? 'bg-brand-primary text-white border-brand-primary'
-                  : 'bg-white text-brand-primary border-brand-primary/10 hover:bg-brand-primary/5'
-              }`}
-            >
-              Día Existente
-            </button>
-            <button
-              type="button"
-              onClick={() => setDaySelectionType('calendar')}
-              className={`flex-1 py-1 text-[8px] font-black uppercase tracking-widest border transition-all cursor-pointer ${
-                daySelectionType === 'calendar'
-                  ? 'bg-brand-primary text-white border-brand-primary'
-                  : 'bg-white text-brand-primary border-brand-primary/10 hover:bg-brand-primary/5'
-              }`}
-            >
-              Seleccionar Día
-            </button>
+            {daySelectionType === 'existing' ? (
+              <md-filled-button type="button" style={{ flex: 1 }} onClick={() => setDaySelectionType('existing')}>
+                Día Existente
+              </md-filled-button>
+            ) : (
+              <md-outlined-button type="button" style={{ flex: 1 }} onClick={() => setDaySelectionType('existing')}>
+                Día Existente
+              </md-outlined-button>
+            )}
+            {daySelectionType === 'calendar' ? (
+              <md-filled-button type="button" style={{ flex: 1 }} onClick={() => setDaySelectionType('calendar')}>
+                Seleccionar Día
+              </md-filled-button>
+            ) : (
+              <md-outlined-button type="button" style={{ flex: 1 }} onClick={() => setDaySelectionType('calendar')}>
+                Seleccionar Día
+              </md-outlined-button>
+            )}
           </div>
 
           {daySelectionType === 'existing' ? (
-            <select
+            <md-outlined-select
               value={newDayId}
-              onChange={(e) => setNewDayId(e.target.value)}
-              className="w-full bg-white border border-brand-primary/10 rounded-none py-2 px-2.5 text-xs focus:outline-none focus:border-brand-primary/30 transition-all font-sans"
+              onChange={(e) => setNewDayId(e.currentTarget.value)}
+              style={{ width: '100%', minWidth: 0 }}
             >
               {itinerary.map(day => (
-                <option key={day.id} value={day.id}>Día {day.dayNumber} - {formatDateToDisplay(day.date)}</option>
+                <md-select-option key={day.id} value={day.id} selected={day.id === newDayId}><div slot="headline">{`Día ${day.dayNumber} - ${formatDateToDisplay(day.date)}`}</div></md-select-option>
               ))}
-            </select>
+            </md-outlined-select>
           ) : (
-            <div>
-              <input
-                type="date"
-                value={newDayDate}
-                onChange={(e) => setNewDayDate(e.target.value)}
-                className="w-full bg-white border border-brand-primary/10 rounded-none py-2 px-2.5 text-xs focus:outline-none focus:border-brand-primary/30 transition-all font-sans"
-                required={daySelectionType === 'calendar'}
-              />
-            </div>
+            <input
+              type="date"
+              value={newDayDate}
+              onChange={(e) => setNewDayDate(e.target.value)}
+              className="w-full bg-white border border-brand-primary/10 rounded-none py-2 px-2.5 text-xs focus:outline-none focus:border-brand-primary/30 transition-all font-sans"
+              required={daySelectionType === 'calendar'}
+            />
           )}
         </div>
 
         <div className="grid grid-cols-2 gap-2">
-          <div>
-            <label className="block text-[8px] font-black text-brand-outline uppercase tracking-widest mb-1">Hora</label>
-            <input
-              type="text"
-              placeholder="ej. 11:00 AM"
-              value={newTime}
-              onChange={(e) => setNewTime(e.target.value)}
-              className="w-full bg-white border border-brand-primary/10 rounded-none py-2 px-2.5 text-xs focus:outline-none focus:border-brand-primary/30 transition-all font-sans"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-[8px] font-black text-brand-outline uppercase tracking-widest mb-1">Tipo</label>
-            <select
-              value={newType}
-              onChange={(e) => setNewType(e.target.value as ItineraryActivity['type'])}
-              className="w-full bg-white border border-brand-primary/10 rounded-none py-2 px-2.5 text-xs focus:outline-none focus:border-brand-primary/30 transition-all font-sans"
-            >
-              <option value="Relaxation">Relajación</option>
-              <option value="Dining">Gastronomía</option>
-              <option value="Sightseeing">Turismo</option>
-              <option value="Adventure">Aventura</option>
-              <option value="Accommodation">Alojamiento</option>
-              <option value="Transportation">Traslado</option>
-            </select>
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-[8px] font-black text-brand-outline uppercase tracking-widest mb-1">Título de la Actividad</label>
-          <input
-            type="text"
-              placeholder="ej. Visita guiada"
-            value={newTitle}
-            onChange={(e) => setNewTitle(e.target.value)}
-            className="w-full bg-white border border-brand-primary/10 rounded-none py-2 px-2.5 text-xs focus:outline-none focus:border-brand-primary/30 transition-all font-sans"
+          <md-outlined-text-field
+            label="Hora"
+            placeholder="ej. 11:00 AM"
+            value={newTime}
+            onInput={(e) => setNewTime(e.currentTarget.value)}
             required
           />
+          <md-outlined-select label="Tipo" value={newType} onChange={(e) => setNewType(e.currentTarget.value as ItineraryActivity['type'])} style={{ width: '100%', minWidth: 0 }}>
+            {ACTIVITY_TYPE_OPTIONS.map(option => (
+              <md-select-option key={option.value} value={option.value} selected={option.value === newType}><div slot="headline">{option.label}</div></md-select-option>
+            ))}
+          </md-outlined-select>
         </div>
 
-        <div>
-          <label className="block text-[8px] font-black text-brand-outline uppercase tracking-widest mb-1">Ubicación</label>
-          <input
-            type="text"
-            placeholder="ej. Centro histórico"
-            value={newLocation}
-            onChange={(e) => setNewLocation(e.target.value)}
-            className="w-full bg-white border border-brand-primary/10 rounded-none py-2 px-2.5 text-xs focus:outline-none focus:border-brand-primary/30 transition-all font-sans"
-          />
-        </div>
+        <md-outlined-text-field
+          label="Título de la Actividad"
+          placeholder="ej. Visita guiada"
+          value={newTitle}
+          onInput={(e) => setNewTitle(e.currentTarget.value)}
+          required
+          style={{ width: '100%' }}
+        />
 
-        <button
-          type="submit"
-          className="w-full py-2.5 bg-brand-primary hover:bg-brand-primary/90 text-white rounded-none font-bold text-[10px] uppercase tracking-widest transition-all cursor-pointer active:scale-95"
-        >
+        <md-outlined-text-field
+          label="Ubicación"
+          placeholder="ej. Centro histórico"
+          value={newLocation}
+          onInput={(e) => setNewLocation(e.currentTarget.value)}
+          style={{ width: '100%' }}
+        />
+
+        <md-filled-button type="submit" style={{ width: '100%' }}>
           Guardar Entrada
-        </button>
+        </md-filled-button>
       </form>
     );
   }
@@ -173,40 +153,36 @@ export default function NewEntryForm({
       <div>
         <label className="block text-[9px] font-black text-brand-outline uppercase tracking-widest mb-1.5">Día de la Actividad</label>
         <div className="flex gap-2 mb-3">
-          <button
-            type="button"
-            onClick={() => setDaySelectionType('existing')}
-            className={`flex-1 py-1.5 text-[9px] font-black uppercase tracking-widest border transition-all cursor-pointer ${
-              daySelectionType === 'existing'
-                ? 'bg-brand-primary text-white border-brand-primary'
-                : 'bg-white text-brand-primary border-brand-primary/10 hover:bg-brand-primary/5'
-            }`}
-          >
-            Día Existente
-          </button>
-          <button
-            type="button"
-            onClick={() => setDaySelectionType('calendar')}
-            className={`flex-1 py-1.5 text-[9px] font-black uppercase tracking-widest border transition-all cursor-pointer ${
-              daySelectionType === 'calendar'
-                ? 'bg-brand-primary text-white border-brand-primary'
-                : 'bg-white text-brand-primary border-brand-primary/10 hover:bg-brand-primary/5'
-            }`}
-          >
-            Seleccionar Día
-          </button>
+          {daySelectionType === 'existing' ? (
+            <md-filled-button type="button" style={{ flex: 1 }} onClick={() => setDaySelectionType('existing')}>
+              Día Existente
+            </md-filled-button>
+          ) : (
+            <md-outlined-button type="button" style={{ flex: 1 }} onClick={() => setDaySelectionType('existing')}>
+              Día Existente
+            </md-outlined-button>
+          )}
+          {daySelectionType === 'calendar' ? (
+            <md-filled-button type="button" style={{ flex: 1 }} onClick={() => setDaySelectionType('calendar')}>
+              Seleccionar Día
+            </md-filled-button>
+          ) : (
+            <md-outlined-button type="button" style={{ flex: 1 }} onClick={() => setDaySelectionType('calendar')}>
+              Seleccionar Día
+            </md-outlined-button>
+          )}
         </div>
 
         {daySelectionType === 'existing' ? (
-          <select
+          <md-outlined-select
             value={newDayId}
-            onChange={(e) => setNewDayId(e.target.value)}
-            className="w-full bg-white border border-brand-primary/10 rounded-none py-2.5 px-3 text-xs focus:outline-none focus:border-brand-primary/30 transition-all font-sans"
+            onChange={(e) => setNewDayId(e.currentTarget.value)}
+            style={{ width: '100%', minWidth: 0 }}
           >
             {itinerary.map(day => (
-              <option key={day.id} value={day.id}>Día {day.dayNumber} - {formatDateToDisplay(day.date)}</option>
+              <md-select-option key={day.id} value={day.id} selected={day.id === newDayId}><div slot="headline">{`Día ${day.dayNumber} - ${formatDateToDisplay(day.date)}`}</div></md-select-option>
             ))}
-          </select>
+          </md-outlined-select>
         ) : (
           <div>
             <input
@@ -224,82 +200,54 @@ export default function NewEntryForm({
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-[9px] font-black text-brand-outline uppercase tracking-widest mb-1.5">Hora</label>
-          <input
-            type="text"
-            placeholder="ej. 11:00 AM"
-            value={newTime}
-            onChange={(e) => setNewTime(e.target.value)}
-            className="w-full bg-white border border-brand-primary/10 rounded-none py-2.5 px-3 text-xs focus:outline-none focus:border-brand-primary/30 transition-all font-sans"
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-[9px] font-black text-brand-outline uppercase tracking-widest mb-1.5">Tipo</label>
-          <select
-            value={newType}
-            onChange={(e) => setNewType(e.target.value as ItineraryActivity['type'])}
-            className="w-full bg-white border border-brand-primary/10 rounded-none py-2.5 px-3 text-xs focus:outline-none focus:border-brand-primary/30 transition-all font-sans"
-          >
-            <option value="Relaxation">Relajación</option>
-            <option value="Dining">Gastronomía</option>
-            <option value="Sightseeing">Turismo</option>
-            <option value="Adventure">Aventura</option>
-            <option value="Accommodation">Alojamiento</option>
-            <option value="Transportation">Traslado</option>
-          </select>
-        </div>
-      </div>
-
-      <div>
-        <label className="block text-[9px] font-black text-brand-outline uppercase tracking-widest mb-1.5">Título de la Actividad</label>
-        <input
-          type="text"
-          placeholder="ej. Visita guiada"
-          value={newTitle}
-          onChange={(e) => setNewTitle(e.target.value)}
-          className="w-full bg-white border border-brand-primary/10 rounded-none py-2.5 px-3 text-xs focus:outline-none focus:border-brand-primary/30 transition-all font-sans"
+        <md-outlined-text-field
+          label="Hora"
+          placeholder="ej. 11:00 AM"
+          value={newTime}
+          onInput={(e) => setNewTime(e.currentTarget.value)}
           required
         />
+        <md-outlined-select label="Tipo" value={newType} onChange={(e) => setNewType(e.currentTarget.value as ItineraryActivity['type'])} style={{ width: '100%', minWidth: 0 }}>
+          {ACTIVITY_TYPE_OPTIONS.map(option => (
+            <md-select-option key={option.value} value={option.value} selected={option.value === newType}><div slot="headline">{option.label}</div></md-select-option>
+          ))}
+        </md-outlined-select>
       </div>
 
-      <div>
-        <label className="block text-[9px] font-black text-brand-outline uppercase tracking-widest mb-1.5">Descripción</label>
-        <textarea
-          placeholder="Detalles sobre reservas, requisitos de equipo..."
-          value={newDesc}
-          onChange={(e) => setNewDesc(e.target.value)}
-          rows={3}
-          className="w-full bg-white border border-brand-primary/10 rounded-none py-2.5 px-3 text-xs focus:outline-none focus:border-brand-primary/30 transition-all font-sans"
-        />
-      </div>
+      <md-outlined-text-field
+        label="Título de la Actividad"
+        placeholder="ej. Visita guiada"
+        value={newTitle}
+        onInput={(e) => setNewTitle(e.currentTarget.value)}
+        required
+        style={{ width: '100%' }}
+      />
 
-      <div>
-        <label className="block text-[9px] font-black text-brand-outline uppercase tracking-widest mb-1.5">Ubicación</label>
-        <input
-          type="text"
-          placeholder="ej. Centro histórico"
-          value={newLocation}
-          onChange={(e) => setNewLocation(e.target.value)}
-          className="w-full bg-white border border-brand-primary/10 rounded-none py-2.5 px-3 text-xs focus:outline-none focus:border-brand-primary/30 transition-all font-sans"
-        />
-      </div>
+      <md-outlined-text-field
+        label="Descripción"
+        type="textarea"
+        rows={3}
+        placeholder="Detalles sobre reservas, requisitos de equipo..."
+        value={newDesc}
+        onInput={(e) => setNewDesc(e.currentTarget.value)}
+        style={{ width: '100%' }}
+      />
+
+      <md-outlined-text-field
+        label="Ubicación"
+        placeholder="ej. Centro histórico"
+        value={newLocation}
+        onInput={(e) => setNewLocation(e.currentTarget.value)}
+        style={{ width: '100%' }}
+      />
 
       <div className="pt-4 border-t border-brand-primary/10 flex gap-3">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="flex-1 py-3 border border-brand-primary/10 text-brand-primary rounded-none font-bold text-[10px] uppercase tracking-widest hover:bg-brand-primary/5 transition-all cursor-pointer"
-        >
+        <md-outlined-button type="button" onClick={onCancel} style={{ flex: 1 }}>
           Cancelar
-        </button>
-        <button
-          type="submit"
-          className="flex-1 py-3 bg-brand-primary hover:bg-brand-primary/90 text-white rounded-none font-bold text-[10px] uppercase tracking-widest transition-all cursor-pointer"
-        >
+        </md-outlined-button>
+        <md-filled-button type="submit" style={{ flex: 1 }}>
           Guardar Entrada
-        </button>
+        </md-filled-button>
       </div>
     </form>
   );

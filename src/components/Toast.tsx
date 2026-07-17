@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, type CSSProperties } from 'react';
 import { CheckCircle2 } from 'lucide-react';
 import { useToastStore } from '../store/toastStore';
 
@@ -23,15 +23,23 @@ export default function Toast() {
   return (
     <div className="fixed bottom-20 md:bottom-6 right-6 z-[70] flex flex-col gap-2 items-end pointer-events-none">
       {toasts.map(toast => (
-        <div
+        <md-elevated-card
           key={toast.id}
           role="status"
           aria-live="polite"
-          className="pointer-events-auto bg-brand-primary text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2 duration-200 max-w-sm"
+          style={
+            {
+              display: 'flex',
+              '--md-elevated-card-container-color': 'var(--md-sys-color-primary)',
+              color: 'var(--md-sys-color-on-primary)',
+              pointerEvents: 'auto',
+            } as CSSProperties
+          }
+          className="px-5 py-3 items-center gap-2 animate-in fade-in slide-in-from-bottom-2 duration-200 max-w-sm"
         >
-          <CheckCircle2 className="w-4 h-4 text-brand-secondary shrink-0" />
+          <CheckCircle2 className="w-4 h-4 shrink-0" />
           <span className="font-semibold text-xs">{toast.message}</span>
-        </div>
+        </md-elevated-card>
       ))}
     </div>
   );

@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import { MapPin, Clock, CheckCircle2, Trash2 } from 'lucide-react';
 import { ItineraryDay, ItineraryActivity } from '../types';
 import FriendChips from './FriendChips';
@@ -26,8 +27,9 @@ export default function ActivityCard({
   onTogglePerson,
 }: ActivityCardProps) {
   return (
-    <div
-      className="relative bg-white border border-brand-primary/10 rounded-none overflow-hidden shadow-none hover:border-brand-primary/30 transition-all duration-300 flex flex-col md:flex-row group"
+    <md-elevated-card
+      style={{ display: 'flex' } as CSSProperties}
+      className="relative overflow-hidden flex-col md:flex-row group"
       id={`activity-card-${activity.id}`}
     >
       {/* Image Thumbnail if exists */}
@@ -53,7 +55,7 @@ export default function ActivityCard({
                   ? 'bg-[#F2EDE4] text-brand-primary'
                   : activity.type === 'Sightseeing'
                   ? 'bg-[#E4ECEB] text-brand-primary'
-                  : 'bg-brand-primary text-white'
+                  : 'bg-brand-primary text-brand-on-primary'
               }`}>
                 {activity.type === 'Relaxation'
                   ? 'Relajación'
@@ -77,13 +79,13 @@ export default function ActivityCard({
             </div>
 
             {/* Delete Activity option */}
-            <button
+            <md-icon-button
               onClick={() => onDelete(day.id, activity.id)}
-              className="text-brand-outline hover:text-red-600 p-1 rounded-none hover:bg-brand-primary/5 transition-colors cursor-pointer active:scale-95"
-              title="Eliminar Actividad"
+              aria-label="Eliminar Actividad"
+              style={{ '--md-icon-button-hover-icon-color': 'var(--md-sys-color-error)' } as CSSProperties}
             >
               <Trash2 className="w-3.5 h-3.5" />
-            </button>
+            </md-icon-button>
           </div>
 
           <h3 className="font-serif font-black italic text-brand-primary text-base md:text-lg mb-1.5 group-hover:opacity-80 transition-colors leading-snug">
@@ -112,7 +114,7 @@ export default function ActivityCard({
 
           <div className="flex gap-2">
             {activity.status ? (
-              <span className="flex items-center gap-1 text-white font-black text-[8px] uppercase tracking-widest bg-brand-primary px-2.5 py-1 rounded-none">
+              <span className="flex items-center gap-1 text-brand-on-primary font-black text-[8px] uppercase tracking-widest bg-brand-primary px-2.5 py-1 rounded-none">
                 <CheckCircle2 className="w-3 h-3 fill-current" />
                 <span>
                   {activity.status === 'Smart Imported'
@@ -122,18 +124,18 @@ export default function ActivityCard({
               </span>
             ) : (
               <div className="flex items-center gap-1.5">
-                <button className="text-brand-primary font-black text-[9px] uppercase tracking-widest hover:opacity-80 cursor-pointer px-1.5 py-0.5 border border-brand-primary/10 bg-white">
+                <md-outlined-button style={{ height: '28px', '--md-outlined-button-label-text-size': '9px' } as CSSProperties}>
                   Ver Boletos
-                </button>
-                <button className="text-brand-primary font-black text-[9px] uppercase tracking-widest hover:opacity-80 cursor-pointer px-1.5 py-0.5 border border-brand-primary/10 bg-white">
+                </md-outlined-button>
+                <md-outlined-button style={{ height: '28px', '--md-outlined-button-label-text-size': '9px' } as CSSProperties}>
                   Cómo Llegar
-                </button>
+                </md-outlined-button>
               </div>
             )}
           </div>
         </div>
       </div>
 
-    </div>
+    </md-elevated-card>
   );
 }

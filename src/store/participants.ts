@@ -11,12 +11,13 @@ export interface CurrentUserLabel {
 /**
  * Pure participant-list derivation (PR5: drop the global `friends` fixture —
  * a trip's real membership IS its participant list now, per design decision
- * "Friends/participants"). No per-member display-name/avatar profile is
- * stored anywhere (`Trip.members` is only `uid -> Role`, and extending its
- * value shape would break `firestore.rules`' `roleIn()`, which reads it as a
- * plain role string) — so every member other than the current signed-in user
- * is labeled by a short, honest placeholder rather than a fabricated name.
- * Pending (not-yet-activated) invitees are listed by email.
+ * "Friends/participants"). Only actual members are returned — pending
+ * invitees are surfaced separately via `getTripPendingInvitesCount`, since
+ * they can't be assigned to activities/places yet and shouldn't inflate any
+ * "N participants"/"N active" count. A member's real name comes from
+ * `trip.memberProfiles` (written at trip creation / invite activation); a
+ * member with no stored profile is labeled by a short, honest placeholder
+ * rather than a fabricated name.
  */
 export function getTripParticipants(
   trip: Trip | null,
@@ -24,16 +25,17 @@ export function getTripParticipants(
 ): string[] {
   if (!trip) return [];
 
-  const memberLabels = trip.memberUids.map(uid => {
+  return trip.memberUids.map(uid => {
     if (uid === currentUser?.uid && currentUser.label) return currentUser.label;
-    return `Miembro ${uid}`;
+    const profileName = trip.memberProfiles?.[uid]?.name;
+    return profileName ?? `Miembro ${uid}`;
   });
+}
 
-  const pendingLabels = Object.values(trip.pendingMemberships ?? {})
-    .filter(membership => membership.pending)
-    .map(membership => `${membership.email} (pendiente)`);
-
-  return [...memberLabels, ...pendingLabels];
+/** Count of not-yet-activated invites — shown separately from the member count/list. */
+export function getTripPendingInvitesCount(trip: Trip | null): number {
+  if (!trip) return 0;
+  return Object.values(trip.pendingMemberships ?? {}).filter(membership => membership.pending).length;
 }
 
 /** React hook wiring: current trip (context) + signed-in user (authStore). */
@@ -44,4 +46,10 @@ export function useTripParticipants(): string[] {
     ? { uid: user.uid, label: user.displayName ?? user.email ?? undefined }
     : null;
   return getTripParticipants(trip, currentUser);
+}
+
+/** React hook wiring for `getTripPendingInvitesCount`. */
+export function useTripPendingInvitesCount(): number {
+  const trip = useContext(CurrentTripContext);
+  return getTripPendingInvitesCount(trip);
 }

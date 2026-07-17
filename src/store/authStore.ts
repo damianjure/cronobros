@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import {
   GoogleAuthProvider,
+  getRedirectResult,
   onAuthStateChanged,
   signInWithRedirect,
   signOut as firebaseSignOut,
@@ -31,14 +32,16 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ error: null });
     try {
       await signInWithRedirect(auth, new GoogleAuthProvider());
-    } catch {
+    } catch (err) {
+      console.error('signIn failed', err);
       set({ error: 'No pudimos iniciar sesión. Intentá de nuevo.' });
     }
   },
   signOut: async () => {
     try {
       await firebaseSignOut(auth);
-    } catch {
+    } catch (err) {
+      console.error('signOut failed', err);
       set({ error: 'No pudimos cerrar sesión. Intentá de nuevo.' });
     }
   },
@@ -49,4 +52,13 @@ export const useAuthStore = create<AuthState>((set) => ({
 // as tripStore's `subscribe*` calls).
 onAuthStateChanged(auth, user => {
   useAuthStore.setState({ user, status: user ? 'in' : 'out' });
+});
+
+// Completes the redirect flow started by `signIn`. A successful result is
+// already picked up by `onAuthStateChanged` above; this only needs to surface
+// failures (e.g. third-party storage restrictions), which otherwise fail
+// silently and leave the user stuck on the sign-in screen with no feedback.
+getRedirectResult(auth).catch(err => {
+  console.error('getRedirectResult failed', err);
+  useAuthStore.setState({ error: 'No pudimos completar el inicio de sesión. Intentá de nuevo.' });
 });
