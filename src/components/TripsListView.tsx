@@ -51,7 +51,8 @@ export default function TripsListView({ onSelectTrip }: TripsListViewProps) {
     e.preventDefault();
     const trimmed = name.trim();
     if (!trimmed) return;
-    createTrip(trimmed, uid);
+    const ownerName = user?.displayName ?? user?.email;
+    createTrip(trimmed, uid, ownerName ? { name: ownerName, ...(user?.photoURL ? { photo: user.photoURL } : {}) } : undefined);
     setName('');
   };
 

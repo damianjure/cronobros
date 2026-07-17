@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState, type FormEvent } from 'react';
 import { MapPin, Navigation, Plus, Search, X } from 'lucide-react';
 import { useTripStore } from '../store/tripStore';
 import { useCurrentTrip } from '../store/currentTripContext';
-import { useTripParticipants } from '../store/participants';
+import { useTripParticipants, useTripPendingInvitesCount } from '../store/participants';
 import { useAuthStore } from '../store/authStore';
 import type { PinnedPoint } from '../types';
 import type { MapPoint, RouteSummary } from '../lib/googleMaps';
@@ -29,6 +29,7 @@ export default function MapView() {
   const upsertPin = useTripStore(state => state.upsertPin);
   const currentTrip = useCurrentTrip();
   const participants = useTripParticipants();
+  const pendingInvitesCount = useTripPendingInvitesCount();
   const user = useAuthStore(state => state.user);
   const role = user ? currentTrip?.members[user.uid] : undefined;
   const canEdit = role === 'owner' || role === 'editor';
@@ -106,7 +107,8 @@ export default function MapView() {
         <div className="px-6 py-5 border-b border-brand-primary/10 shrink-0">
           <h2 className="font-serif font-black italic text-brand-primary text-xl">{currentTrip?.name ?? 'Tu viaje'}</h2>
           <p className="text-[10px] font-black uppercase tracking-widest text-brand-on-surface-variant/75 mt-1">
-            Grupo de {participants.length} · {mapPoints.length} puntos geográficos
+            Grupo de {participants.length}
+            {pendingInvitesCount > 0 && ` (+${pendingInvitesCount} pendiente)`} · {mapPoints.length} puntos geográficos
           </p>
           <div className="relative mt-3">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-outline w-3.5 h-3.5" />

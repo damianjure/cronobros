@@ -15,7 +15,7 @@ import { ChatMessage, UpcomingHighlight, ActiveTab } from '../types';
 import { useTripStore } from '../store/tripStore';
 import { useAuthStore } from '../store/authStore';
 import { useCurrentTrip } from '../store/currentTripContext';
-import { useTripParticipants } from '../store/participants';
+import { useTripParticipants, useTripPendingInvitesCount } from '../store/participants';
 import { deriveUpcomingHighlights } from '../utils/highlights';
 import CriticalEventsCard from './CriticalEventsCard';
 
@@ -31,6 +31,7 @@ export default function DashboardView({ setActiveTab }: DashboardViewProps) {
   const user = useAuthStore(state => state.user);
   const currentTrip = useCurrentTrip();
   const participants = useTripParticipants();
+  const pendingInvitesCount = useTripPendingInvitesCount();
   // PR5: derived from the trip's REAL itinerary instead of the discarded
   // `data.ts` fixture — a brand-new trip has no upcoming highlights yet.
   const initialHighlights = deriveUpcomingHighlights(itinerary);
@@ -95,7 +96,9 @@ export default function DashboardView({ setActiveTab }: DashboardViewProps) {
                 </div>
               )}
             </div>
-            <span className="text-[10px] font-extrabold uppercase tracking-widest text-brand-on-surface-variant/80 ml-1">En viaje</span>
+            <span className="text-[10px] font-extrabold uppercase tracking-widest text-brand-on-surface-variant/80 ml-1">
+              En viaje{pendingInvitesCount > 0 && ` · +${pendingInvitesCount} pendiente`}
+            </span>
           </div>
         </section>
 

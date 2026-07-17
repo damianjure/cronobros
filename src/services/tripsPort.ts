@@ -1,4 +1,4 @@
-import type { Trip, Role } from '../types';
+import type { Trip, Role, MemberProfile } from '../types';
 import type { Unsubscribe } from './ports';
 
 /**
@@ -11,7 +11,7 @@ import type { Unsubscribe } from './ports';
  */
 export interface TripsRepository {
   subscribeTrips(uid: string, cb: (trips: Trip[]) => void): Unsubscribe;
-  createTrip(name: string, ownerUid: string): Promise<void>;
+  createTrip(name: string, ownerUid: string, ownerProfile?: MemberProfile): Promise<void>;
   deleteTrip(tripId: string): Promise<void>;
   setArchived(tripId: string, archived: boolean): Promise<void>;
   inviteMember(tripId: string, email: string, role: Role): Promise<void>;

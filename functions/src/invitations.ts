@@ -6,11 +6,17 @@ interface PendingMembership {
   pending: boolean;
 }
 
+interface MemberProfile {
+  name: string;
+  photo?: string;
+}
+
 interface TripInviteData {
   members?: Record<string, string>;
   memberUids?: string[];
   pendingMemberships?: Record<string, PendingMembership>;
   pendingEmails?: string[];
+  memberProfiles?: Record<string, MemberProfile>;
 }
 
 export function normalizeInviteEmail(email: string): string {
@@ -26,6 +32,7 @@ export async function activatePendingInvitesForUser(
   db: Firestore,
   uid: string,
   email: string,
+  profile?: { name?: string | null; photo?: string | null },
 ): Promise<{ activatedTripIds: string[] }> {
   const normalizedEmail = normalizeInviteEmail(email);
   const snapshot = await db
@@ -54,6 +61,14 @@ export async function activatePendingInvitesForUser(
             memberUids: memberUids.includes(uid) ? memberUids : [...memberUids, uid],
             pendingMemberships: remainingPending,
             pendingEmails: (trip.pendingEmails ?? []).filter(value => value !== normalizedEmail),
+            ...(profile?.name
+              ? {
+                  memberProfiles: {
+                    ...(trip.memberProfiles ?? {}),
+                    [uid]: { name: profile.name, ...(profile.photo ? { photo: profile.photo } : {}) },
+                  },
+                }
+              : {}),
           });
 
           return tripDoc.id;

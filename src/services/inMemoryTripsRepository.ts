@@ -1,4 +1,4 @@
-import type { Trip, Role } from '../types';
+import type { Trip, Role, MemberProfile } from '../types';
 import type { Unsubscribe } from './ports';
 import type { TripsRepository } from './tripsPort';
 
@@ -26,13 +26,14 @@ export class InMemoryTripsRepository implements TripsRepository {
     });
   }
 
-  async createTrip(name: string, ownerUid: string): Promise<void> {
+  async createTrip(name: string, ownerUid: string, ownerProfile?: MemberProfile): Promise<void> {
     const trip: Trip = {
       id: `trip-${this.nextId++}`,
       name,
       ownerUid,
       members: { [ownerUid]: 'owner' },
       memberUids: [ownerUid],
+      ...(ownerProfile ? { memberProfiles: { [ownerUid]: ownerProfile } } : {}),
     };
     this.trips = [...this.trips, trip];
     this.notify();

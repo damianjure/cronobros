@@ -47,6 +47,26 @@ test('activates matching pending invites with Admin SDK permissions', async () =
   assert.deepEqual(trip.pendingEmails, []);
 });
 
+test('writes the invitee display name into memberProfiles when a profile is provided', async () => {
+  await activatePendingInvitesForUser(db, 'invitee-1', 'friend.smith@example.com', {
+    name: 'Friend Smith',
+    photo: 'https://example.com/photo.jpg',
+  });
+
+  const trip = (await tripRef.get()).data();
+  assert.deepEqual(trip.memberProfiles['invitee-1'], {
+    name: 'Friend Smith',
+    photo: 'https://example.com/photo.jpg',
+  });
+});
+
+test('does not write a memberProfiles entry when no name is provided', async () => {
+  await activatePendingInvitesForUser(db, 'invitee-1', 'friend.smith@example.com');
+
+  const trip = (await tripRef.get()).data();
+  assert.equal(trip.memberProfiles, undefined);
+});
+
 test('is idempotent when no pending invite remains', async () => {
   await activatePendingInvitesForUser(db, 'invitee-1', 'friend.smith@example.com');
 

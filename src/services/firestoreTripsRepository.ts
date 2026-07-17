@@ -16,7 +16,7 @@ import {
   type DocumentData,
   type Firestore,
 } from 'firebase/firestore';
-import type { Trip, Role } from '../types';
+import type { Trip, Role, MemberProfile } from '../types';
 import type { Unsubscribe } from './ports';
 import type { TripsRepository } from './tripsPort';
 import { db as defaultDb } from '../lib/firebase';
@@ -60,7 +60,7 @@ export class FirestoreTripsRepository implements TripsRepository {
     });
   }
 
-  async createTrip(name: string, ownerUid: string): Promise<void> {
+  async createTrip(name: string, ownerUid: string, ownerProfile?: MemberProfile): Promise<void> {
     const tripDocRef = doc(this.tripsRef());
     const trip: Trip = {
       id: tripDocRef.id,
@@ -68,6 +68,7 @@ export class FirestoreTripsRepository implements TripsRepository {
       ownerUid,
       members: { [ownerUid]: 'owner' },
       memberUids: [ownerUid],
+      ...(ownerProfile ? { memberProfiles: { [ownerUid]: ownerProfile } } : {}),
     };
     await setDoc(tripDocRef, trip);
   }

@@ -110,6 +110,15 @@ export interface Membership {
 // owner-only membership path). Activated into `members`/`memberUids` on a
 // matching sign-in (spec: "Invite creates a pending membership record,
 // activated on first matching sign-in").
+// PR5: per-uid display profile, written at trip creation (owner) and invite
+// activation (invitee, via the `activatePendingInvites` Cloud Function) —
+// additive, so it doesn't touch `members`/`roleIn()`. A uid with no entry
+// here falls back to a placeholder label (see `store/participants.ts`).
+export interface MemberProfile {
+  name: string;
+  photo?: string;
+}
+
 export interface Trip {
   id: string;
   name: string;
@@ -117,6 +126,7 @@ export interface Trip {
   members: Record<string, Role>;
   memberUids: string[];
   pendingMemberships?: Record<string, Membership>;
+  memberProfiles?: Record<string, MemberProfile>;
   archivedAt?: string | null;
 }
 

@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { ActiveTab } from '../types';
 import { useCurrentTrip } from '../store/currentTripContext';
+import { useTripPendingInvitesCount } from '../store/participants';
 
 interface SidebarProps {
   activeTab: ActiveTab;
@@ -34,6 +35,7 @@ export default function Sidebar({
   // PR5: the real selected trip's name/member count instead of the
   // hardcoded "Verano en Islandia" fixture.
   const trip = useCurrentTrip();
+  const pendingInvitesCount = useTripPendingInvitesCount();
 
   const navItems = [
     { label: 'Panel', tab: 'dashboard' as ActiveTab, icon: LayoutDashboard },
@@ -57,6 +59,7 @@ export default function Sidebar({
             </h3>
             <p className="font-sans text-[10px] uppercase tracking-wider text-brand-on-surface-variant/70 font-semibold mt-0.5">
               {trip?.memberUids.length ?? 0} Huéspedes
+              {pendingInvitesCount > 0 && ` · +${pendingInvitesCount} invitación pendiente`}
             </p>
           </div>
         </div>

@@ -93,7 +93,22 @@ describe('TripsListView', () => {
     await user.type(screen.getByLabelText(/nombre del viaje/i), 'Patagonia 2027');
     await user.click(screen.getByRole('button', { name: /crear viaje/i }));
 
-    expect(state.createTrip).toHaveBeenCalledWith('Patagonia 2027', 'user-1');
+    expect(state.createTrip).toHaveBeenCalledWith('Patagonia 2027', 'user-1', undefined);
+  });
+
+  it('passes the signed-in user\'s display name as the owner profile when creating a trip', async () => {
+    setAuthState({ uid: 'user-1', displayName: 'Damian Jure', photoURL: 'https://example.com/p.jpg' } as AuthState['user']);
+    const state = setTripsState();
+    const user = userEvent.setup();
+
+    render(<TripsListView onSelectTrip={vi.fn()} />);
+    await user.type(screen.getByLabelText(/nombre del viaje/i), 'Patagonia 2027');
+    await user.click(screen.getByRole('button', { name: /crear viaje/i }));
+
+    expect(state.createTrip).toHaveBeenCalledWith('Patagonia 2027', 'user-1', {
+      name: 'Damian Jure',
+      photo: 'https://example.com/p.jpg',
+    });
   });
 
   it('clicking delete on a trip card calls deleteTrip with that trip id', async () => {
