@@ -151,11 +151,11 @@ export default function ItineraryView({
             </div>
 
             <div className="flex gap-3 w-full md:w-auto">
-              <md-outlined-button onClick={handleShare} id="itinerary-share-btn" className="flex-1 md:flex-none">
+              <md-outlined-button onClick={handleShare} id="itinerary-share-btn" className="grow shrink-0 md:flex-none">
                 <Share slot="icon" className="w-3.5 h-3.5" />
                 Compartir
               </md-outlined-button>
-              <md-filled-button onClick={() => setShowNewEntryModal(true)} id="itinerary-new-entry-btn" className="flex-1 md:flex-none">
+              <md-filled-button onClick={() => setShowNewEntryModal(true)} id="itinerary-new-entry-btn" className="grow shrink-0 md:flex-none">
                 <Plus slot="icon" className="w-3.5 h-3.5" />
                 Nueva Entrada
               </md-filled-button>

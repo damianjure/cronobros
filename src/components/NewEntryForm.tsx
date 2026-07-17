@@ -69,20 +69,20 @@ export default function NewEntryForm({
           <label className="block text-[8px] font-black text-brand-outline uppercase tracking-widest mb-1.5">Día de la Actividad</label>
           <div className="flex gap-2 mb-2">
             {daySelectionType === 'existing' ? (
-              <md-filled-button type="button" style={{ flex: 1 }} onClick={() => setDaySelectionType('existing')}>
+              <md-filled-button type="button" style={{ flexGrow: 1, flexShrink: 0, flexBasis: 'auto' }} onClick={() => setDaySelectionType('existing')}>
                 Día Existente
               </md-filled-button>
             ) : (
-              <md-outlined-button type="button" style={{ flex: 1 }} onClick={() => setDaySelectionType('existing')}>
+              <md-outlined-button type="button" style={{ flexGrow: 1, flexShrink: 0, flexBasis: 'auto' }} onClick={() => setDaySelectionType('existing')}>
                 Día Existente
               </md-outlined-button>
             )}
             {daySelectionType === 'calendar' ? (
-              <md-filled-button type="button" style={{ flex: 1 }} onClick={() => setDaySelectionType('calendar')}>
+              <md-filled-button type="button" style={{ flexGrow: 1, flexShrink: 0, flexBasis: 'auto' }} onClick={() => setDaySelectionType('calendar')}>
                 Seleccionar Día
               </md-filled-button>
             ) : (
-              <md-outlined-button type="button" style={{ flex: 1 }} onClick={() => setDaySelectionType('calendar')}>
+              <md-outlined-button type="button" style={{ flexGrow: 1, flexShrink: 0, flexBasis: 'auto' }} onClick={() => setDaySelectionType('calendar')}>
                 Seleccionar Día
               </md-outlined-button>
             )}
@@ -154,20 +154,20 @@ export default function NewEntryForm({
         <label className="block text-[9px] font-black text-brand-outline uppercase tracking-widest mb-1.5">Día de la Actividad</label>
         <div className="flex gap-2 mb-3">
           {daySelectionType === 'existing' ? (
-            <md-filled-button type="button" style={{ flex: 1 }} onClick={() => setDaySelectionType('existing')}>
+            <md-filled-button type="button" style={{ flexGrow: 1, flexShrink: 0, flexBasis: 'auto' }} onClick={() => setDaySelectionType('existing')}>
               Día Existente
             </md-filled-button>
           ) : (
-            <md-outlined-button type="button" style={{ flex: 1 }} onClick={() => setDaySelectionType('existing')}>
+            <md-outlined-button type="button" style={{ flexGrow: 1, flexShrink: 0, flexBasis: 'auto' }} onClick={() => setDaySelectionType('existing')}>
               Día Existente
             </md-outlined-button>
           )}
           {daySelectionType === 'calendar' ? (
-            <md-filled-button type="button" style={{ flex: 1 }} onClick={() => setDaySelectionType('calendar')}>
+            <md-filled-button type="button" style={{ flexGrow: 1, flexShrink: 0, flexBasis: 'auto' }} onClick={() => setDaySelectionType('calendar')}>
               Seleccionar Día
             </md-filled-button>
           ) : (
-            <md-outlined-button type="button" style={{ flex: 1 }} onClick={() => setDaySelectionType('calendar')}>
+            <md-outlined-button type="button" style={{ flexGrow: 1, flexShrink: 0, flexBasis: 'auto' }} onClick={() => setDaySelectionType('calendar')}>
               Seleccionar Día
             </md-outlined-button>
           )}
@@ -242,10 +242,10 @@ export default function NewEntryForm({
       />
 
       <div className="pt-4 border-t border-brand-primary/10 flex gap-3">
-        <md-outlined-button type="button" onClick={onCancel} style={{ flex: 1 }}>
+        <md-outlined-button type="button" onClick={onCancel} style={{ flexGrow: 1, flexShrink: 0, flexBasis: 'auto' }}>
           Cancelar
         </md-outlined-button>
-        <md-filled-button type="submit" style={{ flex: 1 }}>
+        <md-filled-button type="submit" style={{ flexGrow: 1, flexShrink: 0, flexBasis: 'auto' }}>
           Guardar Entrada
         </md-filled-button>
       </div>
