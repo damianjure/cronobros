@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { act, render, screen } from '@testing-library/react';
 import AuthGate from './AuthGate';
 import { useAuthStore } from '../store/authStore';
 import type { AuthState } from '../store/authStore';
@@ -57,28 +56,31 @@ describe('AuthGate', () => {
     setAuthState('out');
     const onMount = vi.fn();
 
-    render(
+    const { container } = render(
       <AuthGate>
         <TripUiStub onMount={onMount} />
       </AuthGate>,
     );
 
-    expect(screen.getByRole('button', { name: /iniciar sesión/i })).toBeInTheDocument();
+    // md-filled-button doesn't upgrade/render its Lit shadow DOM in jsdom, so
+    // it exposes no accessible role — query the host directly.
+    expect(container.querySelector('md-filled-button')).not.toBeNull();
     expect(screen.queryByTestId('trip-ui')).not.toBeInTheDocument();
     expect(onMount).not.toHaveBeenCalled();
   });
 
-  it('clicking the sign-in button calls signIn from the auth store', async () => {
+  it('clicking the sign-in button calls signIn from the auth store', () => {
     const signIn = vi.fn();
     setAuthState('out', signIn);
-    const user = userEvent.setup();
 
-    render(
+    const { container } = render(
       <AuthGate>
         <TripUiStub onMount={vi.fn()} />
       </AuthGate>,
     );
-    await user.click(screen.getByRole('button', { name: /iniciar sesión/i }));
+    act(() => {
+      container.querySelector('md-filled-button')!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
 
     expect(signIn).toHaveBeenCalledTimes(1);
   });

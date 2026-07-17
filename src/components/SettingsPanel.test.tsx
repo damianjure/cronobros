@@ -1,8 +1,31 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { act, render, screen } from '@testing-library/react';
 import SettingsPanel from './SettingsPanel';
 import { useSettingsStore } from '../store/settingsStore';
+
+// @material/web custom elements don't upgrade/render their Lit shadow DOM in
+// jsdom, so md-radio exposes no accessible role and its `checked` state is
+// reflected only as a DOM attribute (not a live property) when set by React
+// — query the host directly and drive/read it accordingly, same pattern as
+// the other migrated components' tests.
+function radioByValue(container: HTMLElement, name: string, value: string) {
+  return [...container.querySelectorAll('md-radio')].find(
+    el => el.getAttribute('name') === name && el.getAttribute('value') === value,
+  ) as HTMLElement;
+}
+
+function selectRadio(radio: HTMLElement) {
+  act(() => {
+    radio.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
+  });
+}
+
+function clickByAriaLabel(container: HTMLElement, label: string) {
+  const el = container.querySelector(`[aria-label="${label}"]`) as HTMLElement;
+  act(() => {
+    el.click();
+  });
+}
 
 describe('SettingsPanel', () => {
   beforeEach(() => {
@@ -17,37 +40,34 @@ describe('SettingsPanel', () => {
   });
 
   it('shows the current currency and theme when open', () => {
-    render(<SettingsPanel isOpen={true} onClose={vi.fn()} />);
+    const { container } = render(<SettingsPanel isOpen={true} onClose={vi.fn()} />);
     expect(screen.getByText('Configuración')).toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: /d.lares/i })).toBeChecked();
-    expect(screen.getByRole('radio', { name: /claro/i })).toBeChecked();
+    expect(radioByValue(container, 'currency', 'USD').hasAttribute('checked')).toBe(true);
+    expect(radioByValue(container, 'theme', 'light').hasAttribute('checked')).toBe(true);
   });
 
-  it('selecting a currency updates the settings store', async () => {
-    const user = userEvent.setup();
-    render(<SettingsPanel isOpen={true} onClose={vi.fn()} />);
+  it('selecting a currency updates the settings store', () => {
+    const { container } = render(<SettingsPanel isOpen={true} onClose={vi.fn()} />);
 
-    await user.click(screen.getByRole('radio', { name: /euros/i }));
+    selectRadio(radioByValue(container, 'currency', 'EUR'));
 
     expect(useSettingsStore.getState().currency).toBe('EUR');
   });
 
-  it('selecting dark theme updates the store and the document root', async () => {
-    const user = userEvent.setup();
-    render(<SettingsPanel isOpen={true} onClose={vi.fn()} />);
+  it('selecting dark theme updates the store and the document root', () => {
+    const { container } = render(<SettingsPanel isOpen={true} onClose={vi.fn()} />);
 
-    await user.click(screen.getByRole('radio', { name: /oscuro/i }));
+    selectRadio(radioByValue(container, 'theme', 'dark'));
 
     expect(useSettingsStore.getState().theme).toBe('dark');
     expect(document.documentElement.classList.contains('dark')).toBe(true);
   });
 
-  it('calls onClose when the close button is clicked', async () => {
-    const user = userEvent.setup();
+  it('calls onClose when the close button is clicked', () => {
     const onClose = vi.fn();
-    render(<SettingsPanel isOpen={true} onClose={onClose} />);
+    const { container } = render(<SettingsPanel isOpen={true} onClose={onClose} />);
 
-    await user.click(screen.getByRole('button', { name: /cerrar/i }));
+    clickByAriaLabel(container, 'Cerrar');
 
     expect(onClose).toHaveBeenCalledTimes(1);
   });

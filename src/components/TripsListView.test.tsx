@@ -1,7 +1,39 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import TripsListView from './TripsListView';
+
+// @material/web custom elements don't upgrade/render their Lit shadow DOM in
+// jsdom, so they expose no accessible role/label association — query the
+// host directly and drive it with real events wrapped in act(), same pattern
+// as the other migrated components' tests.
+function typeIntoField(field: Element, value: string) {
+  act(() => {
+    (field as HTMLElement & { value: string }).value = value;
+    field.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+  });
+}
+
+function submitForm(container: HTMLElement) {
+  const form = container.querySelector('form')!;
+  act(() => {
+    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+  });
+}
+
+function clickByAriaLabel(container: HTMLElement, label: string) {
+  const el = container.querySelector(`[aria-label="${label}"]`) as HTMLElement;
+  act(() => {
+    el.click();
+  });
+}
+
+function clickButtonByText(container: HTMLElement, tag: string, text: string) {
+  const button = [...container.querySelectorAll(tag)].find(el => el.textContent?.trim() === text) as HTMLElement;
+  act(() => {
+    button.click();
+  });
+}
 import { useTripsStore } from '../store/tripsStore';
 import { useAuthStore } from '../store/authStore';
 import type { TripsStoreState } from '../store/tripsStore';
@@ -84,26 +116,24 @@ describe('TripsListView', () => {
     expect(onSelectTrip).toHaveBeenCalledWith('trip-1');
   });
 
-  it('submitting the create-trip form calls createTrip with the trimmed name and current uid', async () => {
+  it('submitting the create-trip form calls createTrip with the trimmed name and current uid', () => {
     setAuthState();
     const state = setTripsState();
-    const user = userEvent.setup();
 
-    render(<TripsListView onSelectTrip={vi.fn()} />);
-    await user.type(screen.getByLabelText(/nombre del viaje/i), 'Patagonia 2027');
-    await user.click(screen.getByRole('button', { name: /crear viaje/i }));
+    const { container } = render(<TripsListView onSelectTrip={vi.fn()} />);
+    typeIntoField(container.querySelector('md-outlined-text-field')!, 'Patagonia 2027');
+    submitForm(container);
 
     expect(state.createTrip).toHaveBeenCalledWith('Patagonia 2027', 'user-1', undefined);
   });
 
-  it('passes the signed-in user\'s display name as the owner profile when creating a trip', async () => {
+  it('passes the signed-in user\'s display name as the owner profile when creating a trip', () => {
     setAuthState({ uid: 'user-1', displayName: 'Damian Jure', photoURL: 'https://example.com/p.jpg' } as AuthState['user']);
     const state = setTripsState();
-    const user = userEvent.setup();
 
-    render(<TripsListView onSelectTrip={vi.fn()} />);
-    await user.type(screen.getByLabelText(/nombre del viaje/i), 'Patagonia 2027');
-    await user.click(screen.getByRole('button', { name: /crear viaje/i }));
+    const { container } = render(<TripsListView onSelectTrip={vi.fn()} />);
+    typeIntoField(container.querySelector('md-outlined-text-field')!, 'Patagonia 2027');
+    submitForm(container);
 
     expect(state.createTrip).toHaveBeenCalledWith('Patagonia 2027', 'user-1', {
       name: 'Damian Jure',
@@ -111,29 +141,27 @@ describe('TripsListView', () => {
     });
   });
 
-  it('clicking delete on a trip card calls deleteTrip with that trip id', async () => {
+  it('clicking delete on a trip card calls deleteTrip with that trip id', () => {
     setAuthState();
     const state = setTripsState({ trips: [makeTrip()] });
-    const user = userEvent.setup();
 
-    render(<TripsListView onSelectTrip={vi.fn()} />);
-    await user.click(screen.getByRole('button', { name: /eliminar/i }));
+    const { container } = render(<TripsListView onSelectTrip={vi.fn()} />);
+    clickByAriaLabel(container, 'Eliminar Islandia 2026');
 
     expect(state.deleteTrip).toHaveBeenCalledWith('trip-1');
   });
 
-  it('archives an active trip and can restore it from the archive', async () => {
+  it('archives an active trip and can restore it from the archive', () => {
     setAuthState();
     const state = setTripsState({ trips: [makeTrip()] });
-    const user = userEvent.setup();
-    const { rerender } = render(<TripsListView onSelectTrip={vi.fn()} />);
-    await user.click(screen.getByRole('button', { name: /archivar islandia/i }));
+    const { container, rerender } = render(<TripsListView onSelectTrip={vi.fn()} />);
+    clickByAriaLabel(container, 'Archivar Islandia 2026');
     expect(state.setArchived).toHaveBeenCalledWith('trip-1', true);
 
     setTripsState({ trips: [makeTrip({ archivedAt: '2026-07-15T00:00:00.000Z' })], setArchived: state.setArchived });
     rerender(<TripsListView onSelectTrip={vi.fn()} />);
-    await user.click(screen.getByRole('button', { name: /ver archivo/i }));
-    await user.click(screen.getByRole('button', { name: /restaurar islandia/i }));
+    clickButtonByText(container, 'md-outlined-button', 'Ver archivo');
+    clickByAriaLabel(container, 'Restaurar Islandia 2026');
     expect(state.setArchived).toHaveBeenCalledWith('trip-1', false);
   });
 

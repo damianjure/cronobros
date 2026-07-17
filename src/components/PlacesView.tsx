@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, type CSSProperties } from 'react';
 import {
   MapPin,
   Plus,
@@ -12,6 +12,8 @@ import { PendingPlace } from '../types';
 import { useTripStore } from '../store/tripStore';
 import { useToastStore } from '../store/toastStore';
 import { useTripParticipants } from '../store/participants';
+
+const CATEGORY_OPTIONS: PendingPlace['category'][] = ['Turismo', 'Gastronomía', 'Relajación', 'Aventura', 'Alojamiento'];
 
 export default function PlacesView() {
   const pendingPlaces = useTripStore(state => state.pendingPlaces);
@@ -76,109 +78,93 @@ export default function PlacesView() {
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       {/* Form column */}
       <div className="lg:col-span-1 space-y-6">
-        <div className="bg-white border border-brand-primary/10 rounded-none p-6 shadow-none">
+        <md-elevated-card style={{ display: 'block' } as CSSProperties} className="p-6">
           <div className="flex items-center gap-2 mb-4 text-brand-primary">
             <Plus className="w-5 h-5 text-brand-secondary" />
             <h3 className="font-serif font-black italic text-lg">Proponer Lugar</h3>
           </div>
 
           <form onSubmit={handleAddPendingPlace} className="space-y-4">
-            <div>
-              <label className="block text-[10px] font-black uppercase tracking-wider text-brand-outline mb-1.5">
-                Nombre del Lugar *
-              </label>
-              <input
-                type="text"
-                required
-                placeholder="Ej. Museo de arte moderno"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="w-full bg-brand-background border border-brand-primary/10 rounded-none py-2.5 px-3 text-xs focus:outline-none focus:border-brand-primary/30 font-sans"
-              />
-            </div>
+            <md-outlined-text-field
+              label="Nombre del Lugar *"
+              required
+              placeholder="Ej. Museo de arte moderno"
+              value={title}
+              onInput={(e) => setTitle(e.currentTarget.value)}
+              style={{ width: '100%' }}
+            />
 
             <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-[10px] font-black uppercase tracking-wider text-brand-outline mb-1.5">
-                  Categoría
-                </label>
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value as PendingPlace['category'])}
-                  className="w-full bg-brand-background border border-brand-primary/10 rounded-none py-2.5 px-2 text-xs focus:outline-none focus:border-brand-primary/30 font-sans"
-                >
-                  <option value="Turismo">Turismo</option>
-                  <option value="Gastronomía">Gastronomía</option>
-                  <option value="Relajación">Relajación</option>
-                  <option value="Aventura">Aventura</option>
-                  <option value="Alojamiento">Alojamiento</option>
-                </select>
-              </div>
+              <md-outlined-select
+                label="Categoría"
+                value={category}
+                onChange={(e) => setCategory(e.currentTarget.value as PendingPlace['category'])}
+                style={{ width: '100%', minWidth: 0 }}
+              >
+                {CATEGORY_OPTIONS.map(option => (
+                  <md-select-option key={option} value={option} selected={option === category}>
+                    <div slot="headline">{option}</div>
+                  </md-select-option>
+                ))}
+              </md-outlined-select>
 
-              <div>
-                <label className="block text-[10px] font-black uppercase tracking-wider text-brand-outline mb-1.5">
-                  Ubicación
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ej. Centro histórico"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  className="w-full bg-brand-background border border-brand-primary/10 rounded-none py-2.5 px-3 text-xs focus:outline-none focus:border-brand-primary/30 font-sans"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-[10px] font-black uppercase tracking-wider text-brand-outline mb-1.5">
-                Descripción / Notas
-              </label>
-              <textarea
-                rows={3}
-                placeholder="Añade detalles o por qué deberíamos visitar este lugar..."
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="w-full bg-brand-background border border-brand-primary/10 rounded-none py-2 px-3 text-xs focus:outline-none focus:border-brand-primary/30 font-sans resize-none"
+              <md-outlined-text-field
+                label="Ubicación"
+                placeholder="Ej. Centro histórico"
+                value={location}
+                onInput={(e) => setLocation(e.currentTarget.value)}
               />
             </div>
+
+            <md-outlined-text-field
+              label="Descripción / Notas"
+              type="textarea"
+              rows={3}
+              placeholder="Añade detalles o por qué deberíamos visitar este lugar..."
+              value={description}
+              onInput={(e) => setDescription(e.currentTarget.value)}
+              style={{ width: '100%' }}
+            />
 
             {/* Friends Selector for this specific place */}
             <div>
               <label className="block text-[10px] font-black uppercase tracking-wider text-brand-outline mb-2">
                 ¿Quiénes participan en este recorrido?
               </label>
-              <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto custom-scrollbar p-1 border border-brand-primary/5 bg-brand-background/30">
+              <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto custom-scrollbar p-1">
                 {participants.map((participantName) => {
                   const isSelected = selectedPeople.includes(participantName);
-                  return (
-                    <button
+                  return isSelected ? (
+                    <md-filled-button
                       type="button"
                       key={participantName}
                       onClick={() => handleTogglePerson(participantName)}
-                      className={`flex items-center gap-2 p-1.5 border transition-all text-left ${
-                        isSelected
-                          ? 'border-brand-primary/35 bg-white'
-                          : 'border-transparent opacity-60'
-                      }`}
+                      style={{ '--md-filled-button-label-text-size': '10px' } as CSSProperties}
                     >
-                      <span className="text-[10px] font-bold text-brand-primary truncate">{participantName}</span>
-                    </button>
+                      {participantName}
+                    </md-filled-button>
+                  ) : (
+                    <md-outlined-button
+                      type="button"
+                      key={participantName}
+                      onClick={() => handleTogglePerson(participantName)}
+                      style={{ '--md-outlined-button-label-text-size': '10px' } as CSSProperties}
+                    >
+                      {participantName}
+                    </md-outlined-button>
                   );
                 })}
               </div>
             </div>
 
-            <button
-              type="submit"
-              className="w-full bg-brand-primary hover:bg-brand-primary/95 text-brand-on-primary py-3 rounded-none font-bold text-[10px] uppercase tracking-widest transition-all cursor-pointer active:scale-98"
-            >
+            <md-filled-button type="submit" style={{ width: '100%' }}>
               Proponer Lugar
-            </button>
+            </md-filled-button>
           </form>
-        </div>
+        </md-elevated-card>
 
         {/* Tip Box */}
-        <div className="bg-brand-primary/5 border border-brand-primary/10 p-5 rounded-none">
+        <md-outlined-card style={{ display: 'block' } as CSSProperties} className="p-5">
           <div className="flex items-start gap-3">
             <Sparkles className="w-4 h-4 text-brand-secondary shrink-0 mt-0.5" />
             <div>
@@ -188,7 +174,7 @@ export default function PlacesView() {
               </p>
             </div>
           </div>
-        </div>
+        </md-outlined-card>
       </div>
 
       {/* List Column */}
@@ -201,38 +187,39 @@ export default function PlacesView() {
         </div>
 
         {pendingPlaces.length === 0 ? (
-          <div className="p-12 bg-white border border-brand-primary/10 rounded-none text-center">
+          <md-outlined-card style={{ display: 'block' } as CSSProperties} className="p-12 text-center">
             <MapPin className="w-8 h-8 text-brand-outline/40 mx-auto mb-3" />
             <p className="font-serif font-bold italic text-brand-primary text-sm mb-1">No hay lugares pendientes</p>
             <p className="text-xs text-brand-outline">¡Empieza por proponer un punto de interés o restaurante en el formulario de la izquierda!</p>
-          </div>
+          </md-outlined-card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {pendingPlaces.map((place) => {
               const currentDaySelection = selectedDays[place.id] || itinerary[0]?.id || 'day-1';
               return (
-                <div 
+                <md-elevated-card
                   key={place.id}
-                  className="bg-white border border-brand-primary/10 rounded-none p-5 flex flex-col justify-between hover:border-brand-primary/30 transition-all duration-300"
+                  style={{ display: 'flex' } as CSSProperties}
+                  className="p-5 flex-col justify-between"
                 >
                   <div>
                     <div className="flex justify-between items-start gap-2 mb-2">
                       <span className="px-2 py-0.5 text-[8px] font-black uppercase tracking-wider bg-brand-background text-brand-primary border border-brand-primary/10">
                         {place.category}
                       </span>
-                      <button 
+                      <md-icon-button
                         onClick={() => handleDeletePending(place.id)}
-                        className="text-brand-outline hover:text-red-600 transition-colors cursor-pointer"
-                        title="Descartar propuesta"
+                        aria-label="Descartar propuesta"
+                        style={{ '--md-icon-button-hover-icon-color': 'var(--md-sys-color-error)' } as CSSProperties}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      </md-icon-button>
                     </div>
 
                     <h4 className="font-serif font-black italic text-brand-primary text-base leading-snug mb-1">
                       {place.title}
                     </h4>
-                    
+
                     <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-brand-primary/60 mb-3">
                       <MapPin className="w-3 h-3 text-brand-primary/50" />
                       <span>{place.location}</span>
@@ -266,29 +253,34 @@ export default function PlacesView() {
                     <div className="flex flex-col gap-2">
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-[9px] font-black uppercase tracking-wider text-brand-outline">Sincronizar al Día:</span>
-                        <select
+                        <md-outlined-select
                           value={currentDaySelection}
-                          onChange={(e) => setSelectedDays(prev => ({ ...prev, [place.id]: e.target.value }))}
-                          className="bg-brand-background border border-brand-primary/10 rounded-none text-xs py-1 px-1.5 focus:outline-none focus:border-brand-primary/30"
+                          onChange={(e) => setSelectedDays(prev => ({ ...prev, [place.id]: e.currentTarget.value }))}
                         >
                           {itinerary.map(day => (
-                            <option key={day.id} value={day.id}>
-                              Día {day.dayNumber} ({day.date})
-                            </option>
+                            <md-select-option key={day.id} value={day.id} selected={day.id === currentDaySelection}>
+                              <div slot="headline">Día {day.dayNumber} ({day.date})</div>
+                            </md-select-option>
                           ))}
-                        </select>
+                        </md-outlined-select>
                       </div>
 
-                      <button
+                      <md-filled-button
                         onClick={() => handleApprovePlace(place.id, currentDaySelection, place.title)}
-                        className="w-full bg-brand-secondary hover:bg-brand-secondary/90 text-brand-primary py-2.5 rounded-none font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-none"
+                        style={
+                          {
+                            width: '100%',
+                            '--md-sys-color-primary': 'var(--md-sys-color-secondary)',
+                            '--md-sys-color-on-primary': 'var(--md-sys-color-on-secondary)',
+                          } as CSSProperties
+                        }
                       >
-                        <Check className="w-3.5 h-3.5 stroke-[3px]" />
-                        <span>Visto Bueno (Aprobar)</span>
-                      </button>
+                        <Check slot="icon" className="w-3.5 h-3.5 stroke-[3px]" />
+                        Visto Bueno (Aprobar)
+                      </md-filled-button>
                     </div>
                   </div>
-                </div>
+                </md-elevated-card>
               );
             })}
           </div>

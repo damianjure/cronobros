@@ -1,5 +1,4 @@
-import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { act, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { InMemoryTripRepository } from '../services/inMemoryTripRepository';
 import { CurrentTripContext } from '../store/currentTripContext';
@@ -19,6 +18,32 @@ const editableTrip: Trip = {
   members: { 'owner-1': 'owner' },
   memberUids: ['owner-1'],
 };
+
+// @material/web custom elements don't upgrade/render their Lit shadow DOM in
+// jsdom, so buttons/text-fields expose no accessible role or label
+// association — query the host directly (by visible text for buttons, by
+// DOM order for fields) and drive it with real events wrapped in act(),
+// same pattern as ItineraryView/MapView/CriticalEventsManager tests.
+function clickButtonByText(container: HTMLElement, tag: string, text: string) {
+  const button = [...container.querySelectorAll(tag)].find(el => el.textContent?.trim() === text) as HTMLElement;
+  act(() => {
+    button.click();
+  });
+}
+
+function clickByAriaLabel(container: HTMLElement, label: string) {
+  const el = container.querySelector(`[aria-label="${label}"]`) as HTMLElement;
+  act(() => {
+    el.click();
+  });
+}
+
+function typeIntoField(field: Element, value: string) {
+  act(() => {
+    (field as HTMLElement & { value: string }).value = value;
+    field.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+  });
+}
 
 function renderCard(criticalEvents: CriticalEvent[], trip: Trip | null = null) {
   const { store } = createTripStore(
@@ -71,20 +96,31 @@ describe('CriticalEventsCard', () => {
   });
 
   it('lets an owner create a dated critical event from the empty state', async () => {
-    const user = userEvent.setup();
-    renderCard([], editableTrip);
+    const { container } = renderCard([], editableTrip);
 
-    await user.click(screen.getByRole('button', { name: 'Agregar evento crítico' }));
-    await user.click(screen.getByRole('button', { name: 'Nuevo evento crítico' }));
-    await user.type(screen.getByLabelText('Título'), 'Salida del ferry');
-    await user.type(screen.getByLabelText('Categoría breve'), 'Embarque');
-    await user.type(screen.getByLabelText('Lugar'), 'Puerto central');
-    await user.type(screen.getByLabelText('Latitud'), '40.1');
-    await user.type(screen.getByLabelText('Longitud'), '-3.2');
-    await user.type(screen.getByLabelText('Descripción'), 'Presentarse con el pase.');
-    await user.type(screen.getByLabelText('Advertencia'), 'La puerta cierra 20 minutos antes.');
-    await user.click(screen.getByRole('button', { name: 'Guardar evento' }));
-    await user.click(screen.getByRole('button', { name: 'Cerrar gestión de eventos' }));
+    clickButtonByText(container, 'md-outlined-button', 'Agregar evento crítico');
+    clickButtonByText(container, 'md-outlined-button', 'Nuevo evento crítico');
+
+    // Field order in the form: Título, Categoría breve, Lugar, Latitud,
+    // Longitud, Descripción, Advertencia (Fecha/Hora límite stay native
+    // inputs — md-outlined-text-field doesn't support type="date"/"time").
+    const [tituloField, categoriaField, lugarField, latitudField, longitudField, descripcionField, advertenciaField] =
+      container.querySelectorAll('md-outlined-text-field');
+
+    typeIntoField(tituloField, 'Salida del ferry');
+    typeIntoField(categoriaField, 'Embarque');
+    typeIntoField(lugarField, 'Puerto central');
+    typeIntoField(latitudField, '40.1');
+    typeIntoField(longitudField, '-3.2');
+    typeIntoField(descripcionField, 'Presentarse con el pase.');
+    typeIntoField(advertenciaField, 'La puerta cierra 20 minutos antes.');
+
+    const form = container.querySelector('form')!;
+    await act(async () => {
+      form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    });
+
+    clickByAriaLabel(container, 'Cerrar gestión de eventos');
 
     expect(await screen.findByText('Salida del ferry')).toBeInTheDocument();
     expect(screen.getByText('Puerto central')).toBeInTheDocument();

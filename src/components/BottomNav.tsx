@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { LayoutDashboard, Calendar, Map, Truck, MapPin, MoreHorizontal, UserPlus, Sparkles, HelpCircle } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { UserPlus, Sparkles, HelpCircle } from 'lucide-react';
 import { ActiveTab } from '../types';
 
 interface BottomNavProps {
@@ -10,8 +10,60 @@ interface BottomNavProps {
   onHelpClick: () => void;
 }
 
+interface NavDestination {
+  tab: ActiveTab;
+  label: string;
+  icon: string;
+}
+
+const DESTINATIONS: NavDestination[] = [
+  { tab: 'dashboard', label: 'Inicio', icon: 'dashboard' },
+  { tab: 'itinerary', label: 'Itinerario', icon: 'calendar_month' },
+  { tab: 'places', label: 'Lugares', icon: 'location_on' },
+  { tab: 'map', label: 'Mapa', icon: 'map' },
+  { tab: 'logistics', label: 'Logística', icon: 'local_shipping' },
+];
+
+// Index of the trailing "Más" tab — activating it opens the actions sheet
+// instead of navigating, so it must never become the bar's active tab.
+const MORE_INDEX = DESTINATIONS.length;
+
 export default function BottomNav({ activeTab, setActiveTab, onInviteClick, onSmartImport, onHelpClick }: BottomNavProps) {
   const [showMore, setShowMore] = useState(false);
+  const barRef = useRef<HTMLElement>(null);
+
+  const activeIndex = Math.max(
+    0,
+    DESTINATIONS.findIndex(destination => destination.tab === activeTab),
+  );
+
+  // md-navigation-bar fires a non-standard custom event, which React doesn't
+  // map to an `on*` prop — bind it manually. On the "Más" tab, reopen the
+  // sheet and snap activeIndex back to the real destination.
+  useEffect(() => {
+    const bar = barRef.current;
+    if (!bar) return;
+
+    const handleActivated = (event: Event) => {
+      const index = (event as CustomEvent<{ activeIndex: number }>).detail.activeIndex;
+      if (index === MORE_INDEX) {
+        setShowMore(current => !current);
+        (bar as HTMLElement & { activeIndex: number }).activeIndex = activeIndex;
+        return;
+      }
+      setShowMore(false);
+      setActiveTab(DESTINATIONS[index].tab);
+    };
+
+    bar.addEventListener('navigation-bar-activated', handleActivated);
+    return () => bar.removeEventListener('navigation-bar-activated', handleActivated);
+  }, [activeIndex, setActiveTab]);
+
+  // Keep the bar in sync when the tab changes from elsewhere (header nav, etc.).
+  useEffect(() => {
+    const bar = barRef.current as (HTMLElement & { activeIndex: number }) | null;
+    if (bar) bar.activeIndex = activeIndex;
+  }, [activeIndex]);
 
   return (
     <>
@@ -23,7 +75,7 @@ export default function BottomNav({ activeTab, setActiveTab, onInviteClick, onSm
       )}
 
       {showMore && (
-        <div className="md:hidden fixed bottom-16 left-0 w-full bg-brand-surface border-t border-brand-outline-variant/30 z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
+        <div className="md:hidden fixed bottom-20 left-0 w-full bg-brand-surface border-t border-brand-outline-variant/30 z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
           <button
             type="button"
             onClick={() => {
@@ -60,75 +112,27 @@ export default function BottomNav({ activeTab, setActiveTab, onInviteClick, onSm
         </div>
       )}
 
-    <div className="md:hidden fixed bottom-0 left-0 w-full bg-brand-surface border-t border-brand-outline-variant/30 flex justify-around items-center h-16 shadow-[0_-4px_20px_rgba(0,30,64,0.05)] z-50">
-      <button
-        onClick={() => setActiveTab('dashboard')}
-        className={`flex flex-col items-center justify-center gap-1 cursor-pointer w-12 h-full ${
-          activeTab === 'dashboard' ? 'text-brand-primary' : 'text-brand-on-surface-variant'
-        }`}
-        id="mobile-nav-dashboard"
+      <md-navigation-bar
+        ref={barRef}
+        active-index={activeIndex}
+        className="md:hidden fixed bottom-0 left-0 w-full z-50"
       >
-        <LayoutDashboard className="w-5 h-5" />
-        <span className="text-[9px] font-semibold">Inicio</span>
-      </button>
-
-      <button
-        onClick={() => setActiveTab('itinerary')}
-        className={`flex flex-col items-center justify-center gap-1 cursor-pointer w-12 h-full ${
-          activeTab === 'itinerary' ? 'text-brand-primary' : 'text-brand-on-surface-variant'
-        }`}
-        id="mobile-nav-itinerary"
-      >
-        <Calendar className="w-5 h-5" />
-        <span className="text-[9px] font-semibold">Itinerario</span>
-      </button>
-
-      <button
-        onClick={() => setActiveTab('places')}
-        className={`flex flex-col items-center justify-center gap-1 cursor-pointer w-12 h-full ${
-          activeTab === 'places' ? 'text-brand-primary' : 'text-brand-on-surface-variant'
-        }`}
-        id="mobile-nav-places"
-      >
-        <MapPin className="w-5 h-5" />
-        <span className="text-[9px] font-semibold">Lugares</span>
-      </button>
-
-      <button
-        onClick={() => setActiveTab('map')}
-        className={`flex flex-col items-center justify-center gap-1 cursor-pointer w-12 h-full ${
-          activeTab === 'map' ? 'text-brand-primary' : 'text-brand-on-surface-variant'
-        }`}
-        id="mobile-nav-map"
-      >
-        <Map className="w-5 h-5" />
-        <span className="text-[9px] font-semibold">Mapa</span>
-      </button>
-
-      <button
-        onClick={() => setActiveTab('logistics')}
-        className={`flex flex-col items-center justify-center gap-1 cursor-pointer w-12 h-full ${
-          activeTab === 'logistics' ? 'text-brand-primary' : 'text-brand-on-surface-variant'
-        }`}
-        id="mobile-nav-logistics"
-      >
-        <Truck className="w-5 h-5" />
-        <span className="text-[9px] font-semibold">Logística</span>
-      </button>
-
-      <button
-        type="button"
-        onClick={() => setShowMore(current => !current)}
-        aria-label="Más"
-        className={`flex flex-col items-center justify-center gap-1 cursor-pointer w-12 h-full ${
-          showMore ? 'text-brand-primary' : 'text-brand-on-surface-variant'
-        }`}
-        id="mobile-nav-more"
-      >
-        <MoreHorizontal className="w-5 h-5" />
-        <span className="text-[9px] font-semibold">Más</span>
-      </button>
-    </div>
+        {DESTINATIONS.map((destination, index) => (
+          <md-navigation-tab
+            key={destination.tab}
+            label={destination.label}
+            active={index === activeIndex}
+            data-testid={`mobile-nav-${destination.tab}`}
+          >
+            <md-icon slot="active-icon">{destination.icon}</md-icon>
+            <md-icon slot="inactive-icon">{destination.icon}</md-icon>
+          </md-navigation-tab>
+        ))}
+        <md-navigation-tab label="Más" data-testid="mobile-nav-more">
+          <md-icon slot="active-icon">more_horiz</md-icon>
+          <md-icon slot="inactive-icon">more_horiz</md-icon>
+        </md-navigation-tab>
+      </md-navigation-bar>
     </>
   );
 }

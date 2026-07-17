@@ -1,3 +1,4 @@
+import { type CSSProperties } from 'react';
 import { Users } from 'lucide-react';
 import { ItineraryDay, ItineraryActivity } from '../types';
 import { useTripParticipants } from '../store/participants';
@@ -46,24 +47,24 @@ export default function FriendChips({
         ))}
 
         {/* Accessible multi-select trigger to add/remove participants */}
-        <button
+        <md-outlined-button
           type="button"
           onClick={onTogglePicker}
           aria-haspopup="true"
           aria-expanded={isPickerOpen}
           aria-controls={`people-picker-${activity.id}`}
-          className="px-2 py-0.5 border border-dashed border-brand-primary/30 hover:bg-brand-primary/5 text-brand-primary text-[8px] font-bold uppercase tracking-wider flex items-center gap-1 transition-all cursor-pointer"
         >
-          <span>+ / - Integrantes</span>
-        </button>
+          + / - Integrantes
+        </md-outlined-button>
       </div>
 
       {isPickerOpen && (
-        <div
+        <md-elevated-card
+          style={{ display: 'grid' } as CSSProperties}
           id={`people-picker-${activity.id}`}
           role="group"
           aria-label={`Elegir integrantes de ${activity.title}`}
-          className="absolute z-20 top-full left-0 mt-1 w-56 bg-white border border-brand-primary/15 shadow-lg p-2 grid grid-cols-1 gap-1"
+          className="absolute z-20 top-full left-0 mt-1 w-56 p-2 grid-cols-1 gap-1"
         >
           {tripParticipants.map((participantName) => {
             const isChecked = currentPeople.includes(participantName);
@@ -72,24 +73,18 @@ export default function FriendChips({
                 key={participantName}
                 className="flex items-center gap-2 px-1.5 py-1 hover:bg-brand-primary/5 cursor-pointer text-[10px] font-semibold text-brand-primary"
               >
-                <input
-                  type="checkbox"
+                <md-checkbox
                   checked={isChecked}
                   onChange={() => onTogglePerson(day, activity, participantName)}
-                  className="cursor-pointer"
                 />
                 <span>{participantName}</span>
               </label>
             );
           })}
-          <button
-            type="button"
-            onClick={onClosePicker}
-            className="mt-1 py-1 text-[9px] font-bold uppercase tracking-widest text-brand-outline hover:text-brand-primary cursor-pointer"
-          >
+          <md-text-button type="button" onClick={onClosePicker}>
             Cerrar
-          </button>
-        </div>
+          </md-text-button>
+        </md-elevated-card>
       )}
     </div>
   );
