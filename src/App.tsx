@@ -146,6 +146,9 @@ export default function App() {
       <BottomNav
         activeTab={activeTab}
         setActiveTab={setActiveTab}
+        onInviteClick={() => setShowInviteModal(true)}
+        onSmartImport={() => setShowSmartImport(true)}
+        onHelpClick={() => setShowHelp(true)}
       />
 
       {/* Invite Friends Modal */}

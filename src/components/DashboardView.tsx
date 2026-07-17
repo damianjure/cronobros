@@ -108,7 +108,7 @@ export default function DashboardView({ setActiveTab }: DashboardViewProps) {
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
           
           {/* Active Map Card */}
-          <div className="md:col-span-2 bg-white rounded-none overflow-hidden relative border border-brand-primary/10 shadow-none group min-h-[380px] flex flex-col justify-end" id="dashboard-active-route">
+          <div className="md:col-span-2 bg-white rounded-none overflow-hidden relative border border-brand-primary/10 shadow-none group min-h-[220px] md:min-h-[380px] flex flex-col justify-end" id="dashboard-active-route">
             
             {/* Map background */}
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_30%,rgba(216,150,95,0.38),transparent_28%),radial-gradient(circle_at_75%_65%,rgba(49,82,76,0.42),transparent_32%),linear-gradient(135deg,#e9eee8,#c9d5d1)]" />
